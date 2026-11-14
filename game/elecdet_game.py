@@ -43,7 +43,7 @@ PAD = [('1', '1', pygame.K_1, 0, 0, 1), ('2', '2', pygame.K_2, 1, 0, 1), ('3', '
        ('END TURN', 'ENDTURN', pygame.K_t, 3, 4, 2)]   # layout of the original: 5 columns x 5 rows
 NUMPAD = {getattr(pygame, 'K_KP%d' % i): str(i) for i in range(10)}
 NUMPAD[pygame.K_KP_ENTER] = 'ENTER'
-OFF_HINT = 'Press ON to start. Shift+ON: a game without patterns (the shell deals the case).'
+OFF_HINT = 'Press ON to start a classic game, or Shift+ON for a game without patterns (the shell deals the case).'
 
 
 def num(s):
@@ -314,7 +314,6 @@ class Game:
         self.font = pygame.font.SysFont('arial', 15)
         self.small = pygame.font.SysFont('arial', 13, bold=True)
         self.big = pygame.font.SysFont('arial', 26, bold=True)
-        self.tag = self.small.render('NO PATTERNS', True, (170, 60, 40))
         self.buttons = []
         for label, key, _, col, row, w in PAD:
             x = self.M + col * (self.U + self.GAP)
@@ -486,12 +485,6 @@ class Game:
                 self.final = ('%s %s %s' % (head, sc.summary(), self.rec)).strip()
                 self.bottom = sc.summary()
 
-    def fair_on(self):
-        return bool(self.dealer and self.board and self.board.powered)
-
-    def tag_w(self):
-        return self.tag.get_width() + 14 if self.fair_on() else 0
-
     def wrap(self, text, width):
         lines, cur = [], ''
         for w in text.split(' '):
@@ -519,19 +512,17 @@ class Game:
         for i, s in enumerate(segs):
             draw_digit(sc, self.DISP.centerx - 232 + i * 70, self.DISP.y + 16, 44, 68, s, (255, 40, 40), (55, 18, 18))
         self.update_status()
-        if (self.status, self.fair_on()) != getattr(self, '_status_src', None):
-            self._status_src, self._status_lines = (self.status, self.fair_on()), [
-                self.font.render(t, True, (20, 20, 20)) for t in self.wrap(self.status, self.CW - 24 - self.tag_w())[:2]]
+        if self.status != getattr(self, '_status_src', None):
+            self._status_src, self._status_lines = self.status, [
+                self.font.render(t, True, (20, 20, 20)) for t in self.wrap(self.status, self.CW - 24)[:2]]
         lines = self._status_lines
         if self.decoder.is_private(self.d) and not (self.peek_key or self.peek_mouse):
             self.draw_cover(sc)
             c = self.decoder.context
             lines = [self.font.render(t, True, (20, 20, 20)) for t in self.wrap(
-                'Q%s for %s: hold SPACE or click here to see the answer.' % (c[1], who(c[2])), self.CW - 24 - self.tag_w())[:2]]
+                'Q%s for %s: hold SPACE or click here to see the answer.' % (c[1], who(c[2])), self.CW - 24)[:2]]
         for k, img in enumerate(lines):
             sc.blit(img, (self.STATUS.x + 12, self.STATUS.y + 7 + k * 19))
-        if self.fair_on():
-            sc.blit(self.tag, (self.STATUS.right - self.tag.get_width() - 10, self.STATUS.y + 8))
         for r, label, key in self.buttons:
             if self.held.get(key, 0) > 0:
                 self.button(sc, r, label, key, True)
