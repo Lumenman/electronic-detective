@@ -1,0 +1,15 @@
+# third-party material and tools: not our work, large, or not ours to redistribute
+mame/
+elecdet/
+electronic-detective-master/
+rules1/
+rules2/
+/*.pdf
+/*.jpg
+/*.webp
+# generated
+__pycache__/
+*.pkl
+research/dasm/tr_*.txt
+research/emu/ref/
+game/settings.json

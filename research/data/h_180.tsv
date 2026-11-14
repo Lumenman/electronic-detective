@@ -1,0 +1,193 @@
+crime	 5F    
+ram0	69617e100061caaf83252d2010000f81278956302000004ea1431c403000100045a76a60425b120000003f50000000000000000000003000bbbbf5b73138a020
+alibi1	  C    
+q1_1	  4E5  
+q1_2	     N0
+q1_9	     N0
+alibi1b	  C    
+q1_13	0000000
+q1_14	0000000
+off1_3	     EE
+alibi2	  b 7  
+q2_2	     N0
+q2_3	 5     
+q2_9	  4E5  
+alibi2b	  b 7  
+q2_13	0000000
+q2_14	     N0
+off2_1	     EE
+alibi3	 4d    
+q3_3	 5     
+q3_4	     N0
+q3_5	  d    
+alibi3b	 4d    
+q3_13	     N0
+q3_14	0000000
+off3_1	     EE
+alibi4	 4A    
+q4_4	     N0
+q4_5	  d    
+q4_9	  4E5  
+alibi4b	 4A    
+q4_13	0000000
+q4_14	0000000
+off4_1	     EE
+alibi5	0000000
+q5_1	     EE
+q5_4	     N0
+q5_9	  4E5  
+alibi5b	0000000
+q5_13	0000000
+q5_14	0000000
+off5_2	     EE
+alibi6	2   911
+q6_5	  d    
+q6_6	  b    
+q6_12	     N0
+alibi6b	2   911
+q6_13	0000000
+q6_14	0000000
+off6_1	     EE
+alibi7	   1819
+q7_2	     N0
+q7_5	  d    
+q7_12	  4E5  
+alibi7b	   1819
+q7_13	0000000
+q7_14	     N0
+off7_1	     EE
+alibi8	  d15  
+q8_3	 5     
+q8_5	  d    
+q8_12	  4E5  
+alibi8b	  d15  
+q8_13	  4E5  
+q8_14	0000000
+off8_1	     EE
+alibi9	  E    
+q9_1	  4E5  
+q9_5	  d    
+q9_12	     N0
+alibi9b	  E    
+q9_13	0000000
+q9_14	0000000
+off9_2	     EE
+alibi10	13     
+q10_7	  A    
+q10_8	     N0
+q10_12	     N0
+alibi10b	13     
+q10_13	0000000
+q10_14	0000000
+off10_1	     EE
+alibi11	 5     
+q11_6	  b    
+q11_7	  A    
+q11_11	     N0
+alibi11b	 5     
+q11_13	0000000
+q11_14	0000000
+off11_1	     EE
+alibi12	14     
+q12_2	     N0
+q12_6	  b    
+q12_11	     N0
+alibi12b	14     
+q12_13	  4E5  
+q12_14	0000000
+off12_1	     EE
+alibi13	   1014
+q13_3	 5     
+q13_7	  A    
+q13_11	  4E5  
+alibi13b	   1014
+q13_13	0000000
+q13_14	0000000
+off13_1	     EE
+alibi14	    113
+q14_1	  4E5  
+q14_6	  b    
+q14_11	  4E5  
+alibi14b	    113
+q14_13	0000000
+q14_14	0000000
+off14_2	     EE
+alibi15	1   312
+q15_4	     N0
+q15_7	  A    
+q15_11	     N0
+alibi15b	1   312
+q15_13	     N0
+q15_14	0000000
+off15_1	     EE
+alibi16	 5  b  
+q16_6	  b    
+q16_8	     N0
+q16_10	 5     
+alibi16b	 5  b  
+q16_13	0000000
+q16_14	0000000
+off16_1	     EE
+alibi17	24   20
+q17_2	     N0
+q17_7	  A    
+q17_10	 4     
+alibi17b	24   20
+q17_13	0000000
+q17_14	0000000
+off17_1	     EE
+alibi18	2      
+q18_1	  4E5  
+q18_8	     N0
+q18_10	 3     
+alibi18b	2      
+q18_13	0000000
+q18_14	     N0
+off18_2	     EE
+alibi19	 3     
+q19_3	 5     
+q19_8	     N0
+q19_10	 3     
+alibi19b	 3     
+q19_13	0000000
+q19_14	     N0
+off19_1	     EE
+alibi20	2   4  
+q20_4	     N0
+q20_8	     N0
+q20_10	 4     
+alibi20b	2   4  
+q20_13	0000000
+q20_14	0000000
+off20_1	     EE
+ram1	69617e120061caaf83252d2311000f81278956332100004ea1431c423100100045a76a62435b170002003f500000000045a76a6241b03000bbbbbbb23178a020
+acc1	       
+acc2	       
+acc3	       
+acc4	     N0
+acc5	       
+acc6	     N0
+acc7	       
+acc8	       
+acc9	       
+acc10	       
+acc11	       
+acc12	       
+acc13	       
+acc14	       
+acc15	1bd1d  
+acc16	1bd1d  
+acc17	1bd1d  
+acc18	1bd1d  
+acc19	       
+acc20	1bd1d  
+acc21	1bd1d  
+acc22	       
+acc23	1bd1d  
+acc24	1bd1d  
+acc25	{02}-{42}{02}{42}  
+acc26	1bd1d  
+acc27	       
+acc28	1bd1d  
+acc29	1bd1d  
+acc30	       

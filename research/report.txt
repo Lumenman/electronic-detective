@@ -1,0 +1,204 @@
+games analysed: 300; skipped: {}
+
+## Q01_correct
+   True: 1417
+
+## Q02_correct
+   True: 1409
+
+## Q03_correct
+   True: 1419
+
+## Q04_correct
+   True: 1409
+
+## Q05_correct
+   True: 1714
+
+## Q06_correct
+   True: 1440
+
+## Q07_correct
+   True: 1444
+
+## Q08_correct
+   True: 1435
+
+## Q09_correct
+   True: 1114
+
+## Q10_correct
+   True: 1407
+
+## Q11_correct
+   True: 1438
+
+## Q12_correct
+   True: 1454
+
+## VICTIM_Q01_as_if_at_three_place
+   False: 83
+
+## VICTIM_Q02_as_if_at_three_place
+   False: 68, True: 23
+
+## VICTIM_Q03_as_if_at_three_place
+   False: 68, True: 13
+
+## VICTIM_Q04_as_if_at_three_place
+   True: 46, False: 45
+
+## VICTIM_Q05_as_if_at_three_place
+   True: 73, False: 13
+
+## VICTIM_Q06_as_if_at_three_place
+   False: 45, True: 15
+
+## VICTIM_Q07_as_if_at_three_place
+   False: 43, True: 13
+
+## VICTIM_Q08_as_if_at_three_place
+   True: 34, False: 31
+
+## VICTIM_Q09_as_if_at_three_place
+   False: 61, True: 25
+
+## VICTIM_Q10_as_if_at_three_place
+   False: 57, True: 36
+
+## VICTIM_Q11_as_if_at_three_place
+   False: 32, True: 30
+
+## VICTIM_Q12_as_if_at_three_place
+   True: 24, False: 22
+
+## VICTIM_prints_answer
+   0000000: 470, N0: 72, 4E5: 58
+
+## addresses_are_permutation
+   True: 300
+
+## alibi_(companions,named)
+   (3, 0): 2212, (3, 2): 1642, (3, 1): 946, (2, 1): 600, (2, 0): 300
+
+## alibi_constant_within_game
+   True: 5700
+
+## alibi_fields
+    with=2: 1128, town place with=0: 566, side town with=0: 520, side with=2: 514, place with=1: 510, place with=0: 502, town with=0: 492, town with=1: 436, side town with=1: 300, side with=1: 300, side with=0: 244, side place with=0: 188
+
+## alibi_nfacts
+   2: 3648, 1: 1238, 3: 814
+
+## alibi_truthful
+   True: 5700
+
+## murder_weapon
+   .38: 173, .45: 127
+
+## murderer
+   10: 33, 2: 31, 11: 30, 6: 26, 16: 19, 13: 16, 7: 16, 15: 15, 9: 15, 1: 14, 20: 14, 12: 13, 5: 12, 14: 11, 17: 10, 18: 10, 3: 9, 19: 6
+
+## murderer_at_weapon_place
+   False: 300
+
+## murderer_category
+   Me: 90, Fo: 77, Fe: 67, Mo: 66
+
+## murderer_in_three_place
+   False: 300
+
+## n_samesex_witnesses_at_murder_weapon
+   2: 300
+
+## offcard_answer
+   EE: 5939, 4E5: 40, N0: 21
+
+## offcard_not_EE_(suspect,q,is_victim)
+   (2, 1, True): 23, (18, 2, True): 18, (19, 1, True): 11, (15, 1, True): 9
+
+## place_sizes
+   (0, 3, 4, 4, 4, 4): 300
+
+## scene
+   C: 53, D: 53, A: 52, F: 51, E: 47, B: 44
+
+## some_weapon_in_three_place
+   False: 300
+
+## three_place_missing_category_is_victims
+   True: 300
+
+## victim
+   17: 28, 8: 28, 4: 27, 2: 23, 20: 23, 14: 19, 5: 19, 18: 18, 1: 17, 12: 15, 11: 13, 16: 13, 3: 13, 19: 11, 9: 10, 15: 9, 7: 8, 13: 6
+
+## victim_alibi
+   0000000: 300
+
+## victim_answers
+   0000000: 470, EE: 466, N0: 200, 4E5: 170, 5: 34, 3: 32, 4: 27, b: 24, F: 19, A: 18, C: 15, E: 15, d: 10
+
+## victim_category
+   Fe: 88, Me: 78, Fo: 67, Mo: 67
+
+## victim_same_sex_as_murderer
+   True: 157, False: 143
+
+## weapon_at_scene
+   False: 300
+
+## weapons_same_place
+   False: 300
+
+## prints Q13/Q14, 3 asks each (=M same parity as murderer, !M opposite)
+  [murder weapon, opposite sex] n=600
+     !M: 304
+     =M: 296
+  [murder weapon, opposite sex, Q13 raw, murderer even] n=182
+     4E5: 182
+  [murder weapon, opposite sex, Q13 raw, murderer odd] n=164
+     4E5: 164
+  [murder weapon, opposite sex, Q14 raw, murderer even] n=132
+     N0: 132
+  [murder weapon, opposite sex, Q14 raw, murderer odd] n=122
+     N0: 122
+  [murder weapon, same sex] n=600
+     =M: 600
+  [murder weapon, same sex, Q13 raw, murderer even] n=182
+     N0: 182
+  [murder weapon, same sex, Q13 raw, murderer odd] n=164
+     4E5: 164
+  [murder weapon, same sex, Q14 raw, murderer even] n=132
+     N0: 132
+  [murder weapon, same sex, Q14 raw, murderer odd] n=122
+     4E5: 122
+  [no weapon here] n=6600
+     0000000: 6600
+  [non-murder weapon, opposite sex] n=600
+     =M: 309
+     !M: 291
+  [non-murder weapon, opposite sex, Q13 raw, murderer even] n=132
+     4E5: 66
+     N0: 66
+  [non-murder weapon, opposite sex, Q13 raw, murderer odd] n=122
+     N0: 61
+     4E5: 61
+  [non-murder weapon, opposite sex, Q14 raw, murderer even] n=182
+     N0: 182
+  [non-murder weapon, opposite sex, Q14 raw, murderer odd] n=164
+     N0: 164
+  [non-murder weapon, same sex] n=600
+     =M: 473
+     !M: 127
+  [non-murder weapon, same sex, Q13 raw, murderer even] n=132
+     4E5: 66
+     N0: 66
+  [non-murder weapon, same sex, Q13 raw, murderer odd] n=122
+     N0: 61
+     4E5: 61
+  [non-murder weapon, same sex, Q14 raw, murderer even] n=182
+     N0: 182
+  [non-murder weapon, same sex, Q14 raw, murderer odd] n=164
+     4E5: 164
+  [other weapon here] n=2400
+     0000000: 2400

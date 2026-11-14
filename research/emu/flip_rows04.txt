@@ -1,0 +1,8 @@
+murderer parity odd opp witnesses [10, 5] q 13
+baseline answer 4E5 | other opp witness: 4E5
+flip 1:8 bit 0 -> 0000000
+flip 1:8 bit 1 -> 0000000
+flip 1:8 bit 2 -> 0000000
+flip 1:8 bit 3 -> 0000000
+flip 3:B bit 0 -> EE
+flip 3:C bit 0 -> 0000000
