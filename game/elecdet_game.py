@@ -43,7 +43,7 @@ PAD = [('1', '1', pygame.K_1, 0, 0, 1), ('2', '2', pygame.K_2, 1, 0, 1), ('3', '
        ('END TURN', 'ENDTURN', pygame.K_t, 3, 4, 2)]   # layout of the original: 5 columns x 5 rows
 NUMPAD = {getattr(pygame, 'K_KP%d' % i): str(i) for i in range(10)}
 NUMPAD[pygame.K_KP_ENTER] = 'ENTER'
-OFF_HINT = 'Press ON to start a classic game, or Shift+ON for a game without patterns (the shell deals the case).'
+OFF_HINT = 'Press ON to start an original game, or Shift+ON for a game without patterns (the shell deals the case).'
 
 
 def num(s):
