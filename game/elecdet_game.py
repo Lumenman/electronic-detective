@@ -3,11 +3,13 @@
     python elecdet_game.py [path to ROM folder or elecdet.zip]
 
 Keys: 0-9, S = Suspect, Q = Private Question, A = I Accuse, Enter, T = End Turn, O = On, X = Off.
+Hold Shift while switching on (key or mouse) for 'no patterns': the shell deals the case, see dealer.py.
 Suspect cards are not shown: use the paper cards or the PDF.
 """
 import array, json, os, re, sys, threading
 import pygame
 from board import ElecDet, IPS, SEG, load_romset
+from dealer import Dealer
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 SETTINGS = os.path.join(HERE, 'settings.json')
@@ -41,6 +43,7 @@ PAD = [('1', '1', pygame.K_1, 0, 0, 1), ('2', '2', pygame.K_2, 1, 0, 1), ('3', '
        ('END TURN', 'ENDTURN', pygame.K_t, 3, 4, 2)]   # layout of the original: 5 columns x 5 rows
 NUMPAD = {getattr(pygame, 'K_KP%d' % i): str(i) for i in range(10)}
 NUMPAD[pygame.K_KP_ENTER] = 'ENTER'
+OFF_HINT = 'Press ON to start. Shift+ON: a game without patterns (the shell deals the case).'
 
 
 def num(s):
@@ -104,7 +107,7 @@ class Decoder:
     def status(self, d):
         c, t = self.context, d.replace(' ', '')
         if c[0] == 'off':
-            return 'Press ON to start.'
+            return OFF_HINT
         if t == 'EE':
             return 'EE: wrong key sequence or a question not on this card. Start the entry again.'
         if t == 'ENd':
@@ -293,9 +296,10 @@ class Game:
         self.board = None
         self._level = self._last = 0
         self.decoder = Decoder()
-        self.status = 'Press ON to start.'
+        self.status = OFF_HINT
         self.held = {}                   # board key -> number of sources holding it (mouse/keyboard)
         self.keyq, self.cur_key, self.key_age, self.key_rest = [], None, 0, 0   # presses waiting for the board
+        self.dealer = None               # 'no patterns' mode: deals the case instead of the ROM's rotation
         pygame.init()                    # also brings up SDL audio, needed by AudioDevice
         self.buf, self.lock, self.underruns = bytearray(), threading.Lock(), 0
         try:
@@ -310,6 +314,7 @@ class Game:
         self.font = pygame.font.SysFont('arial', 15)
         self.small = pygame.font.SysFont('arial', 13, bold=True)
         self.big = pygame.font.SysFont('arial', 26, bold=True)
+        self.tag = self.small.render('NO PATTERNS', True, (170, 60, 40))
         self.buttons = []
         for label, key, _, col, row, w in PAD:
             x = self.M + col * (self.U + self.GAP)
@@ -344,6 +349,8 @@ class Game:
             return [0] * round(seconds * RATE)
         b = self.board
         self.feed_keys()
+        if self.dealer and b.powered:
+            self.dealer.tick(b.cpu)
         c0 = b.cpu.cycles
         b.run(n)
         ev, b.sound_events = b.sound_events, []
@@ -377,7 +384,7 @@ class Game:
                 self.buf += samples.tobytes()
 
     # --- input ---
-    def press(self, key, down):
+    def press(self, key, down, fair=False):
         if key in ('ON', 'OFF'):
             if key == 'ON' and self.board is not None and self.board.powered:
                 return                       # already on: the real switch does nothing either
@@ -387,6 +394,7 @@ class Game:
                 if key == 'ON' and (self.board is None or not self.board.powered):
                     self.board = ElecDet(self.files); self._level = 0
                     self.keyq, self.cur_key, self.key_rest = [], None, 0
+                    self.dealer = Dealer() if fair else None
                     self.board.power_on()
                 elif key == 'OFF' and self.board:
                     self.board.power_off()
@@ -443,7 +451,7 @@ class Game:
             self.track(d)
         if self.board is not None and not self.board.powered:
             self.final = None                # the summary stays on the bottom line
-            self.status = 'Switched off. Press ON for a new game.'
+            self.status = 'Switched off. ' + OFF_HINT
         if self.final and not self.decoder.entry:
             self.status = self.final
         if self.score and not self.score.over and self.decoder.context[0] == 'turn' and self.score.n > 1 \
@@ -466,9 +474,10 @@ class Game:
                 p = sc.accused(bool(m) and m.group(2) == '4E5')
                 self.rec = ''
                 if sc.n == 1 and sc.winner == 0:
-                    records = load_settings().get('records', {})
+                    name = 'records_fair' if self.dealer else 'records'      # the two modes are not comparable
+                    records = load_settings().get(name, {})
                     self.rec = sc.record(records)
-                    save_settings(records=records)
+                    save_settings(**{name: records})
                 if not sc.over:
                     self.bottom = '%s is out - %s' % (sc.name(p), sc.stats(p))
             if m and sc.over and dec.seq == self.counted and self.final_seq != dec.seq:
@@ -476,6 +485,12 @@ class Game:
                 head = ('YES! %s is the murderer.' if sc.winner is not None else 'The murderer was %s.') % who(num(m.group(1)))
                 self.final = ('%s %s %s' % (head, sc.summary(), self.rec)).strip()
                 self.bottom = sc.summary()
+
+    def fair_on(self):
+        return bool(self.dealer and self.board and self.board.powered)
+
+    def tag_w(self):
+        return self.tag.get_width() + 14 if self.fair_on() else 0
 
     def wrap(self, text, width):
         lines, cur = [], ''
@@ -504,17 +519,19 @@ class Game:
         for i, s in enumerate(segs):
             draw_digit(sc, self.DISP.centerx - 232 + i * 70, self.DISP.y + 16, 44, 68, s, (255, 40, 40), (55, 18, 18))
         self.update_status()
-        if self.status != getattr(self, '_status_src', None):
-            self._status_src, self._status_lines = self.status, [
-                self.font.render(t, True, (20, 20, 20)) for t in self.wrap(self.status, self.CW - 24)[:2]]
+        if (self.status, self.fair_on()) != getattr(self, '_status_src', None):
+            self._status_src, self._status_lines = (self.status, self.fair_on()), [
+                self.font.render(t, True, (20, 20, 20)) for t in self.wrap(self.status, self.CW - 24 - self.tag_w())[:2]]
         lines = self._status_lines
         if self.decoder.is_private(self.d) and not (self.peek_key or self.peek_mouse):
             self.draw_cover(sc)
             c = self.decoder.context
             lines = [self.font.render(t, True, (20, 20, 20)) for t in self.wrap(
-                'Q%s for %s: hold SPACE or click here to see the answer.' % (c[1], who(c[2])), self.CW - 24)[:2]]
+                'Q%s for %s: hold SPACE or click here to see the answer.' % (c[1], who(c[2])), self.CW - 24 - self.tag_w())[:2]]
         for k, img in enumerate(lines):
             sc.blit(img, (self.STATUS.x + 12, self.STATUS.y + 7 + k * 19))
+        if self.fair_on():
+            sc.blit(self.tag, (self.STATUS.right - self.tag.get_width() - 10, self.STATUS.y + 8))
         for r, label, key in self.buttons:
             if self.held.get(key, 0) > 0:
                 self.button(sc, r, label, key, True)
@@ -537,7 +554,7 @@ class Game:
                 if e.type in (pygame.KEYDOWN, pygame.KEYUP) and e.key in keymap:
                     if e.type == pygame.KEYDOWN and getattr(e, 'repeat', False):
                         continue
-                    self.press(keymap[e.key], e.type == pygame.KEYDOWN)
+                    self.press(keymap[e.key], e.type == pygame.KEYDOWN, bool(pygame.key.get_mods() & pygame.KMOD_SHIFT))
                 elif e.type in (pygame.KEYDOWN, pygame.KEYUP) and e.key == pygame.K_SPACE:
                     self.peek_key = e.type == pygame.KEYDOWN
                 elif e.type == pygame.MOUSEBUTTONDOWN and e.button == 1 and (
@@ -548,7 +565,7 @@ class Game:
                 elif e.type == pygame.MOUSEBUTTONDOWN and e.button == 1:
                     for r, _, key in self.buttons:
                         if r.collidepoint(e.pos):
-                            mouse_key = key; self.press(key, True)
+                            mouse_key = key; self.press(key, True, bool(pygame.key.get_mods() & pygame.KMOD_SHIFT))
                 elif e.type == pygame.MOUSEBUTTONUP and e.button == 1 and mouse_key:
                     self.press(mouse_key, False); mouse_key = None
             if self.audio is not None:

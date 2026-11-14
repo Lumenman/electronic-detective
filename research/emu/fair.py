@@ -1,52 +1,10 @@
-"""'Classic without patterns': the original ROM, but the shell deals the cards.
-
-The ROM has no random generator: its table only rotates, which leaves the regularities listed in SPOILERS.md.
-Here the shell overwrites the table in RAM just before the ROM builds the case (while the gunshots play), and
-flips the murder-weapon flag just after. Everything else - alibis, answers, sounds - is still the ROM.
-
-    pre(ram, rng)   when the program is on page D (sound delay) and M(3,12) bit 0 is clear
-    post(ram, rng)  once, after M(3,12) bit 0 is set (case built)
-    python fair.py [games]    self-check: plays whole cases and compares every answer with the dealt table
-"""
-import random
-
-ADDR = [1, 2, 3, 5, 6, 7]                 # side: bit 2 = East; area: low bits 1/2/3
-LETTER = [10, 6, 12, 13, 14, 15]          # A b C d E F
-
-
-def pre(ram, rng):
-    for col in range(4):                  # who is where: any order, not just a rotation
-        v = [ram[r * 16 + col] for r in range(5)]; rng.shuffle(v)
-        for r in range(5): ram[r * 16 + col] = v[r]
-    for col, vals in ((4, ADDR), (5, LETTER)):
-        v = vals[:]; rng.shuffle(v)
-        for r in range(6): ram[r * 16 + col] = v[r]
-    t = [1, 2, 3, 4, 5]; rng.shuffle(t)   # alibi templates, no longer tied to the odd woman
-    for r, x in zip((0, 1, 2, 3, 5), t): ram[r * 16 + 6] = x
-    ram[4 * 16 + 6] = 6
-    ram[4 * 16 + 13] = rng.randrange(16)  # murderer / victim categories, instead of the ENTER hold time
-
-
-def post(ram, rng):
-    ram[1 * 16 + 9] = ram[1 * 16 + 9] & ~2 | rng.choice((0, 2))   # bit 1: the .38 is the murder weapon
-
-
-class Dealer:
-    """Call tick(cpu) between emulation steps (any period up to ~0.1 s)."""
-
-    def __init__(self, rng=None):
-        self.rng, self.dealt, self.wait = rng or random.SystemRandom(), False, 0
-
-    def tick(self, cpu):
-        ram = cpu.ram
-        if not ram[3 * 16 + 12] & 1:
-            self.wait = 0
-            if cpu.rom_address >> 7 == 13:
-                pre(ram, self.rng); self.dealt = True
-        elif self.dealt:
-            self.wait += 1
-            if self.wait == 2:            # one tick later: the ROM has finished building the case
-                post(ram, self.rng); self.dealt = False
+"""Self-check of game/dealer.py ('Classic without patterns'): plays whole cases in the emulator and compares
+every alibi, every card question, questions 13/14 and the accusation with the dealt table.
+    python fair.py [games]      (about a minute per game, 2 processes)"""
+import os, random, sys
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', 'game'))
+from dealer import Dealer
+sys.path.pop(0)                           # keep this folder's tms0980/elecdet
 
 
 # ---------------------------------------------------------------- self-check

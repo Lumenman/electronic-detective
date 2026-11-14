@@ -107,6 +107,7 @@ print('rom selection OK')
 g = eg.Game.__new__(eg.Game)
 g.files, g.board, g.decoder, g.held, g._level = files, None, Decoder(), {}, 0
 g.keyq, g.cur_key, g.key_age, g.key_rest = [], None, 0, 0
+g.dealer = None
 g.score = g.bottom = g.final = None
 
 
@@ -124,3 +125,27 @@ click('2'); click('ENTER'); wait(2)
 shown = g.decoder.status(g.board.display()); print(repr(g.board.display()), shown)
 assert shown.startswith('#12 ') and 'I was' in shown, shown   # could be the victim: then rerun
 print('key queue OK')
+
+# --- 'no patterns' mode (Shift+ON): the shell deals the case, the ROM plays it ---
+import random
+from dealer import Dealer
+g.press('OFF', True); g.press('ON', True, fair=True)
+assert isinstance(g.dealer, Dealer)
+g.dealer = Dealer(random.Random(5)); wait(6.3)
+click('3'); click('1'); click('ENTER'); wait(58)
+ram = g.board.cpu.ram
+cols = [''.join('%x' % ram[r * 16 + c] for r in range(6)) for c in range(7)]
+print('dealt table columns:', cols)
+assert sorted(cols[4]) == sorted('123567') and sorted(cols[5]) == sorted('6acdef') and sorted(cols[6]) == sorted('123456')
+rot = lambda t: {t[i:] + t[:i] for i in range(6)}
+sw = lambda t, i, j: ''.join(t[j] if k == i else t[i] if k == j else ch for k, ch in enumerate(t))
+orig = {sw(t, 0, j) for t in rot('ad6cef') for j in (0, 4, 5)}          # every letter order the ROM alone can make
+assert cols[5] not in orig, 'dealer did not run'
+crime = g.decoder.status(g.board.display()); print(repr(g.board.display()), crime)
+v = g.decoder.victim; s2 = 1 if v != 1 else 2
+click('SUSPECT'); click(str(s2)); click('ENTER'); wait(2)
+shown = g.decoder.status(g.board.display()); print(repr(g.board.display()), shown)
+assert shown.startswith('#%d ' % s2) and 'I was' in shown, shown
+g.press('OFF', True); g.press('ON', True)
+assert g.dealer is None
+print('no-patterns mode OK')
