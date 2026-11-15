@@ -7,13 +7,15 @@ prints on the murder weapon is told reliably only by a suspect of the murderer's
 It does NOT use the undocumented regularities from SPOILERS.md.
 
 suspects(obs) returns every suspect who could be the murderer given the observations: if it is one name,
-the case is solvable. obs is what engine.observe() returns, or any subset of it (fewer alibis and answers).
+the case is solvable. obs is what rules.observe() returns, or any subset of it (fewer alibis and answers).
 
     python solver.py classic [n]     cases from the emulator sweep (the ROM's own deals)
     python solver.py fair [n]        random deals as made by game/dealer.py
 """
 from itertools import permutations
-from engine import CARDS, male, col_of
+import os, sys
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', 'game'))
+from rules import CARDS, male, col_of
 
 LETTERS = 'ABCDEF'
 ADDR = [(s, a) for s in (1, 2) for a in (3, 4, 5)]
@@ -124,21 +126,12 @@ def place_all(dom, cats, mates, places, three):
 
 
 # ---------------------------------------------------------------- experiments
-def random_case(rng):
-    """A deal as game/dealer.py makes it: every column shuffled, categories and weapon at random."""
-    cols = [[2, 4, 6, 8, 10], [1, 3, 5, 7, 9], [12, 14, 16, 18, 20], [11, 13, 15, 17, 19]]
-    for c in cols: rng.shuffle(c)
-    addr = ADDR[:]; rng.shuffle(addr)
-    let = list(LETTERS); rng.shuffle(let)
-    tpl = [1, 2, 3, 4, 5]; rng.shuffle(tpl); tpl = tpl[:4] + [6, tpl[4]]
-    rows = [{'people': [cols[c][r] for c in range(4)] if r < 5 else [], 'side': addr[r][0], 'area': addr[r][1],
-             'letter': let[r], 'tpl': tpl[r]} for r in range(6)]
-    return {'rows': rows, 'vcol': rng.randrange(4), 'mcol': rng.randrange(4), 'w38': rng.random() < 0.5}
+from rules import deal as random_case
 
 
 def run(job):
     import random
-    from engine import observe, from_ram
+    from rules import observe, from_ram
     kind, arg = job
     case = random_case(random.Random(arg)) if kind == 'fair' else from_ram(arg)
     obs, murderer = observe(case)

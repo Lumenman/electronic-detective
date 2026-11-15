@@ -14,7 +14,9 @@ The accusation itself is not counted.
     python par.py classic [n] [level]    deals of the ROM (emulator sweep)
     add 'ideal' to compute the floor too (slow)
 """
-from engine import CARDS, male
+import os, sys
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', 'game'))
+from rules import CARDS, male
 from solver import suspects
 
 
@@ -86,7 +88,7 @@ def ideal(obs, level, cap=40):
 
 def run(job):
     import random
-    from engine import observe, from_ram
+    from rules import observe, from_ram
     from solver import random_case
     kind, arg, level, want_ideal = job
     case = random_case(random.Random(arg)) if kind == 'fair' else from_ram(arg)

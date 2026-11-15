@@ -1,10 +1,10 @@
-"""Rules of the original as code (SPOILERS: this is RULES.md section 5 in executable form).
+"""Rules of the original as code (SPOILERS: this is research/RULES.md section 5 in executable form).
 
 A case is the ROM table after generation: six rows (murderer's place, .38, .45, second place of four,
 place of three, scene) plus the categories of victim and murderer and the weapon flag.
 observe(case) returns everything a player can learn: all alibis and all answers.
 
-    python engine.py     compares the engine with 300 recorded MAME games (../data/h_*.tsv)
+    python rules.py     compares the rules with 300 recorded MAME games (../research/data/h_*.tsv)
 """
 CARDS = {1: (1, 2, 9), 2: (2, 3, 9), 3: (3, 4, 5), 4: (4, 5, 9), 5: (1, 4, 9), 6: (5, 6, 12), 7: (2, 5, 12),
          8: (3, 5, 12), 9: (1, 5, 12), 10: (7, 8, 12), 11: (6, 7, 11), 12: (2, 6, 11), 13: (3, 7, 11),
@@ -28,6 +28,18 @@ def from_ram(ram):
     return {'rows': [{'people': [who(r, c) for c in range(4)] if r < 5 else [], 'side': 2 if R(r, 4) & 4 else 1,
                       'area': 2 + (R(r, 4) & 3), 'letter': LETTER[R(r, 5)], 'tpl': R(r, 6)} for r in range(6)],
             'vcol': R(4, 12), 'mcol': R(4, 13), 'w38': bool(R(1, 9) & 2)}
+
+
+def deal(rng):
+    """A random case: every column shuffled, any address and letter order, categories and weapon at random."""
+    cols = [[2, 4, 6, 8, 10], [1, 3, 5, 7, 9], [12, 14, 16, 18, 20], [11, 13, 15, 17, 19]]
+    for c in cols: rng.shuffle(c)
+    addr = [(s, a) for s in (1, 2) for a in (3, 4, 5)]; rng.shuffle(addr)
+    let = list('ABCDEF'); rng.shuffle(let)
+    tpl = [1, 2, 3, 4, 5]; rng.shuffle(tpl); tpl = tpl[:4] + [6, tpl[4]]
+    rows = [{'people': [cols[c][r] for c in range(4)] if r < 5 else [], 'side': addr[r][0], 'area': addr[r][1],
+             'letter': let[r], 'tpl': tpl[r]} for r in range(6)]
+    return {'rows': rows, 'vcol': rng.randrange(4), 'mcol': rng.randrange(4), 'w38': rng.random() < 0.5}
 
 
 def observe(case):
@@ -64,11 +76,11 @@ def observe(case):
 
 if __name__ == '__main__':
     import glob, os, sys
-    sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
+    sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'research'))
     from analyze import load, alibi as parse_alibi
     NORM = {'4E5': 'Y', 'N0': 'N', '0000000': '?', 'b': 'B', 'd': 'D'}
     games = diffs = 0
-    for fn in sorted(glob.glob(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'data', 'h_*.tsv'))):
+    for fn in sorted(glob.glob(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'research', 'data', 'h_*.tsv'))):
         g = load(fn)
         if 'ram0' not in g or 'murderer' not in g: continue
         obs, murderer = observe(from_ram(g['ram0'])); games += 1; bad = []
