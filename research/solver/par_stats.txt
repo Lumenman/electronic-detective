@@ -1,0 +1,6 @@
+fair level 3 methodical: 100 cases, turns min 4  median 7  mean 7.0  max 22   4:5 5:17 6:26 7:27 8:11 9:6 10:5 15:1 16:1 22:1
+classic level 3 methodical: 100 cases, turns min 4  median 7  mean 6.9  max 13   4:6 5:19 6:23 7:17 8:13 9:11 10:8 11:2 13:1
+fair level 2 methodical: 100 cases, turns min 5  median 8  mean 9.3  max 28   5:4 6:24 7:19 8:14 9:13 10:10 11:3 12:2 15:2 16:1 24:2 26:5 28:1
+fair level 1 methodical: 100 cases, turns min 9  median 12  mean 21.6  max 80   9:10 10:18 11:22 12:9 13:6 14:2 15:3 16:1 28:5 32:7 36:4 40:1 44:1 48:1 64:1 68:2 72:3 80:4
+fair level 3 methodical: 16 cases, turns min 4  median 7  mean 7.5  max 22   4:1 5:2 6:4 7:6 8:1 10:1 22:1
+fair level 3 ideal     : 16 cases, turns min 4  median 6  mean 5.7  max 10   4:5 5:2 6:5 7:3 10:1
