@@ -1,7 +1,11 @@
 """The game machine without the ROM: key entry, turns, answers, display and sounds.
 
 It behaves like the original (compared key by key with the ROM in research/emu/diff_machine.py), but the case is
-dealt by rules.deal() and the answers come from rules.observe(). It offers the same interface as board.ElecDet,
+dealt by rules.deal() and the answers come from rules.observe(). Four oddities of the original are left out
+unless rom_like=True (which the comparison uses): SUSPECT pressed again before ENTER shows EE; the I ACCUSE key
+forgets the turn's suspect, so another one can be questioned; a rejected mode key leaves the previous mode on, so
+the next number is read as something else; questions go to the previous suspect when nobody is being questioned
+(the victim); suspects 11-15 answer question 12, which is not on their cards; a finished game switches itself off. It offers the same interface as board.ElecDet,
 so the window can drive either. Time is counted in CPU cycles of the original (IPS per second).
 
     m = Machine(); m.power_on(); m.run(3 * SEC); m.key('3'); m.key('1'); m.key('ENTER'); m.run(6 * SEC); m.display()
@@ -24,8 +28,8 @@ def digits(n, width=2):
 
 
 class Machine:
-    def __init__(self, rng=None, case=None):
-        self.rng, self.fixed_case = rng or random.SystemRandom(), case
+    def __init__(self, rng=None, case=None, rom_like=False):
+        self.rng, self.fixed_case, self.rom_like = rng or random.SystemRandom(), case, rom_like
         self.powered = False
         self.cycles = self.busy_until = 0
         self.off_at = None
@@ -38,7 +42,7 @@ class Machine:
         while self.powered and self.timeline and self.timeline[0][0] <= end:
             self.cycles, _, fn = self.timeline.pop(0); fn()
         self.cycles = end
-        if self.powered and self.off_at and end >= self.off_at:
+        if self.powered and self.off_at and self.rom_like and end >= self.off_at:
             self.power_off()
         q = self.sound_queue; i = 0
         while i < len(q) and q[i][0] <= end: i += 1
@@ -124,13 +128,16 @@ class Machine:
 
     def key_play(self, k):
         if k in ('SUSPECT', 'PQ', 'ACCUSE'):
-            if k == 'ACCUSE': self.active = self.touched = False     # as in the original: this forgets the turn's suspect
-            ok = k == 'ACCUSE' or ((self.mode in ('SUSPECT', 'PQ')) if k == 'PQ' else not self.touched)   # checked at once
+            if k == 'ACCUSE' and self.rom_like: self.active = self.touched = False   # forgets the turn's suspect
+            asked = self.mode in ('SUSPECT', 'PQ') if self.rom_like else self.active
+            ok = k == 'ACCUSE' or (asked if k == 'PQ' else not self.touched)   # checked when the key is pressed
             self.typed, self.fresh = '', False
             if ok:
                 self.mode = k; self.show(BLANK)
-                if k == 'SUSPECT': self.active, self.touched = False, not self.over   # one suspect per turn
-            else: self.show(EE)                                    # the previous mode stays in force
+                if k == 'SUSPECT': self.active, self.touched = False, self.rom_like and not self.over
+            else:
+                self.show(EE)
+                if not self.rom_like: self.mode = None             # the ROM keeps the previous mode in force
         elif k.isdigit():
             if self.fresh: self.typed, self.fresh = '', False
             self.typed = (self.typed + k)[-2:]; self.echo()
@@ -149,6 +156,7 @@ class Machine:
     def enter_suspect(self, n):
         if n is None or not 1 <= n <= 20 or self.active:
             return EE
+        self.touched = not self.over      # one suspect per turn (the ROM marks the turn already when SUSPECT is pressed)
         if n == self.victim:              # as in the original: the victim keeps the previous suspect's answers
             return '0000000'
         self.active, self.who = True, n
@@ -173,7 +181,7 @@ class Machine:
             return self.end()
         if not self.over: self.used += 1  # a question that is not on the card is lost as well
         if self.who is None: self.deviation = True                 # the victim first: the original answers nonsense
-        a = self.obs['ans'].get((self.who, q), self.obs['hidden'].get((self.who, q)))
+        a = self.obs['ans'].get((self.who, q), self.obs['hidden'].get((self.who, q)) if self.rom_like else None)
         self.answer(EE if a is None else '  4E5  ' if a == 'Y' else '     N0' if a == 'N' else '0000000' if a == '?'
                     else '  ' + GLYPH[a] + '    ' if a in GLYPH else ' ' + a + '     ')
 

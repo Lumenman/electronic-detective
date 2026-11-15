@@ -5,7 +5,7 @@ from diff_machine import started, Machine, IPS, view
 ALIAS = {'S': 'SUSPECT', 'Q': 'PQ', 'A': 'ACCUSE', 'E': 'ENTER', 'T': 'ENDTURN'}
 level, players, seed = int(sys.argv[1]), int(sys.argv[2]), int(sys.argv[3])
 b, case = started(level, players, seed); b = copy.deepcopy(b)
-m = Machine(case=case); m.power_on(); m.run(int(3 * IPS))
+m = Machine(case=case, rom_like=True); m.power_on(); m.run(int(3 * IPS))
 for k in (str(level), str(players), 'ENTER'): m.key(k)
 m.run(int(7 * IPS))
 print('victim', m.victim, 'murderer', m.murderer)

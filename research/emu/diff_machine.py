@@ -71,7 +71,7 @@ def session(seed, nkeys, verbose=True):
     level, players = rng.choice([1, 2, 3]), rng.choice([1, 1, 2, 3])
     b, case = started(level, players, seed % 12)
     b = copy.deepcopy(b)
-    m = Machine(case=case); m.power_on(); m.run(int(3 * IPS))
+    m = Machine(case=case, rom_like=True); m.power_on(); m.run(int(3 * IPS))
     for k in (str(level), str(players), 'ENTER'): m.key(k)
     m.run(int(7 * IPS))
     keys = random_keys(rng, nkeys, m.victim, m.murderer)

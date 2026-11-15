@@ -144,6 +144,36 @@ click('ENTER')
 loud = sum(1 for _ in range(300) if any(g.emulate(1 / 60)))           # 5 s: the siren lasts 3.7 s
 assert g.board.shown.strip().endswith('4E5'), g.board.shown
 assert 180 < loud < 260, loud
+# the four oddities of the original that our machine leaves out
+import random
+from machine import SEC
+from rules import CARDS, deal, observe
+def play(keys, case):
+    m = Machine(case=case); m.power_on(); m.run(4 * SEC)
+    for k in ['3', '1', 'ENTER']: m.key(k)
+    m.run(6 * SEC); out = []
+    for k in keys.split():
+        if k[0] == 'w': m.run(int(k[1:]) * SEC)
+        else: m.key({'S': 'SUSPECT', 'Q': 'PQ', 'A': 'ACCUSE', 'E': 'ENTER', 'T': 'ENDTURN'}.get(k, k)); m.run(SEC)
+        out.append(m.display().strip() if m.powered else 'off')
+    return out
+case = deal(random.Random(3)); obs, murderer = observe(case)
+a, b = [s for s in (11, 12, 13, 14, 15, 1, 2) if s != obs['victim']][:2]
+r = play('S 9 S %s E' % ' '.join(str(a)), case)
+assert r[2] == '' and r[-1] not in ('EE', ''), r                       # SUSPECT again: clean screen, then the alibi
+r = play('S %s E A S %s E' % (' '.join(str(a)), ' '.join(str(b))), case)
+assert r[-4] == 'EE' and r[-1] == 'EE', r                              # I ACCUSE does not free another suspect
+r = play('S %s E S %s E Q %d E' % (' '.join(str(a)), ' '.join(str(b)), CARDS[a][0]), case)
+n = len(str(a)) + 2                                                    # keys up to the first ENTER
+assert r[n] == 'EE' and r[-3 - len(str(CARDS[a][0]))] == 'EE' and r[-1] != 'EE', r   # a second suspect: refused, costs nothing
+v = ' '.join(str(obs['victim']))
+r = play('S %s E Q 1 3 E' % v, case)
+assert r[len(v.split()) + 1] == '0000000' and r[-1] == 'EE', r         # the victim cannot be questioned
+r = play('S %s E Q 1 2 E' % ' '.join(str(a)), case)
+assert r[-1] == 'EE', r                                                # question 12 is not on the card of 11-15
+r = play('A %s E w600 T' % ' '.join(str(murderer)), case)
+assert r[-1] != 'off', r                                               # no batteries to save
+print('oddities left out OK')
 g.press('OFF', True); g.press('ON', True, original=True)                # Shift+ON: the ROM
 assert g.original and not isinstance(g.board, Machine)
 print('own machine OK')
