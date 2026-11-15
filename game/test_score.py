@@ -35,6 +35,7 @@ def check(t, name, test):
 
 
 def murderer():
+    if hasattr(game.board, 'murderer'): return game.board.murderer      # our own machine
     R = [game.board.cpu.ram[i * 16:(i + 1) * 16] for i in range(8)]
     c = R[4][0xd]; v = R[0][c]
     return [v or 10, v, (v or 10) + 10, v + 10][c]

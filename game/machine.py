@@ -16,6 +16,7 @@ MASK = {ch: m for m, ch in SEG.items() if m != 0x67}
 BLANK, EE, END, ON = ' ' * 7, '     EE', '  ENd  ', '     0N'
 SEC = int(IPS)
 BLINK, BLINK_NO = (0.44, 0.14), (0.26, 0.14)       # seconds on, off
+OFF_AFTER, OFF_EXTEND = 240, 177                   # a finished game switches itself off; END TURN gives more time
 
 
 def digits(n, width=2):
@@ -27,6 +28,7 @@ class Machine:
         self.rng, self.fixed_case = rng or random.SystemRandom(), case
         self.powered = False
         self.cycles = self.busy_until = 0
+        self.off_at = None
         self.cpu = self                   # the window reads board.cpu.cycles
         self.sound_events, self.sound_queue, self.timeline = [], [], []
 
@@ -36,6 +38,8 @@ class Machine:
         while self.powered and self.timeline and self.timeline[0][0] <= end:
             self.cycles, _, fn = self.timeline.pop(0); fn()
         self.cycles = end
+        if self.powered and self.off_at and end >= self.off_at:
+            self.power_off()
         q = self.sound_queue; i = 0
         while i < len(q) and q[i][0] <= end: i += 1
         self.sound_events += q[:i]; del q[:i]
@@ -60,7 +64,7 @@ class Machine:
     def power_on(self):
         self.powered, self.state = True, 'setup'
         self.timeline, self.sound_queue = [], []
-        self.typed = ''
+        self.typed, self.off_at = '', None
         self.show(BLANK)
         self.at(self.sound('power_on'), lambda: self.show(ON))
 
@@ -106,6 +110,7 @@ class Machine:
         self.case = self.fixed_case or deal(self.rng)
         self.obs, self.murderer = observe(self.case)
         self.victim = self.obs['victim']
+        self.over = False                 # solved, or everybody is out
         self.who = None                   # the suspect whose answers are loaded (survives END TURN and the victim)
         self.new_turn()
         self.state = 'play'
@@ -119,7 +124,7 @@ class Machine:
 
     def key_play(self, k):
         if k in ('SUSPECT', 'PQ', 'ACCUSE'):
-            ok = (self.mode is not None) if k == 'PQ' else not self.touched   # checked when the key is pressed
+            ok = k == 'ACCUSE' or ((self.mode is not None) if k == 'PQ' else not self.touched)   # checked at once
             self.typed = ''
             if ok: self.mode = k; self.show(BLANK)
             else: self.show(EE)                                    # the previous mode stays in force
@@ -127,6 +132,7 @@ class Machine:
             self.typed = (self.typed + k)[-2:]; self.echo()
         elif k == 'ENDTURN':
             self.new_turn(); self.show(BLANK); self.sound('bong')
+            if self.off_at: self.off_at = self.cycles + OFF_EXTEND * SEC
         elif k == 'ENTER':
             n = int(self.typed) if self.typed else None
             self.typed = ''
@@ -138,10 +144,10 @@ class Machine:
     def enter_suspect(self, n):
         if n is None or not 1 <= n <= 20 or self.active:
             return EE
-        self.touched = True
+        self.touched = not self.over      # once the case is closed, suspects can be reviewed freely
         if n == self.victim:              # as in the original: the victim keeps the previous suspect's answers
             return '0000000'
-        self.active, self.who = True, n
+        self.active, self.who = not self.over, n
         a = self.obs['alibi'][n]
         mates = [digits(m) for m in a.get('with', ())]
         row = next(r for r in range(5) if n in self.case['rows'][r]['people'])
@@ -166,13 +172,15 @@ class Machine:
         self.new_turn(); self.show(BLANK)
         if n == self.murderer:
             self.at(self.sound('solved') + 0.2, lambda: self.show(digits(n) + '4E5  ', BLINK))
+            self.off_at = self.cycles + OFF_AFTER * SEC; self.over = True
             return
-        self.left -= 1
+        self.left = max(self.left - 1, 0)
         no = lambda: self.show('     N0')
         self.at(1.4, no); self.at(1.84, lambda: self.show(BLANK)); self.at(1.98, no)
         if self.left > 0:                 # the others play on
             self.sound('wrong')
             self.at(2.6, lambda: self.show('     N0', BLINK_NO))
         else:                             # everybody is out: the machine names the murderer
+            self.over = True
             self.at(2.3, lambda: self.show(BLANK))
             self.at(self.sound('wrong_last'), lambda: self.show(digits(self.murderer) + 'd1d  ', BLINK))

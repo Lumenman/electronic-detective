@@ -1,16 +1,16 @@
-"""Electronic Detective (Ideal, 1979) -- play the original ROM in a window.
+"""Electronic Detective (Ideal, 1979) in a window.
 
-    python elecdet_game.py [path to ROM folder or elecdet.zip]
+    python elecdet_game.py [path to ROM folder or elecdet.zip]      (the ROM is needed only for Shift+ON)
 
 Keys: 0-9, S = Suspect, Q = Private Question, A = I Accuse, Enter, T = End Turn, O = On, X = Off.
-By default the shell deals the case ('no patterns', see dealer.py); hold Shift while switching on (key or mouse)
-for the original game, where the ROM deals.
+ON starts our own machine (machine.py: same rules and behaviour, cases dealt at random, no ROM needed).
+Shift+ON (key or mouse) runs the original ROM in the emulator, with the regularities of its deals.
 Suspect cards are not shown: use the paper cards or the PDF.
 """
 import array, json, os, re, sys, threading
 import pygame
 from board import ElecDet, IPS, SEG, load_romset
-from dealer import Dealer
+from machine import Machine
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 SETTINGS = os.path.join(HERE, 'settings.json')
@@ -292,15 +292,15 @@ class Game:
     PAD_TOP = STATUS.bottom + 16
     H = PAD_TOP + 5 * KEY_H + 4 * GAP + 44
 
-    def __init__(self, files):
-        self.files = files
+    def __init__(self, files=None, rom=None):
+        self.files, self.rom = files, rom   # the ROM (loaded files, or where to look) is asked for on Shift+ON only
+        self.original = False
         self.board = None
         self._level = self._last = 0
         self.decoder = Decoder()
         self.status = OFF_HINT
         self.held = {}                   # board key -> number of sources holding it (mouse/keyboard)
         self.keyq, self.cur_key, self.key_age, self.key_rest = [], None, 0, 0   # presses waiting for the board
-        self.dealer = None               # 'no patterns' mode: deals the case instead of the ROM's rotation
         pygame.init()                    # also brings up SDL audio, needed by AudioDevice
         self.buf, self.lock, self.underruns = bytearray(), threading.Lock(), 0
         try:
@@ -349,8 +349,6 @@ class Game:
             return [0] * round(seconds * RATE)
         b = self.board
         self.feed_keys()
-        if self.dealer and b.powered:
-            self.dealer.tick(b.cpu)
         c0 = b.cpu.cycles
         b.run(n)
         ev, b.sound_events = b.sound_events, []
@@ -389,12 +387,17 @@ class Game:
             if key == 'ON' and self.board is not None and self.board.powered:
                 return                       # already on: the real switch does nothing either
             if down:
+                if key == 'ON' and original and self.files is None:
+                    try:
+                        self.files = find_rom(self.rom)
+                    except SystemExit:           # no ROM chosen: stay off
+                        return
                 self.decoder.key(key)
                 self.score = self.bottom = self.final = None
                 if key == 'ON' and (self.board is None or not self.board.powered):
-                    self.board = ElecDet(self.files); self._level = 0
+                    self.board = ElecDet(self.files) if original else Machine()
+                    self.original, self._level = original, 0
                     self.keyq, self.cur_key, self.key_rest = [], None, 0
-                    self.dealer = None if original else Dealer()
                     self.board.power_on()
                 elif key == 'OFF' and self.board:
                     self.board.power_off()
@@ -474,7 +477,7 @@ class Game:
                 p = sc.accused(bool(m) and m.group(2) == '4E5')
                 self.rec = ''
                 if sc.n == 1 and sc.winner == 0:
-                    name = 'records_fair' if self.dealer else 'records'      # the two modes are not comparable
+                    name = 'records' if self.original else 'records_fair'    # the two modes are not comparable
                     records = load_settings().get(name, {})
                     self.rec = sc.record(records)
                     save_settings(**{name: records})
@@ -571,7 +574,7 @@ class Game:
 
 
 def main():
-    Game(find_rom(sys.argv[1] if len(sys.argv) > 1 else None)).run()
+    Game(rom=sys.argv[1] if len(sys.argv) > 1 else None).run()
     # Any SDL audio shutdown (pause/close/pygame.quit) can deadlock against the audio callback waiting for the GIL,
     # so close the window and leave without it; nothing needs saving at exit.
     pygame.display.quit()

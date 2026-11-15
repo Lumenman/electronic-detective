@@ -106,8 +106,8 @@ print('rom selection OK')
 # --- key queue: instant clicks and overlapping keys must still reach the ROM ---
 g = eg.Game.__new__(eg.Game)
 g.files, g.board, g.decoder, g.held, g._level = files, None, Decoder(), {}, 0
+g.rom, g.original = None, False
 g.keyq, g.cur_key, g.key_age, g.key_rest = [], None, 0, 0
-g.dealer = None
 g.score = g.bottom = g.final = None
 
 
@@ -126,26 +126,24 @@ shown = g.decoder.status(g.board.display()); print(repr(g.board.display()), show
 assert shown.startswith('#12 ') and 'I was' in shown, shown   # could be the victim: then rerun
 print('key queue OK')
 
-# --- 'no patterns' mode (the default): the shell deals the case, the ROM plays it ---
-import random
-from dealer import Dealer
+# --- default mode: our own machine (no ROM), cases dealt at random ---
+from machine import Machine
 g.press('OFF', True); g.press('ON', True)
-assert isinstance(g.dealer, Dealer)
-g.dealer = Dealer(random.Random(5)); wait(6.3)
-click('3'); click('1'); click('ENTER'); wait(58)
-ram = g.board.cpu.ram
-cols = [''.join('%x' % ram[r * 16 + c] for r in range(6)) for c in range(7)]
-print('dealt table columns:', cols)
-assert sorted(cols[4]) == sorted('123567') and sorted(cols[5]) == sorted('6acdef') and sorted(cols[6]) == sorted('123456')
-rot = lambda t: {t[i:] + t[:i] for i in range(6)}
-sw = lambda t, i, j: ''.join(t[j] if k == i else t[i] if k == j else ch for k, ch in enumerate(t))
-orig = {sw(t, 0, j) for t in rot('ad6cef') for j in (0, 4, 5)}          # every letter order the ROM alone can make
-assert cols[5] not in orig, 'dealer did not run'
+assert isinstance(g.board, Machine) and not g.original
+wait(3.5); assert g.board.display() == '     0N', g.board.display()
+click('3'); click('1'); click('ENTER'); wait(6)
 crime = g.decoder.status(g.board.display()); print(repr(g.board.display()), crime)
+assert crime.startswith('The victim is #'), crime
 v = g.decoder.victim; s2 = 1 if v != 1 else 2
 click('SUSPECT'); click(str(s2)); click('ENTER'); wait(2)
 shown = g.decoder.status(g.board.display()); print(repr(g.board.display()), shown)
 assert shown.startswith('#%d ' % s2) and 'I was' in shown, shown
-g.press('OFF', True); g.press('ON', True, original=True)   # Shift+ON
-assert g.dealer is None
-print('no-patterns mode OK')
+click('ACCUSE')
+for ch in str(g.board.murderer): click(ch)
+click('ENTER')
+loud = sum(1 for _ in range(300) if any(g.emulate(1 / 60)))           # 5 s: the siren lasts 3.7 s
+assert g.board.shown.strip().endswith('4E5'), g.board.shown
+assert 180 < loud < 260, loud
+g.press('OFF', True); g.press('ON', True, original=True)                # Shift+ON: the ROM
+assert g.original and not isinstance(g.board, Machine)
+print('own machine OK')

@@ -69,25 +69,26 @@ def view(run, display, seconds=0.6):
 def session(seed, nkeys, verbose=True):
     rng = random.Random(seed)
     level, players = rng.choice([1, 2, 3]), rng.choice([1, 1, 2, 3])
-    b, case = started(level, players, seed % 6)
+    b, case = started(level, players, seed % 12)
     b = copy.deepcopy(b)
     m = Machine(case=case); m.power_on(); m.run(int(3 * IPS))
     for k in (str(level), str(players), 'ENTER'): m.key(k)
     m.run(int(7 * IPS))
     keys = random_keys(rng, nkeys, m.victim, m.murderer)
     brun, mrun = (lambda s: b.run(int(s * IPS))), (lambda s: m.run(int(s * IPS)))
-    accusing = False
+    accusing = blinking = False
     for i, k in enumerate(keys):
         if k == 'ACCUSE': accusing = True
         wait = 9.0 if (k == 'ENTER' and accusing) else 0.1          # sirens, shots and the march take their time
-        b.set_key(k, True); brun(0.15); b.set_key(k, False); brun(wait)
-        m.key(k); mrun(0.15 + wait)
+        hold = 0.8 if blinking else 0.15                         # the ROM misses short presses while it blinks
+        b.set_key(k, True); brun(hold); b.set_key(k, False); brun(wait)
+        m.key(k); mrun(hold + wait)
         if k in ('ENTER', 'SUSPECT', 'PQ', 'ENDTURN'): accusing = False
         want, got = view(brun, b.display), view(mrun, m.display)
+        blinking = len(want) > 1
         if want != got:
             if verbose:
-                print('seed %d level %d players %d, after %d keys: ROM %s, model %s
-   keys: %s' % (
+                print('seed %d level %d players %d, after %d keys: ROM %s, model %s; keys: %s' % (
                     seed, level, players, i + 1, sorted(want), sorted(got),
                     ' '.join(keys[:i + 1]).replace('SUSPECT', 'S').replace('ENTER', 'E').replace('ENDTURN', 'T')
                     .replace('PQ', 'Q').replace('ACCUSE', 'A')))

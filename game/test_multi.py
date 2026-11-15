@@ -35,6 +35,7 @@ def check(t, name, test):
 
 
 def people():
+    if hasattr(game.board, 'murderer'): return game.board.murderer, game.board.victim   # our own machine
     R = [game.board.cpu.ram[i * 16:(i + 1) * 16] for i in range(8)]
     who = lambda r, c: [R[r][c] or 10, R[r][c], (R[r][c] or 10) + 10, R[r][c] + 10][c]
     return who(0, R[4][0xd]), who(4, R[4][0xc])        # murderer, victim
