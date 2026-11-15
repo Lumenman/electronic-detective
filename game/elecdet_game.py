@@ -315,6 +315,7 @@ class Game:
         self.font = pygame.font.SysFont('arial', 15)
         self.small = pygame.font.SysFont('arial', 13, bold=True)
         self.big = pygame.font.SysFont('arial', 26, bold=True)
+        self.hint_img = self.small.render(self.HINT, True, (110, 110, 100))
         self.buttons = []
         for label, key, _, col, row, w in PAD:
             x = self.M + col * (self.U + self.GAP)
@@ -322,7 +323,7 @@ class Game:
             self.buttons.append((r, label, key))
         self.clock_left = 0.0
         self.peek_key = self.peek_mouse = False
-        self.score = self.bottom = self.final = None
+        self.score = self.note = self.final = None
         self.counted = self.final_seq = -1
         self.rec = ''
         self.d = ''
@@ -393,7 +394,7 @@ class Game:
                     except SystemExit:           # no ROM chosen: stay off
                         return
                 self.decoder.key(key)
-                self.score = self.bottom = self.final = None
+                self.score = self.note = self.final = None
                 if key == 'ON' and (self.board is None or not self.board.powered):
                     self.board = ElecDet(self.files) if original else Machine()
                     self.original, self._level = original, 0
@@ -411,7 +412,7 @@ class Game:
             was_setup, entry = dec.context[0] == 'setup', list(dec.entry)
             dec.key(key)
             if key != 'ENDTURN':
-                self.bottom = None           # next player's first key brings the key hint back
+                self.note = None             # the turn summary goes with the next player's first key
             self.final = None
             if was_setup and key == 'ENTER':
                 self.score = Score(dec.level, dec.players)
@@ -420,7 +421,7 @@ class Game:
             elif self.score and key == 'ENDTURN':
                 line = self.score.end_turn()
                 if line:
-                    self.bottom = line
+                    self.note = line
 
     # --- drawing ---
     def button(self, sc, r, label, key, down):
@@ -453,13 +454,19 @@ class Game:
             self.status = self.decoder.status(d) or self.status
             self.track(d)
         if self.board is not None and not self.board.powered:
-            self.final = None                # the summary stays on the bottom line
+            self.final = None
             self.status = 'Switched off. ' + OFF_HINT
         if self.final and not self.decoder.entry:
             self.status = self.final
         if self.score and not self.score.over and self.decoder.context[0] == 'turn' and self.score.n > 1 \
                 and not d.strip() and not self.decoder.entry:
             self.status = '%s: SUSPECT, number, ENTER.' % self.score.name(self.score.cur)
+        if self.note and not self.decoder.entry and not self.final:    # turn summary, or who is out: with the prompt
+            c = self.decoder.context[0]
+            if c == 'turn' and not d.strip():
+                self.status = '%s. %s' % (self.note, self.status)
+            elif c == 'accuse':
+                self.status = '%s. Next player: press END TURN first.' % self.note
 
     def track(self, d):
         """Count each answered private question and each accusation once (per ENTER).
@@ -482,12 +489,11 @@ class Game:
                     self.rec = sc.record(records)
                     save_settings(**{name: records})
                 if not sc.over:
-                    self.bottom = '%s is out - %s' % (sc.name(p), sc.stats(p))
+                    self.note = '%s is out - %s' % (sc.name(p), sc.stats(p))
             if m and sc.over and dec.seq == self.counted and self.final_seq != dec.seq:
                 self.final_seq = dec.seq
                 head = ('YES! %s is the murderer.' if sc.winner is not None else 'The murderer was %s.') % who(num(m.group(1)))
                 self.final = ('%s %s %s' % (head, sc.summary(), self.rec)).strip()
-                self.bottom = sc.summary()
 
     def wrap(self, text, width):
         lines, cur = [], ''
@@ -530,11 +536,7 @@ class Game:
         for r, label, key in self.buttons:
             if self.held.get(key, 0) > 0:
                 self.button(sc, r, label, key, True)
-        text = self.bottom or self.HINT
-        if text != getattr(self, '_bottom_src', None):
-            self._bottom_src = text
-            self._bottom_img = self.small.render(text, True, (40, 70, 120) if self.bottom else (110, 110, 100))
-        sc.blit(self._bottom_img, self._bottom_img.get_rect(center=(self.W // 2, self.H - 22)))
+        sc.blit(self.hint_img, self.hint_img.get_rect(center=(self.W // 2, self.H - 22)))
         pygame.display.flip()
 
     def run(self):

@@ -30,7 +30,7 @@ def check(t, name, test):
         results.append(ok)
         print('%s  %s' % ('PASS' if ok else 'FAIL', name), flush=True)
         if not ok:
-            print('      (status hidden: may contain the solution) bottom=%r' % game.bottom)
+            print('      (status hidden: may contain the solution) bottom=%r' % game.note)
     at(t, fn)
 
 
@@ -49,22 +49,22 @@ def turn_plan():
     t = tap(t, 'SUSPECT', str(s[0]), 'ENTER')                       # player 1
     t = tap(t + 1.5, 'PQ', str(CARDS[s[0]][0]), 'ENTER')
     t = tap(t + 1.0, 'ENDTURN')
-    check(t + 0.6, 'P1 turn summary', lambda: game.bottom == 'Player 1 - after turn 1: 1 question so far')
-    check(t + 0.7, 'status names Player 2', lambda: game.status == 'Player 2: SUSPECT, number, ENTER.')
+    check(t + 0.6, 'P1 turn summary', lambda: game.status == 'Player 1 - after turn 1: 1 question so far. Player 2: SUSPECT, number, ENTER.')
+    check(t + 0.7, 'status names Player 2', lambda: game.status.endswith('. Player 2: SUSPECT, number, ENTER.'))
     t = tap(t + 1.0, 'ACCUSE', *str(wrong[0]), 'ENTER')            # player 2, wrong
     check(t + 2.0, 'P2 wrong accusation: out, told to press END TURN',
-          lambda: game.bottom == 'Player 2 is out - 0 turns, 0 questions' and game.status.startswith('NO!'))
+          lambda: game.status == 'Player 2 is out - 0 turns, 0 questions. Next player: press END TURN first.')
     t = tap(t + 3.0, 'ENDTURN')
-    check(t + 0.6, 'next is Player 1 (Player 2 skipped)', lambda: game.status == 'Player 1: SUSPECT, number, ENTER.')
+    check(t + 0.6, 'next is Player 1 (Player 2 skipped)', lambda: game.status == 'Player 2 is out - 0 turns, 0 questions. Player 1: SUSPECT, number, ENTER.')
     t = tap(t + 1.0, 'SUSPECT', str(s[1]), 'ENTER')
     check(t + 1.5, 'P1 can question after that (no EE)', lambda: 'I was' in game.status)
     t = tap(t + 1.5, 'PQ', str(CARDS[s[1]][0]), 'ENTER')
     t = tap(t + 1.0, 'ENDTURN')
-    check(t + 0.6, 'P1 second turn summary', lambda: game.bottom == 'Player 1 - after turn 2: 2 questions so far')
+    check(t + 0.6, 'P1 second turn summary', lambda: game.status.startswith('Player 1 - after turn 2: 2 questions so far. '))
     t = tap(t + 1.0, 'ACCUSE', *str(wrong[1]), 'ENTER')            # player 1, wrong -> all out
     summary = 'All detectives are out. Player 1: out. Player 2: out.'
     check(t + 6.0, 'all out: murderer shown and summary',
-          lambda: game.status.startswith('The murderer was #') and summary in game.status and game.bottom == summary)
+          lambda: game.status.startswith('The murderer was #') and summary in game.status)
     check(t + 6.1, 'no record for multiplayer', lambda: 'records' not in g.load_settings() and 'records_fair' not in g.load_settings())
     at(t + 7, lambda: pygame.event.post(pygame.event.Event(pygame.QUIT)))
 

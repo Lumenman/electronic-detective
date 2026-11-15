@@ -108,7 +108,7 @@ g = eg.Game.__new__(eg.Game)
 g.files, g.board, g.decoder, g.held, g._level = files, None, Decoder(), {}, 0
 g.rom, g.original = None, False
 g.keyq, g.cur_key, g.key_age, g.key_rest = [], None, 0, 0
-g.score = g.bottom = g.final = None
+g.score = g.note = g.final = None
 
 
 def wait(s):

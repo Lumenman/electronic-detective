@@ -30,7 +30,7 @@ def check(t, name, test):
         results.append(ok)
         print('%s  %s' % ('PASS' if ok else 'FAIL', name), flush=True)
         if not ok:
-            print('      (status hidden: may contain the solution) bottom=%r' % game.bottom)
+            print('      (status hidden: may contain the solution) bottom=%r' % game.note)
     at(t, fn)
 
 
@@ -49,14 +49,14 @@ def turn_plan():
     t = tap(t + 1.5, 'PQ', *str(CARDS[s][0]), 'ENTER')
     t = tap(t + 1.0, 'PQ', *str(CARDS[s][1]), 'ENTER')
     t = tap(t + 1.0, 'ENDTURN')
-    check(t + 0.6, 'after END TURN: bottom shows "After turn 1: 2 questions so far"',
-          lambda: game.bottom == 'After turn 1: 2 questions so far')
+    check(t + 0.6, 'after END TURN: status shows "After turn 1: 2 questions so far" and the prompt',
+          lambda: game.status == 'After turn 1: 2 questions so far. Next player: SUSPECT, number, ENTER.')
     t = tap(t + 1.0, 'SUSPECT')
-    check(t + 0.3, 'first key of the next turn: key hint is back', lambda: game.bottom is None)
+    check(t + 0.3, 'first key of the next turn: the summary is gone', lambda: game.note is None and 'turn' not in game.status)
     t = tap(t + 0.2, *str(s2), 'ENTER')
     t = tap(t + 1.5, 'PQ', *str(CARDS[s2][0]), 'ENTER')
     t = tap(t + 1.0, 'ENDTURN')
-    check(t + 0.6, 'second turn counted', lambda: game.bottom == 'After turn 2: 3 questions so far')
+    check(t + 0.6, 'second turn counted', lambda: game.status.startswith('After turn 2: 3 questions so far. '))
     t = tap(t + 1.0, 'ACCUSE', *str(murderer()), 'ENTER')
     check(t + 10.0, 'final summary in the status line',
           lambda: 'Solved after 2 turns, 3 questions.' in game.status and 'First record for level 3.' in game.status)
