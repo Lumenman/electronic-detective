@@ -3,7 +3,8 @@
     python elecdet_game.py [path to ROM folder or elecdet.zip]
 
 Keys: 0-9, S = Suspect, Q = Private Question, A = I Accuse, Enter, T = End Turn, O = On, X = Off.
-Hold Shift while switching on (key or mouse) for 'no patterns': the shell deals the case, see dealer.py.
+By default the shell deals the case ('no patterns', see dealer.py); hold Shift while switching on (key or mouse)
+for the original game, where the ROM deals.
 Suspect cards are not shown: use the paper cards or the PDF.
 """
 import array, json, os, re, sys, threading
@@ -43,7 +44,7 @@ PAD = [('1', '1', pygame.K_1, 0, 0, 1), ('2', '2', pygame.K_2, 1, 0, 1), ('3', '
        ('END TURN', 'ENDTURN', pygame.K_t, 3, 4, 2)]   # layout of the original: 5 columns x 5 rows
 NUMPAD = {getattr(pygame, 'K_KP%d' % i): str(i) for i in range(10)}
 NUMPAD[pygame.K_KP_ENTER] = 'ENTER'
-OFF_HINT = 'Press ON to start an original game, or Shift+ON for a game without patterns (the shell deals the case).'
+OFF_HINT = 'Press ON to start a game without patterns (the shell deals the case), or Shift+ON for an original game.'
 
 
 def num(s):
@@ -383,7 +384,7 @@ class Game:
                 self.buf += samples.tobytes()
 
     # --- input ---
-    def press(self, key, down, fair=False):
+    def press(self, key, down, original=False):
         if key in ('ON', 'OFF'):
             if key == 'ON' and self.board is not None and self.board.powered:
                 return                       # already on: the real switch does nothing either
@@ -393,7 +394,7 @@ class Game:
                 if key == 'ON' and (self.board is None or not self.board.powered):
                     self.board = ElecDet(self.files); self._level = 0
                     self.keyq, self.cur_key, self.key_rest = [], None, 0
-                    self.dealer = Dealer() if fair else None
+                    self.dealer = None if original else Dealer()
                     self.board.power_on()
                 elif key == 'OFF' and self.board:
                     self.board.power_off()

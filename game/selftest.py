@@ -118,7 +118,7 @@ def wait(s):
 def click(k): g.press(k, True); g.press(k, False)     # down and up in the same frame
 
 
-g.press('ON', True); wait(6.3)
+g.press('ON', True, original=True); wait(6.3)   # the ROM's own deal: the same case every run
 click('3'); click('1'); click('ENTER'); wait(58)      # typed with no pause at all
 g.press('SUSPECT', True); g.press('1', True); g.press('SUSPECT', False); g.press('1', False)   # rollover
 click('2'); click('ENTER'); wait(2)
@@ -126,10 +126,10 @@ shown = g.decoder.status(g.board.display()); print(repr(g.board.display()), show
 assert shown.startswith('#12 ') and 'I was' in shown, shown   # could be the victim: then rerun
 print('key queue OK')
 
-# --- 'no patterns' mode (Shift+ON): the shell deals the case, the ROM plays it ---
+# --- 'no patterns' mode (the default): the shell deals the case, the ROM plays it ---
 import random
 from dealer import Dealer
-g.press('OFF', True); g.press('ON', True, fair=True)
+g.press('OFF', True); g.press('ON', True)
 assert isinstance(g.dealer, Dealer)
 g.dealer = Dealer(random.Random(5)); wait(6.3)
 click('3'); click('1'); click('ENTER'); wait(58)
@@ -146,6 +146,6 @@ v = g.decoder.victim; s2 = 1 if v != 1 else 2
 click('SUSPECT'); click(str(s2)); click('ENTER'); wait(2)
 shown = g.decoder.status(g.board.display()); print(repr(g.board.display()), shown)
 assert shown.startswith('#%d ' % s2) and 'I was' in shown, shown
-g.press('OFF', True); g.press('ON', True)
+g.press('OFF', True); g.press('ON', True, original=True)   # Shift+ON
 assert g.dealer is None
 print('no-patterns mode OK')

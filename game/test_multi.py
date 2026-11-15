@@ -64,7 +64,7 @@ def turn_plan():
     summary = 'All detectives are out. Player 1: out. Player 2: out.'
     check(t + 6.0, 'all out: murderer shown and summary',
           lambda: game.status.startswith('The murderer was #') and summary in game.status and game.bottom == summary)
-    check(t + 6.1, 'no record for multiplayer', lambda: 'records' not in g.load_settings())
+    check(t + 6.1, 'no record for multiplayer', lambda: 'records' not in g.load_settings() and 'records_fair' not in g.load_settings())
     at(t + 7, lambda: pygame.event.post(pygame.event.Event(pygame.QUIT)))
 
 

@@ -59,7 +59,7 @@ def turn_plan():
     t = tap(t + 1.0, 'ACCUSE', *str(murderer()), 'ENTER')
     check(t + 10.0, 'final summary in the status line',
           lambda: 'Solved after 2 turns, 3 questions.' in game.status and 'First record for level 3.' in game.status)
-    check(t + 10.1, 'record saved', lambda: g.load_settings().get('records') == {'3': [2, 3]})
+    check(t + 10.1, 'record saved', lambda: g.load_settings().get('records_fair') == {'3': [2, 3]})   # default mode: no patterns
     at(t + 11, lambda: pygame.event.post(pygame.event.Event(pygame.QUIT)))
 
 
