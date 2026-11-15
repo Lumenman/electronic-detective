@@ -120,7 +120,7 @@ class Machine:
 
     def new_turn(self):
         self.active = self.touched = False   # a suspect is being questioned; something was entered this turn
-        self.used, self.mode, self.typed, self.fresh, self.ended = 0, None, '', False, False
+        self.used, self.mode, self.typed, self.fresh, self.last_ee = 0, None, '', False, False
 
     def key_play(self, k):
         if k in ('SUSPECT', 'PQ', 'ACCUSE'):
@@ -141,7 +141,6 @@ class Machine:
             n = int(self.typed) if self.typed else None
             repeat, self.fresh = self.fresh, True                    # ENTER again, with nothing new typed
             if repeat: n = None
-            else: self.ended = False                                 # END was the last thing shown
             if self.mode == 'SUSPECT': self.show(self.enter_suspect(n))
             elif self.mode == 'PQ': self.enter_question(n, repeat)
             elif self.mode == 'ACCUSE': self.enter_accuse(n)
@@ -161,20 +160,31 @@ class Machine:
         return str(a.get('side', ' ')) + str(a.get('area', ' ')) + GLYPH.get(a.get('place'), ' ') + ''.join(mates).ljust(4)
 
     def enter_question(self, q, repeat=False):
+        """The order of the checks is the original's, found by comparing with the ROM."""
+        limit = self.used >= self.level and not self.over           # a closed case can be reviewed without limit
         if q is not None and not 1 <= q <= 14:
-            return self.show(EE)          # no such question: costs nothing, even when the turn is used up
-        if repeat and not self.ended:
-            return self.show(EE)          # costs nothing
-        if self.used >= self.level and not self.over:               # a closed case can be reviewed without limit
-            self.show(BLANK); self.ended = True
-            return self.at(self.sound('bong'), lambda: self.show(END))
-        if repeat:
-            return self.show(EE)
+            return self.answer(EE)        # no such question: costs nothing, even when the turn is used up
+        if repeat:                        # ENTER again: END once the turn is used up, unless EE is showing
+            return self.end() if limit and not self.last_ee else self.answer(EE)
+        if q is None:                     # nothing typed after the mode key: a lost question, if one was left
+            if not limit and not self.over: self.used += 1
+            return self.answer(EE)
+        if limit:
+            return self.end()
         if not self.over: self.used += 1  # a question that is not on the card is lost as well
         if self.who is None: self.deviation = True                 # the victim first: the original answers nonsense
         a = self.obs['ans'].get((self.who, q), self.obs['hidden'].get((self.who, q)))
-        self.show(EE if a is None else '  4E5  ' if a == 'Y' else '     N0' if a == 'N' else '0000000' if a == '?'
-                  else '  ' + GLYPH[a] + '    ' if a in GLYPH else ' ' + a + '     ')
+        self.answer(EE if a is None else '  4E5  ' if a == 'Y' else '     N0' if a == 'N' else '0000000' if a == '?'
+                    else '  ' + GLYPH[a] + '    ' if a in GLYPH else ' ' + a + '     ')
+
+    def answer(self, text):
+        self.last_ee = text == EE
+        self.show(text)
+
+    def end(self):
+        self.last_ee = False
+        self.show(BLANK)
+        self.at(self.sound('bong'), lambda: self.show(END))
 
     def enter_accuse(self, n):
         self.active = self.touched = False; self.mode = None      # the questions used this turn stay used
