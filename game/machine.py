@@ -64,7 +64,7 @@ class Machine:
     def power_on(self):
         self.powered, self.state = True, 'setup'
         self.timeline, self.sound_queue = [], []
-        self.typed, self.off_at = '', None
+        self.typed, self.fresh, self.off_at = '', False, None
         self.show(BLANK)
         self.at(self.sound('power_on'), lambda: self.show(ON))
 
@@ -120,34 +120,39 @@ class Machine:
 
     def new_turn(self):
         self.active = self.touched = False   # a suspect is being questioned; something was entered this turn
-        self.used, self.mode, self.typed = 0, None, ''
+        self.used, self.mode, self.typed, self.fresh, self.ended = 0, None, '', False, False
 
     def key_play(self, k):
         if k in ('SUSPECT', 'PQ', 'ACCUSE'):
+            if k == 'ACCUSE': self.active = self.touched = False     # as in the original: this forgets the turn's suspect
             ok = k == 'ACCUSE' or ((self.mode in ('SUSPECT', 'PQ')) if k == 'PQ' else not self.touched)   # checked at once
-            self.typed = ''
-            if ok: self.mode = k; self.show(BLANK)
+            self.typed, self.fresh = '', False
+            if ok:
+                self.mode = k; self.show(BLANK)
+                if k == 'SUSPECT': self.active, self.touched = False, not self.over   # one suspect per turn
             else: self.show(EE)                                    # the previous mode stays in force
         elif k.isdigit():
+            if self.fresh: self.typed, self.fresh = '', False
             self.typed = (self.typed + k)[-2:]; self.echo()
         elif k == 'ENDTURN':
             self.new_turn(); self.show(BLANK); self.sound('bong')
             if self.off_at: self.off_at = self.cycles + OFF_EXTEND * SEC
         elif k == 'ENTER':
             n = int(self.typed) if self.typed else None
-            self.typed = ''
+            repeat, self.fresh = self.fresh, True                    # ENTER again, with nothing new typed
+            if repeat: n = None
+            else: self.ended = False                                 # END was the last thing shown
             if self.mode == 'SUSPECT': self.show(self.enter_suspect(n))
-            elif self.mode == 'PQ': self.enter_question(n)
+            elif self.mode == 'PQ': self.enter_question(n, repeat)
             elif self.mode == 'ACCUSE': self.enter_accuse(n)
             else: self.show(EE)
 
     def enter_suspect(self, n):
         if n is None or not 1 <= n <= 20 or self.active:
             return EE
-        self.touched = not self.over      # once the case is closed, suspects can be reviewed freely
         if n == self.victim:              # as in the original: the victim keeps the previous suspect's answers
             return '0000000'
-        self.active, self.who = not self.over, n
+        self.active, self.who = True, n
         a = self.obs['alibi'][n]
         mates = [digits(m) for m in a.get('with', ())]
         row = next(r for r in range(5) if n in self.case['rows'][r]['people'])
@@ -155,13 +160,15 @@ class Machine:
             mates = ['  '] + mates
         return str(a.get('side', ' ')) + str(a.get('area', ' ')) + GLYPH.get(a.get('place'), ' ') + ''.join(mates).ljust(4)
 
-    def enter_question(self, q):
+    def enter_question(self, q, repeat=False):
         if q is not None and not 1 <= q <= 14:
             return self.show(EE)          # no such question: costs nothing, even when the turn is used up
+        if repeat and not self.ended:
+            return self.show(EE)          # costs nothing
         if self.used >= self.level and not self.over:               # a closed case can be reviewed without limit
-            self.show(BLANK)
+            self.show(BLANK); self.ended = True
             return self.at(self.sound('bong'), lambda: self.show(END))
-        if q is None:
+        if repeat:
             return self.show(EE)
         if not self.over: self.used += 1  # a question that is not on the card is lost as well
         if self.who is None: self.deviation = True                 # the victim first: the original answers nonsense
