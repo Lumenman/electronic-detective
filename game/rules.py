@@ -9,6 +9,7 @@ observe(case) returns everything a player can learn: all alibis and all answers.
 CARDS = {1: (1, 2, 9), 2: (2, 3, 9), 3: (3, 4, 5), 4: (4, 5, 9), 5: (1, 4, 9), 6: (5, 6, 12), 7: (2, 5, 12),
          8: (3, 5, 12), 9: (1, 5, 12), 10: (7, 8, 12), 11: (6, 7, 11), 12: (2, 6, 11), 13: (3, 7, 11),
          14: (1, 6, 11), 15: (4, 7, 11), 16: (6, 8, 10), 17: (2, 7, 10), 18: (1, 8, 10), 19: (3, 8, 10), 20: (4, 8, 10)}
+OFF_CARD = (11, 12, 13, 14, 15)      # the original also answers question 12 for these, though their cards do not list it
 LETTER = {10: 'A', 6: 'B', 12: 'C', 13: 'D', 14: 'E', 15: 'F'}
 # template -> column -> (fields, companion columns); s = side, a = area, p = place
 TPL = {1: [('s', (1, 3)), ('p', ()), ('a', (0,)), ('a', ())], 2: [('p', (3,)), ('ap', ()), ('sa', ()), ('s', (1, 2))],
@@ -47,7 +48,7 @@ def observe(case):
     victim, murderer = rows[4]['people'][vcol], rows[0]['people'][mcol]
     loc = {s: (r, c) for r in range(5) for c, s in enumerate(rows[r]['people']) if s != victim}
     yn = lambda b: 'Y' if b else 'N'
-    alibi, ans = {}, {}
+    alibi, ans, hidden = {}, {}, {}
     for s, (r, c) in loc.items():
         row = rows[r]
         if r < 4:
@@ -71,7 +72,8 @@ def observe(case):
                  9: yn(row['side'] == 2), 10: str(row['area']), 11: yn(row['letter'] in 'ABC'), 12: yn(r in (1, 2)),
                  13: q13, 14: q14}
         for q in CARDS[s] + (13, 14): ans[(s, q)] = table[q]
-    return {'victim': victim, 'scene': rows[5]['letter'], 'alibi': alibi, 'ans': ans}, murderer
+        if s in OFF_CARD: hidden[(s, 12)] = table[12]
+    return {'victim': victim, 'scene': rows[5]['letter'], 'alibi': alibi, 'ans': ans, 'hidden': hidden}, murderer
 
 
 if __name__ == '__main__':

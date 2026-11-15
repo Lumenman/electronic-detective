@@ -110,7 +110,7 @@ class Machine:
         self.case = self.fixed_case or deal(self.rng)
         self.obs, self.murderer = observe(self.case)
         self.victim = self.obs['victim']
-        self.over = False                 # solved, or everybody is out
+        self.over = self.deviation = False   # solved, or everybody is out; known difference from the ROM met
         self.who = None                   # the suspect whose answers are loaded (survives END TURN and the victim)
         self.new_turn()
         self.state = 'play'
@@ -124,7 +124,7 @@ class Machine:
 
     def key_play(self, k):
         if k in ('SUSPECT', 'PQ', 'ACCUSE'):
-            ok = k == 'ACCUSE' or ((self.mode is not None) if k == 'PQ' else not self.touched)   # checked at once
+            ok = k == 'ACCUSE' or ((self.mode in ('SUSPECT', 'PQ')) if k == 'PQ' else not self.touched)   # checked at once
             self.typed = ''
             if ok: self.mode = k; self.show(BLANK)
             else: self.show(EE)                                    # the previous mode stays in force
@@ -156,22 +156,24 @@ class Machine:
         return str(a.get('side', ' ')) + str(a.get('area', ' ')) + GLYPH.get(a.get('place'), ' ') + ''.join(mates).ljust(4)
 
     def enter_question(self, q):
-        if q is None or not 1 <= q <= 14:
-            return self.show(EE)
-        if self.used >= self.level:
+        if q is not None and not 1 <= q <= 14:
+            return self.show(EE)          # no such question: costs nothing, even when the turn is used up
+        if self.used >= self.level and not self.over:               # a closed case can be reviewed without limit
             self.show(BLANK)
             return self.at(self.sound('bong'), lambda: self.show(END))
-        self.used += 1                    # a question that is not on the card is lost as well
-        a = self.obs['ans'].get((self.who, q))
+        if q is None:
+            return self.show(EE)
+        if not self.over: self.used += 1  # a question that is not on the card is lost as well
+        if self.who is None: self.deviation = True                 # the victim first: the original answers nonsense
+        a = self.obs['ans'].get((self.who, q), self.obs['hidden'].get((self.who, q)))
         self.show(EE if a is None else '  4E5  ' if a == 'Y' else '     N0' if a == 'N' else '0000000' if a == '?'
                   else '  ' + GLYPH[a] + '    ' if a in GLYPH else ' ' + a + '     ')
 
     def enter_accuse(self, n):
-        if n is None or not 1 <= n <= 20:
-            return self.show(EE)
-        self.new_turn(); self.show(BLANK)
+        self.active = self.touched = False; self.mode = None      # the questions used this turn stay used
+        self.show(BLANK)
         if n == self.murderer:
-            self.at(self.sound('solved') + 0.2, lambda: self.show(digits(n) + '4E5  ', BLINK))
+            self.at(self.sound('solved') + 0.2, lambda: self.show(digits(self.murderer) + '4E5  ', BLINK))
             self.off_at = self.cycles + OFF_AFTER * SEC; self.over = True
             return
         self.left = max(self.left - 1, 0)

@@ -81,10 +81,13 @@ def session(seed, nkeys, verbose=True):
         if k == 'ACCUSE': accusing = True
         wait = 9.0 if (k == 'ENTER' and accusing) else 0.1          # sirens, shots and the march take their time
         hold = 0.8 if blinking else 0.15                         # the ROM misses short presses while it blinks
+        m.key(k)
+        wait = max(0.1, (m.busy_until - m.cycles) / IPS + 3.0 if m.busy_until > m.cycles + IPS else 0.1)   # let sounds finish
         b.set_key(k, True); brun(hold); b.set_key(k, False); brun(wait)
-        m.key(k); mrun(hold + wait)
+        mrun(hold + wait)
         if k in ('ENTER', 'SUSPECT', 'PQ', 'ENDTURN'): accusing = False
         want, got = view(brun, b.display), view(mrun, m.display)
+        if m.deviation: return None                              # victim questioned before anybody else: known difference
         blinking = len(want) > 1
         if want != got:
             if verbose:
