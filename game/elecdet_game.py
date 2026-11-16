@@ -562,6 +562,7 @@ class Game:
                 self.decoder.key(key)
                 self.score = self.note = self.final = None
                 self.stop_par()
+                if key == 'OFF': self.pending = None                              # OFF forgets the number that was set
                 if key == 'ON' and (self.board is None or not self.board.powered):
                     number = None if ask or original else self.pending            # the ROM's cases have no numbers
                     self.board = ElecDet(self.files) if original else Machine(lies=lies, take=self.take, ask=ask, number=number)
@@ -691,7 +692,8 @@ class Game:
         if isinstance(b, Machine) and b.ask and not b.powered and b.number:
             self.pending, b.number = b.number, None
         if self.pending and not (b and b.powered):
-            self.status = ('Case %d is set. Press ON to play it, or hold 2 and press ON to play it as two false alibis.'
+            self.status = ('Case %d is set. Press ON to play it, or hold 2 and press ON to play it as two false alibis. '
+                           'OFF forgets it.'
                            % self.pending)
         if self.wiped and not (self.board and self.board.powered):
             self.status = 'Records and the running score are cleared. ' + OFF_HINT

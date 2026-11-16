@@ -222,6 +222,10 @@ for ch in '90000001': click(ch)                                    # seven digit
 wait(2); assert g.decoder.typing() == '0 0 0 0 0 0 1' and g.board.display().strip() == '1', g.board.display()
 click('ENTER'); wait(1); g.update_status(); print(g.status)
 assert not g.board.powered and g.pending == 1 and g.status.startswith('Case 1 is set.'), g.status
+g.press('OFF', True); g.update_status()                            # OFF forgets it
+assert g.pending is None and g.status.startswith('Switched off.'), g.status
+g.press('9', True); g.press('ON', True); g.press('9', False); wait(3.5)
+click('1'); click('ENTER'); wait(1); g.update_status(); assert g.pending == 1
 g.press('ON', True); wait(3.5)                                     # the next game plays it
 assert g.numbered and g.pending is None and g.decoder.context == ('setup',)
 click('ENDTURN'); assert g.decoder.context == ('setup',)
