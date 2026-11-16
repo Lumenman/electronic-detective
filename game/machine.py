@@ -10,9 +10,9 @@ so the window can drive either. Time is counted in CPU cycles of the original (I
 
     m = Machine(); m.power_on(); m.run(3 * SEC); m.key('3'); m.key('1'); m.key('ENTER'); m.run(6 * SEC); m.display()
 """
-import random
+import os, random, sys
 from board import IPS, SEG
-from rules import deal, observe
+from rules import deal, deal_lies, observe
 from sounds import SOUNDS
 
 GLYPH = {'A': 'A', 'B': 'b', 'C': 'C', 'D': 'd', 'E': 'E', 'F': 'F'}
@@ -28,8 +28,9 @@ def digits(n, width=2):
 
 
 class Machine:
-    def __init__(self, rng=None, case=None, rom_like=False):
+    def __init__(self, rng=None, case=None, rom_like=False, lies=False, take=None):
         self.rng, self.fixed_case, self.rom_like = rng or random.SystemRandom(), case, rom_like
+        self.lies, self.take = lies, take        # the game of two false alibis; take() gives a case dealt ahead, or None
         self.powered = False
         self.cycles = self.busy_until = 0
         self.off_at = None
@@ -110,8 +111,22 @@ class Machine:
             else:
                 self.show(ON)
 
+    def deal_solvable(self):
+        """A case with two false alibis that logic can still solve (about 1 in 25 cannot: dealt again)."""
+        sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'research', 'solver'))
+        try:
+            from solver import lie_suspects      # on the phone the solver lies beside this file
+        except ImportError:
+            lie_suspects = None                  # no solver here: the case is played unchecked
+        while True:
+            case = deal_lies(self.rng)
+            if lie_suspects is None or len(lie_suspects(observe(case)[0])) == 1: return case
+
     def start_case(self, typed):
-        self.case = self.fixed_case or deal(self.rng)
+        if self.fixed_case or not self.lies:
+            self.case = self.fixed_case or deal(self.rng)
+        else:                             # shortcut: nothing dealt ahead - dealt here, the machine waits (seconds on a phone)
+            self.case = self.take and self.take() or self.deal_solvable()
         self.obs, self.murderer = observe(self.case)
         self.victim = self.obs['victim']
         self.over = self.deviation = False   # solved, or everybody is out; known difference from the ROM met
@@ -162,7 +177,8 @@ class Machine:
         self.active, self.who = True, n
         a = self.obs['alibi'][n]
         mates = [digits(m) for m in a.get('with', ())]
-        row = next(r for r in range(5) if n in self.case['rows'][r]['people'])
+        told = dict(self.case.get('lies', ())).get(n, n)            # a liar shows the alibi as its owner would
+        row = next(r for r in range(5) if told in self.case['rows'][r]['people'])
         if row == 4 and 'area' in a and mates:                     # place of three, second position: right-hand field
             mates = ['  '] + mates
         return str(a.get('side', ' ')) + str(a.get('area', ' ')) + GLYPH.get(a.get('place'), ' ') + ''.join(mates).ljust(4)

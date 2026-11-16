@@ -1,0 +1,17 @@
+everything asked, 500 cases: names left 1:471 2:27 3:2
+  the pair of liars known exactly in 447
+  (45 s)
+level 3, 200 cases, the detective who trusts everybody ends with: contradiction 147  other 27  murderer 26
+  (377 s)
+level 3, 200 cases: solved 187 of 200
+  turns min 5  median 14  mean 13.9  max 20   5:1 7:2 8:3 9:15 10:15 11:17 12:17 13:16 14:15 15:21 16:18 17:16 18:12 19:16 20:3
+  two or fewer names left: median turn 11, mean 11.3
+  (259 s)
+level 2, 200 cases: solved 187 of 200
+  turns min 6  median 14  mean 14.1  max 56   6:2 7:2 8:3 9:13 10:16 11:24 12:19 13:13 14:19 15:10 16:13 17:20 18:8 19:17 20:6 44:1 56:1
+  two or fewer names left: median turn 11, mean 11.5
+  (310 s)
+level 1, 200 cases: solved 187 of 200
+  turns min 8  median 14  mean 15.0  max 93   8:4 9:6 10:8 11:24 12:15 13:18 14:33 15:12 16:18 17:14 18:14 19:5 20:8 21:3 23:2 24:1 69:1 93:1
+  two or fewer names left: median turn 12, mean 12.8
+  (450 s)

@@ -1,0 +1,6 @@
+level 3, 200 cases. One visit each: solved 200; turns median 7  max 14
+  questions in the usual game: min 12  median 21  9 of 10 within 27  max 42
+level 2, 200 cases. One visit each: solved 189; turns median 8  max 12
+  questions in the usual game: min 8  median 16  9 of 10 within 22  max 26
+level 1, 200 cases. One visit each: solved 151; turns median 11  max 16
+  questions in the usual game: min 8  median 10  9 of 10 within 13  max 17
