@@ -740,10 +740,12 @@ class Game:
             body = self.read
             step, room = body.get_linesize(), self.help_bar()[0][0].top - self.M - 2 * body.get_linesize()
             pages, page, y = [], [], 0
-            for text in HELP[self.lang]:
-                lines = [(self.small, text[2:])] if text.startswith('# ') else \
-                    [(body, t) for t in self.wrap(text, self.CW, body)] if text else [(None, '')]
-                if y + step * (len(lines) + text.startswith('# ')) > room:          # a heading takes its first line along
+            cut = lambda text: [(self.small, text[2:])] if text.startswith('# ') else                 [(body, t) for t in self.wrap(text, self.CW, body)] if text else [(None, '')]
+            texts = HELP[self.lang]
+            for k, text in enumerate(texts):
+                lines = cut(text)
+                need = len(lines) + (sum(len(cut(t)) for t in texts[k + 1:k + 3]) if text.startswith('# ') else 0)   # a heading keeps
+                if y + step * need > room:                                          # its first two paragraphs
                     pages.append(page); page, y = [], 0
                 if page or text:                                                    # no gap at the top of a page
                     page += lines; y += step * len(lines)
