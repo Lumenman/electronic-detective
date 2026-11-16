@@ -1,10 +1,12 @@
-"""Touch screen path (as on Android) on the desktop: the picture is scaled to the window, each finger is a key.
+"""Touch screen path (as on Android) on the desktop: the picture is laid out for the window, each finger is a key.
     python test_touch.py"""
 import os, tempfile
 os.environ['ANDROID_ARGUMENT'] = os.environ['ANDROID_PRIVATE'] = tempfile.mkdtemp()
 import pygame
 import elecdet_game as g
 
+_mode = pygame.display.set_mode
+pygame.display.set_mode = lambda *a, **k: _mode((405, 880))     # an upright phone screen, small enough for any desktop
 game = g.Game()
 ww, wh = game.window.get_size()
 rect = {k: r for r, _, k in game.buttons}
@@ -12,8 +14,8 @@ rect = {k: r for r, _, k in game.buttons}
 
 def finger(kind, fid, key):
     x, y = rect[key].center
-    pygame.event.post(pygame.event.Event(kind, finger_id=fid, x=(game.shown.x + x * game.zoom) / ww,
-                                         y=(game.shown.y + y * game.zoom) / wh))
+    pygame.event.post(pygame.event.Event(kind, finger_id=fid, x=x / ww,
+                                         y=y / wh))
 
 
 steps = [lambda: (finger(pygame.FINGERDOWN, 1, '1'), finger(pygame.FINGERDOWN, 2, 'ON')),
@@ -24,7 +26,7 @@ steps = [lambda: (finger(pygame.FINGERDOWN, 1, '1'), finger(pygame.FINGERDOWN, 2
          lambda: check('ON alone: our machine is on', game.board is not None and game.board.powered and not game.original),
          lambda: finger(pygame.FINGERUP, 3, 'ON'),
          lambda: check('all keys released', not any(game.held.values()) and not game.fingers),
-         lambda: check('picture fills the window', game.shown.w == ww or game.shown.h == wh),
+         lambda: check('picture fills the window', wh - 6 <= game.buttons[-1][0].bottom + game.M <= wh and game.buttons[2][0].right + game.M >= ww - 3),
          lambda: pygame.event.post(pygame.event.Event(pygame.QUIT))]
 results, frame, orig_draw = [], [0], game.draw
 

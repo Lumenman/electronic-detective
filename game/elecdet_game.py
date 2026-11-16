@@ -300,13 +300,26 @@ class Game:
     M, U, KEY_H, GAP = 24, 91, 56, 12    # outer margin, key width/height, gap
     CW = 5 * U + 4 * GAP                 # keypad width = width of every area
     W = CW + 2 * M
-    Z, LINES, ROWS = 1, 2, 5             # text size, lines of status, rows of keys
-    if ANDROID:                          # a tall picture for a phone held upright: larger text, wider and taller keys
-        Z, LINES, ROWS, U, KEY_H = 1.45, 4, 6, (CW - 2 * GAP) // 3, 110
+    K, Z, LINES = 1, 1, 2                # pixels per unit of this layout, text size, lines of status
     DISP = pygame.Rect(M, M, CW, 100)
-    STATUS = pygame.Rect(M, DISP.bottom + 14, CW, 14 + int(19 * Z) * LINES)
+    STATUS = pygame.Rect(M, DISP.bottom + 14, CW, 52)
     PAD_TOP = STATUS.bottom + 16
-    H = PAD_TOP + ROWS * KEY_H + (ROWS - 1) * GAP + (M if ANDROID else 44)
+    H = PAD_TOP + 5 * KEY_H + 4 * GAP + 44
+
+    def px(self, n):
+        return round(n * self.K)
+
+    def fit(self, ww, wh):
+        """The phone: the whole upright screen, drawn at its own resolution (sharp text) - larger text, 3 x 6 keys."""
+        # shortcut: upright screens only (the apk is locked to portrait); a wide one needs side margins
+        self.K, self.Z, self.LINES = ww / self.W, 1.6, 3
+        self.M, self.GAP, self.W, self.H = self.px(24), self.px(12), ww, wh
+        self.CW = ww - 2 * self.M
+        self.U = (self.CW - 2 * self.GAP) // 3
+        self.DISP = pygame.Rect(self.M, self.M, self.CW, 2 * self.px(7) + self.LINES * self.px(19 * self.Z))
+        self.STATUS = self.DISP.move(0, self.DISP.h + self.px(14))             # the same size as the display
+        self.PAD_TOP = self.STATUS.bottom + self.px(16)
+        self.KEY_H = (wh - self.PAD_TOP - self.M - 5 * self.GAP) // 6
 
     par = par_msg = None                 # the solver's process for this case; its line in the final summary
 
@@ -332,17 +345,14 @@ class Game:
             self.audio = None
             self.status = 'Sound disabled: %s. %s' % (e, OFF_HINT)
         self.window = self.screen = pygame.display.set_mode((0, 0) if ANDROID else (self.W, self.H))
-        if ANDROID:                      # draw at the desktop size, show it as large as the screen allows
-            self.screen = pygame.Surface((self.W, self.H))
         ww, wh = self.window.get_size()
-        self.zoom = min(ww / self.W, wh / self.H)
-        self.shown = pygame.Rect(0, 0, round(self.W * self.zoom), round(self.H * self.zoom))
-        self.shown.center = (ww // 2, wh // 2)
+        if ANDROID:
+            self.fit(ww, wh)
         self.fingers = {}                # finger id -> the key it holds (None: it lifts the cover)
         pygame.display.set_caption('Electronic Detective')
-        self.font = pygame.font.SysFont('arial', int(15 * self.Z))
-        self.small = pygame.font.SysFont('arial', int(13 * self.Z), bold=True)
-        self.big = pygame.font.SysFont('arial', int(26 * self.Z), bold=True)
+        self.font = pygame.font.SysFont('arial', int(15 * self.Z * self.K))
+        self.small = pygame.font.SysFont('arial', int(13 * self.Z * self.K), bold=True)
+        self.big = pygame.font.SysFont('arial', int(26 * self.Z * self.K), bold=True)
         self.hint_img = self.small.render(self.HINT, True, (110, 110, 100))
         self.buttons = []
         for label, key, _, col, row, w in PAD:
@@ -511,21 +521,23 @@ class Game:
 
     # --- drawing ---
     def button(self, sc, r, label, key, down):
-        color = (120, 185, 235) if down else (60, 140, 210)
-        pygame.draw.rect(sc, color, r, border_radius=8)
+        color = {'ON': (50, 160, 90), 'OFF': (205, 70, 60)}.get(key, (60, 140, 210))
+        if down:
+            color = tuple(min(255, c + 60) for c in color)
+        pygame.draw.rect(sc, color, r, border_radius=self.px(8))
         f = self.big if len(label) == 1 else self.small
         words = label.split(' ') if len(label) > 10 else [label]
         for k, wd in enumerate(words):
             t = f.render(wd, True, (245, 245, 245))
             sc.blit(t, (r.centerx - t.get_width() // 2,
-                        r.centery + int((k * 16 - len(words) * 8 - (4 if f is self.big else 0)) * self.Z)))
+                        r.centery + int((k * 16 - len(words) * 8 - (4 if f is self.big else 0)) * self.Z * self.K)))
 
     def paint_static(self, sc):
         """Everything that does not change: drawn once, blitted every frame."""
         sc.fill((236, 232, 222))
-        pygame.draw.rect(sc, (25, 10, 10), self.DISP, border_radius=8)
-        pygame.draw.rect(sc, (255, 255, 250), self.STATUS, border_radius=6)
-        pygame.draw.rect(sc, (150, 150, 140), self.STATUS, 1, border_radius=6)
+        pygame.draw.rect(sc, (25, 10, 10), self.DISP, border_radius=self.px(8))
+        pygame.draw.rect(sc, (255, 255, 250), self.STATUS, border_radius=self.px(6))
+        pygame.draw.rect(sc, (150, 150, 140), self.STATUS, 1, border_radius=self.px(6))
         for r, label, key in self.buttons:
             self.button(sc, r, label, key, False)
 
@@ -593,40 +605,39 @@ class Game:
 
     def draw_cover(self, sc):
         r = self.DISP
-        pygame.draw.rect(sc, (70, 70, 80), r, border_radius=8)
-        sc.set_clip(r.inflate(-12, -12))                       # hatching inside the rounded frame
-        for x in range(r.x - r.h, r.right, 14):
-            pygame.draw.line(sc, (90, 90, 100), (x, r.y), (x + r.h, r.bottom), 5)
+        pygame.draw.rect(sc, (70, 70, 80), r, border_radius=self.px(8))
+        sc.set_clip(r.inflate(-self.px(12), -self.px(12)))     # hatching inside the rounded frame
+        for x in range(r.x - r.h, r.right, self.px(14)):
+            pygame.draw.line(sc, (90, 90, 100), (x, r.y), (x + r.h, r.bottom), self.px(5))
         sc.set_clip(None)
         t = self.small.render('PRIVATE ANSWER  -  ' + ('touch here' if ANDROID else 'hold SPACE'), True, (240, 240, 240))
         sc.blit(t, t.get_rect(center=r.center))
-        pygame.draw.rect(sc, (255, 255, 250), self.STATUS.inflate(-2, -2), border_radius=6)
+        pygame.draw.rect(sc, (255, 255, 250), self.STATUS.inflate(-2, -2), border_radius=self.px(6))
 
     def draw(self):
         sc = self.screen
         sc.blit(self.static, (0, 0))
         segs = self.board.segments() if self.board else [0] * 7
         for i, s in enumerate(segs):
-            draw_digit(sc, self.DISP.centerx - 232 + i * 70, self.DISP.y + 16, 44, 68, s, (255, 40, 40), (55, 18, 18))
+            draw_digit(sc, self.DISP.centerx - self.px(232) + i * self.px(70), self.DISP.centery - self.px(34),
+                       self.px(44), self.px(68), s, (255, 40, 40), (55, 18, 18))
         self.update_status()
         if self.status != getattr(self, '_status_src', None):
             self._status_src, self._status_lines = self.status, [
-                self.font.render(t, True, (20, 20, 20)) for t in self.wrap(self.status, self.CW - 24)[:self.LINES]]
+                self.font.render(t, True, (20, 20, 20)) for t in self.wrap(self.status, self.CW - self.px(24))[:self.LINES]]
         lines = self._status_lines
         if self.decoder.is_private(self.d) and not (self.peek_key or self.peek_mouse or None in self.fingers.values()):
             self.draw_cover(sc)
             c = self.decoder.context
             lines = [self.font.render(t, True, (20, 20, 20)) for t in self.wrap(
-                'Q%s for %s: %s here to see the answer.' % (c[1], who(c[2]), 'touch' if ANDROID else 'hold SPACE or click'), self.CW - 24)[:self.LINES]]
+                'Q%s for %s: %s here to see the answer.' % (c[1], who(c[2]), 'touch' if ANDROID else 'hold SPACE or click'), self.CW - self.px(24))[:self.LINES]]
         for k, img in enumerate(lines):
-            sc.blit(img, (self.STATUS.x + 12, self.STATUS.y + 7 + k * int(19 * self.Z)))
+            sc.blit(img, (self.STATUS.x + self.px(12), self.STATUS.y + self.px(7) + k * self.px(19 * self.Z)))
         for r, label, key in self.buttons:
             if self.held.get(key, 0) > 0:
                 self.button(sc, r, label, key, True)
         if not ANDROID:
             sc.blit(self.hint_img, self.hint_img.get_rect(center=(self.W // 2, self.H - 22)))
-        if sc is not self.window:
-            self.window.blit(pygame.transform.scale(sc, self.shown.size), self.shown)
         pygame.display.flip()
 
     def run(self):
@@ -646,7 +657,7 @@ class Game:
                     self.peek_key = e.type == pygame.KEYDOWN
                 elif e.type == pygame.FINGERDOWN:           # every finger is a key of its own: 1 + ON needs two
                     ww, wh = self.window.get_size()
-                    pos = ((e.x * ww - self.shown.x) / self.zoom, (e.y * wh - self.shown.y) / self.zoom)
+                    pos = (e.x * ww, e.y * wh)
                     key = next((k for r, _, k in self.buttons if r.collidepoint(pos)), None)
                     if key:
                         self.press(key, True)
