@@ -48,9 +48,14 @@ PAD = [('1', '1', pygame.K_1, 0, 0, 1), ('2', '2', pygame.K_2, 1, 0, 1), ('3', '
        ('SUSPECT', 'SUSPECT', pygame.K_s, 3, 0, 2), ('PRIVATE QUESTION', 'PQ', pygame.K_q, 3, 1, 2),
        ('I ACCUSE', 'ACCUSE', pygame.K_a, 3, 2, 2), ('ENTER', 'ENTER', pygame.K_RETURN, 3, 3, 2),
        ('END TURN', 'ENDTURN', pygame.K_t, 3, 4, 2)]   # layout of the original: 5 columns x 5 rows
+# the phone's keypad: 3 columns x 6 rows, digits on top, the five commands below
+TALL = {'ON': (0, 3, 1), 'OFF': (1, 3, 1), '0': (2, 3, 1), 'SUSPECT': (0, 4, 1), 'PQ': (1, 4, 1), 'ACCUSE': (2, 4, 1),
+        'ENTER': (0, 5, 2), 'ENDTURN': (2, 5, 1)}
 NUMPAD = {getattr(pygame, 'K_KP%d' % i): str(i) for i in range(10)}
 NUMPAD[pygame.K_KP_ENTER] = 'ENTER'
 OFF_HINT = 'Press ON to start a game without patterns (the shell deals the case), or hold 1 and press ON for an original game.'
+if 'ANDROID_ARGUMENT' in os.environ:      # no ROM on the phone
+    OFF_HINT = 'Press ON to start a game.'
 
 
 def num(s):
@@ -295,10 +300,13 @@ class Game:
     M, U, KEY_H, GAP = 24, 91, 56, 12    # outer margin, key width/height, gap
     CW = 5 * U + 4 * GAP                 # keypad width = width of every area
     W = CW + 2 * M
+    Z, LINES, ROWS = 1, 2, 5             # text size, lines of status, rows of keys
+    if ANDROID:                          # a tall picture for a phone held upright: larger text, wider and taller keys
+        Z, LINES, ROWS, U, KEY_H = 1.45, 4, 6, (CW - 2 * GAP) // 3, 110
     DISP = pygame.Rect(M, M, CW, 100)
-    STATUS = pygame.Rect(M, DISP.bottom + 14, CW, 52)
+    STATUS = pygame.Rect(M, DISP.bottom + 14, CW, 14 + int(19 * Z) * LINES)
     PAD_TOP = STATUS.bottom + 16
-    H = PAD_TOP + 5 * KEY_H + 4 * GAP + 44
+    H = PAD_TOP + ROWS * KEY_H + (ROWS - 1) * GAP + (M if ANDROID else 44)
 
     par = par_msg = None                 # the solver's process for this case; its line in the final summary
 
@@ -332,12 +340,14 @@ class Game:
         self.shown.center = (ww // 2, wh // 2)
         self.fingers = {}                # finger id -> the key it holds (None: it lifts the cover)
         pygame.display.set_caption('Electronic Detective')
-        self.font = pygame.font.SysFont('arial', 15)
-        self.small = pygame.font.SysFont('arial', 13, bold=True)
-        self.big = pygame.font.SysFont('arial', 26, bold=True)
+        self.font = pygame.font.SysFont('arial', int(15 * self.Z))
+        self.small = pygame.font.SysFont('arial', int(13 * self.Z), bold=True)
+        self.big = pygame.font.SysFont('arial', int(26 * self.Z), bold=True)
         self.hint_img = self.small.render(self.HINT, True, (110, 110, 100))
         self.buttons = []
         for label, key, _, col, row, w in PAD:
+            if ANDROID:
+                col, row, w = TALL.get(key, (col, row, w))
             x = self.M + col * (self.U + self.GAP)
             r = pygame.Rect(x, self.PAD_TOP + row * (self.KEY_H + self.GAP), w * self.U + (w - 1) * self.GAP, self.KEY_H)
             self.buttons.append((r, label, key))
@@ -507,7 +517,8 @@ class Game:
         words = label.split(' ') if len(label) > 10 else [label]
         for k, wd in enumerate(words):
             t = f.render(wd, True, (245, 245, 245))
-            sc.blit(t, (r.centerx - t.get_width() // 2, r.centery - len(words) * 8 + k * 16 - (4 if f is self.big else 0)))
+            sc.blit(t, (r.centerx - t.get_width() // 2,
+                        r.centery + int((k * 16 - len(words) * 8 - (4 if f is self.big else 0)) * self.Z)))
 
     def paint_static(self, sc):
         """Everything that does not change: drawn once, blitted every frame."""
@@ -587,7 +598,7 @@ class Game:
         for x in range(r.x - r.h, r.right, 14):
             pygame.draw.line(sc, (90, 90, 100), (x, r.y), (x + r.h, r.bottom), 5)
         sc.set_clip(None)
-        t = self.small.render('PRIVATE ANSWER  -  hold SPACE', True, (240, 240, 240))
+        t = self.small.render('PRIVATE ANSWER  -  ' + ('touch here' if ANDROID else 'hold SPACE'), True, (240, 240, 240))
         sc.blit(t, t.get_rect(center=r.center))
         pygame.draw.rect(sc, (255, 255, 250), self.STATUS.inflate(-2, -2), border_radius=6)
 
@@ -600,15 +611,15 @@ class Game:
         self.update_status()
         if self.status != getattr(self, '_status_src', None):
             self._status_src, self._status_lines = self.status, [
-                self.font.render(t, True, (20, 20, 20)) for t in self.wrap(self.status, self.CW - 24)[:2]]
+                self.font.render(t, True, (20, 20, 20)) for t in self.wrap(self.status, self.CW - 24)[:self.LINES]]
         lines = self._status_lines
         if self.decoder.is_private(self.d) and not (self.peek_key or self.peek_mouse or None in self.fingers.values()):
             self.draw_cover(sc)
             c = self.decoder.context
             lines = [self.font.render(t, True, (20, 20, 20)) for t in self.wrap(
-                'Q%s for %s: hold SPACE or click here to see the answer.' % (c[1], who(c[2])), self.CW - 24)[:2]]
+                'Q%s for %s: %s here to see the answer.' % (c[1], who(c[2]), 'touch' if ANDROID else 'hold SPACE or click'), self.CW - 24)[:self.LINES]]
         for k, img in enumerate(lines):
-            sc.blit(img, (self.STATUS.x + 12, self.STATUS.y + 7 + k * 19))
+            sc.blit(img, (self.STATUS.x + 12, self.STATUS.y + 7 + k * int(19 * self.Z)))
         for r, label, key in self.buttons:
             if self.held.get(key, 0) > 0:
                 self.button(sc, r, label, key, True)
