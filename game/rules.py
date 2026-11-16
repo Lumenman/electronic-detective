@@ -43,6 +43,22 @@ def deal(rng):
     return {'rows': rows, 'vcol': rng.randrange(4), 'mcol': rng.randrange(4), 'w38': rng.random() < 0.5}
 
 
+def deal_lies(rng):
+    """The game of two false alibis: the murderer and one more suspect say they were where they were not - each
+    tells the alibi of somebody of the same sex and parity who really was at another place (never one with a gun:
+    the murderer is never there, so nobody would say so). All answers to questions stay true.
+    The case gets 'lies': [[liar, whose alibi], ...]. Whether it can be solved is for the caller to check."""
+    case = deal(rng)
+    rows = case['rows']
+    victim, murderer = rows[4]['people'][case['vcol']], rows[0]['people'][case['mcol']]
+    row_of = {s: r for r, row in enumerate(rows) for s in row['people'] if s != victim}
+    doubles = lambda s, second: [o for o in sorted(row_of) if col_of(o) == col_of(s) and o not in (murderer, second)
+                                 and row_of[o] not in (row_of[s], 1, 2)]
+    second = rng.choice([s for s in sorted(row_of) if s != murderer and doubles(s, s) and doubles(murderer, s)])
+    case['lies'] = [[s, rng.choice(doubles(s, second))] for s in (murderer, second)]
+    return case
+
+
 def observe(case):
     rows, vcol, mcol, w38 = case['rows'], case['vcol'], case['mcol'], case['w38']
     victim, murderer = rows[4]['people'][vcol], rows[0]['people'][mcol]
@@ -73,6 +89,7 @@ def observe(case):
                  13: q13, 14: q14}
         for q in CARDS[s] + (13, 14): ans[(s, q)] = table[q]
         if s in OFF_CARD: hidden[(s, 12)] = table[12]
+    for s, o in case.get('lies', ()): alibi[s] = dict(alibi[o])        # the liar tells the other one's alibi
     return {'victim': victim, 'scene': rows[5]['letter'], 'alibi': alibi, 'ans': ans, 'hidden': hidden}, murderer
 
 

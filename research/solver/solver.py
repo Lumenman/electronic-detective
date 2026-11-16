@@ -80,6 +80,73 @@ def suspects(obs, limit=None, worlds=None, only=None):
     return found
 
 
+def lie_suspects(obs, worlds=None):
+    """suspects() for the game of two false alibis (rules.deal_lies): the murderer and one more suspect lie in the
+    alibi, every answer to a question is true. m is possible if, for some second liar, everything fits once the
+    alibis of the two are set aside. Per arrangement of addresses every choice of up to two heard alibis is tried
+    (it must cover everybody whose word fits no place). That the two alibis must be false is not used."""
+    from itertools import combinations
+    victim, scene, alibi, ans = obs['victim'], obs['scene'], obs['alibi'], obs['ans']
+    people = [s for s in range(1, 21) if s != victim]
+    places = [l for l in LETTERS if l != scene]
+
+    def known(q):
+        v = {a for (s, qq), a in ans.items() if qq == q}
+        assert len(v) <= 1, (q, v)
+        return v.pop() if v else None
+    m_east, m_male, m_area, w38, l38, l45, three, m_abc = (known(q) for q in range(1, 9))
+
+    def unary(s, l, side, area, word):                   # as in suspects(); word: the alibi counts
+        a = alibi.get(s, {}) if word else {}
+        if a.get('place', l) != l or a.get('side', side) != side or a.get('area', area) != area: return False
+        g = lambda q: ans.get((s, q))
+        if g(9) is not None and (g(9) == 'Y') != (side == 2): return False
+        if g(10) is not None and int(g(10)) != area: return False
+        if g(11) is not None and (g(11) == 'Y') != (l in 'ABC'): return False
+        if g(12) is not None and l38 and l45 and (g(12) == 'Y') != (l in (l38, l45)): return False
+        if g(13) is not None and l38 and (g(13) == '?') != (l != l38): return False
+        if g(14) is not None and l45 and (g(14) == '?') != (l != l45): return False
+        return not (three and l == three and col_of(s) == col_of(victim))
+    spoke = sorted(alibi)
+    silent = [s for s in people if s not in alibi]
+    choices = [()] * (len(silent) > 1) + [(a,) for a in spoke] + list(combinations(spoke, 2))
+    cats = [[s for s in people if col_of(s) == c] for c in range(4)]
+    found, done = set(), set()
+
+    for perm in permutations(ADDR):
+        amap = dict(zip(LETTERS, perm))
+        dom = {s: {l for l in places if unary(s, l, *amap[l], True)} for s in people}
+        lost = {s for s in people if not dom[s]}
+        if len(lost) > 2: continue
+        loose = {s: {l for l in places if unary(s, l, *amap[l], False)} for s in spoke}
+        xs = [l for l in places if l not in (l38, l45)
+              and (m_east is None or (m_east == 'Y') == (amap[l][0] == 2))
+              and (m_area is None or int(m_area) == amap[l][1])
+              and (m_abc is None or (m_abc == 'Y') == (l in 'ABC'))]
+        for liars in choices:
+            if not lost <= set(liars): continue
+            ms = [m for m in (liars if len(liars) == 2 else silent + list(liars))
+                  if m not in found and (m_male is None or (m_male == 'Y') == male(m))]
+            if not ms: continue
+            mates = [(s, o) for s, a in alibi.items() if s not in liars for o in a.get('with', ())]
+            base = {s: loose[s] if s in liars else dom[s] for s in people}
+            for m in ms:
+                for x, weapon38 in ((x, w) for x in xs if x in base[m]
+                                    for w in ((w38 == 'Y',) if w38 is not None else (True, False))):
+                    d = {s: set(v) for s, v in base.items()}; d[m] = {x}
+                    lw, qw = (l38, 13) if weapon38 else (l45, 14)
+                    if lw:
+                        for s in people:
+                            a = ans.get((s, qw))
+                            if a in ('Y', 'N') and male(s) == male(m) and (a == 'Y') != (m % 2 == 1): d[s].discard(lw)
+                    loc = all(d.values()) and place_all(d, cats, mates, places, three)
+                    if loc:
+                        found.add(m)
+                        if worlds is not None: worlds[m] = (amap, loc)
+                        break
+    return found
+
+
 def place_all(dom, cats, mates, places, three):
     """Can everybody be placed? One of each category per place of four; companions together.
     Returns one such placement (suspect -> place), or False."""

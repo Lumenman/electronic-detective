@@ -178,13 +178,20 @@ assert r[-1] != 'off', r                                               # no batt
 print('oddities left out OK')
 g.press('OFF', True); g.press('1', True); g.press('ON', True); g.press('1', False)    # 1 + ON: the ROM
 assert g.original and not isinstance(g.board, Machine)
-g.press('OFF', True); g.press('2', True); g.press('ON', True); g.press('2', False)    # 2 + ON: nothing yet
-assert not g.board.powered
+g.press('OFF', True); g.press('2', True); g.press('ON', True); g.press('2', False)    # 2 + ON: two false alibis
+assert g.board.powered and g.board.lies and g.lies and not g.original and g.kind() == '_lies'
+wait(3.5); click('3'); click('1'); click('ENTER'); wait(6)
+lies = g.board.case['lies']; from rules import observe as _obs
+true = _obs(dict(g.board.case, lies=[]))[0]['alibi']
+assert lies[0][0] == g.board.murderer and all(g.board.obs['alibi'][s] == true[o] != true[s] for s, o in lies), lies
+assert _obs(dict(g.board.case, lies=[]))[0]['ans'] == g.board.obs['ans']             # every answer stays true
+g.press('OFF', True)
 g.press('ON', True); assert g.board.powered and not g.original                         # ON alone: our machine
 eg.save_settings(records_fair={'3': [4, 9]}, par_fair={'3': [1]})
 g.press('OFF', True); g.press('0', True); g.press('ON', True); g.press('0', False)     # 0 + ON: a clean sheet, still off
 st = eg.load_settings()
 assert not g.board.powered and g.wiped and st['records_fair'] == st['par_fair'] == st['records'] == {} and 'rom' in st
+assert st['records_lies'] == st['par_lies'] == {}
 g.press('ON', True); assert g.board.powered and not g.wiped
 print('own machine OK')
 

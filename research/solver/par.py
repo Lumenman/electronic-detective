@@ -19,7 +19,7 @@ The accusation itself is not counted.
 import os, sys
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', 'game'))
 from rules import CARDS, male
-from solver import suspects
+from solver import suspects, lie_suspects
 
 
 def partial(obs, asked, visited):
@@ -27,8 +27,9 @@ def partial(obs, asked, visited):
             'ans': {k: obs['ans'][k] for k in asked}}
 
 
-def methodical(obs, level, cap=120, trace=None, once=False):
-    """once: a draft rule - every suspect can be visited one time only."""
+def methodical(obs, level, cap=120, trace=None, once=False, lies=False):
+    """once: a draft rule - every suspect can be visited one time only.
+    lies: the game of two false alibis - a question whose answer the alibi gave already tests that alibi."""
     people = sorted(obs['alibi'])
     visited, asked = set(), set()
     cand, worlds = set(people), {}
@@ -59,7 +60,7 @@ def methodical(obs, level, cap=120, trace=None, once=False):
             if q == 12:                                                # at a gun or not
                 if place and fact[5] and fact[6] or told(s, 13) or told(s, 14): return 0
                 return 4 if splits(s, 3) else 3 if s in cand else 1 if sex in (None, male(s)) else 0
-            if {9: 'side', 10: 'area', 11: 'place'}[q] in a: return 0  # the alibi said it already
+            if {9: 'side', 10: 'area', 11: 'place'}[q] in a: return 5 if lies else 0  # the alibi said it already
             return 4 if splits(s, {9: 1, 10: 2, 11: 0}[q]) else 3 if s in cand else 0
 
         def questions(s, a):
@@ -80,11 +81,17 @@ def methodical(obs, level, cap=120, trace=None, once=False):
         qs = questions(s, obs['alibi'][s])[:level]                 # chosen after hearing the alibi
         asked.update((s, q) for q in qs)
         worlds = {}
-        cand = suspects(partial(obs, asked, visited), worlds=worlds)
+        cand = (lie_suspects if lies else suspects)(partial(obs, asked, visited), worlds=worlds)
         if trace is not None: trace.append((s, qs, len(cand)))
         if len(cand) == 1:
             return turn
     return None
+
+
+def case_par(case, level):
+    """Par of a case as the game holds it (a dict, perhaps through JSON); None if the routine does not get there."""
+    from rules import observe
+    return methodical(observe(case)[0], level, lies=bool(case.get('lies')))
 
 
 def ideal(obs, level, cap=40):
@@ -123,8 +130,7 @@ def run(job):
 if __name__ == '__main__':
     import json, os, sys
     if sys.argv[1] == 'case':
-        from rules import observe
-        print(methodical(observe(json.loads(sys.argv[2]))[0], int(sys.argv[3]))); sys.exit()
+        print(case_par(json.loads(sys.argv[2]), int(sys.argv[3]))); sys.exit()
     from collections import Counter
     from multiprocessing import Pool
     args = [a for a in sys.argv[1:] if a != 'ideal']; want_ideal = 'ideal' in sys.argv

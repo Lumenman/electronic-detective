@@ -55,9 +55,10 @@ TALL = {'ON': (0, 0, 1), 'OFF': (1, 0, 1), 'ACCUSE': (2, 0, 1),
         'ENTER': (0, 5, 2), 'ENDTURN': (2, 5, 1)}
 NUMPAD = {getattr(pygame, 'K_KP%d' % i): str(i) for i in range(10)}
 NUMPAD[pygame.K_KP_ENTER] = 'ENTER'
-OFF_HINT = 'Press ON to start a game without patterns (the shell deals the case), or hold 1 and press ON for an original game.'
+OFF_HINT = ('Press ON to start a game without patterns (the shell deals the case), hold 1 and press ON for an original game, '
+            'or hold 2 and press ON for the game of two false alibis.')
 if 'ANDROID_ARGUMENT' in os.environ:      # no ROM on the phone
-    OFF_HINT = 'Press ON to start a game.'
+    OFF_HINT = 'Press ON to start a game, or hold 2 and press ON for the game of two false alibis.'
 
 
 def num(s):
@@ -309,8 +310,7 @@ class ParThread(threading.Thread):
     def run(self):
         sys.path.append(os.path.dirname(PAR))        # on the phone the solver lies beside this file
         import par
-        from rules import observe
-        self.out = str(par.methodical(observe(self.case)[0], self.level))
+        self.out = str(par.case_par(self.case, self.level))
 
     def poll(self):
         return None if self.is_alive() else 0
@@ -353,6 +353,11 @@ class Game:
 
     par = par_msg = None                 # the solver's process for this case; its line in the final summary
     wiped = False                        # 0 + ON was pressed: say so until the machine is switched on
+    lies = False                         # the game of two false alibis (2 + ON)
+
+    def kind(self):
+        """The game being played, as the ending of its records in the settings."""
+        return '' if self.original else '_lies' if self.lies else '_fair'
 
     def __init__(self, files=None, rom=None):
         self.files, self.rom = files, rom   # the ROM (loaded files, or where to look) is asked for on 1 + ON only
@@ -459,11 +464,12 @@ class Game:
         if key in ('ON', 'OFF'):
             original = bool(self.held.get('1'))      # a held digit picks the game: 1 + ON, 2 + ON
             if key == 'ON' and down and self.held.get('0') and not (self.board and self.board.powered):
-                save_settings(records={}, records_fair={}, par={}, par_fair={})      # 0 + ON: a clean sheet
+                save_settings(records={}, records_fair={}, records_lies={}, par={}, par_fair={}, par_lies={})   # 0 + ON
                 self.wiped = True
                 return
-            if key == 'ON' and down and (self.held.get('2') or original and ANDROID and self.files is None):
-                return                       # the game with our own rules is not made yet
+            lies = bool(self.held.get('2')) and not original                      # 2 + ON: two false alibis
+            if key == 'ON' and down and original and ANDROID and self.files is None:
+                return                       # no ROM on the phone
             if key == 'ON' and self.board is not None and self.board.powered:
                 return                       # already on: the real switch does nothing either
             if down:
@@ -476,8 +482,8 @@ class Game:
                 self.score = self.note = self.final = None
                 self.stop_par()
                 if key == 'ON' and (self.board is None or not self.board.powered):
-                    self.board = ElecDet(self.files) if original else Machine()
-                    self.original, self._level, self.wiped = original, 0, False
+                    self.board = ElecDet(self.files) if original else Machine(lies=lies)
+                    self.original, self.lies, self._level, self.wiped = original, lies, 0, False
                     self.keyq, self.cur_key, self.key_rest = [], None, 0
                     self.board.power_on()
                 elif key == 'OFF' and self.board:
@@ -546,7 +552,7 @@ class Game:
             if par:
                 self.par_msg = ' Par for this case: %d turns.' % par
             if par and sc and sc.n == 1 and sc.winner == 0:
-                name = 'par' if self.original else 'par_fair'              # as with the records: per mode and level
+                name = 'par' + self.kind()                                 # as with the records: per game and level
                 tally = load_settings().get(name, {})
                 last = tally[str(sc.level)] = (tally.get(str(sc.level), []) + [sc.turns[0] - par])[-TALLY:]
                 save_settings(**{name: tally})
@@ -591,6 +597,8 @@ class Game:
         if self.board is not None and not self.board.powered:
             self.final = None
             self.status = 'Switched off. ' + OFF_HINT
+        if self.lies and self.decoder.context[0] == 'setup' and self.board and self.board.powered:
+            self.status = 'Two false alibis: the murderer and one more suspect lie about where they were. ' + self.status
         if self.wiped and not (self.board and self.board.powered):
             self.status = 'Records and the running score are cleared. ' + OFF_HINT
         if self.final and not self.decoder.entry:
@@ -621,7 +629,7 @@ class Game:
                 p = sc.accused(bool(m) and m.group(2) == '4E5')
                 self.rec = ''
                 if sc.n == 1 and sc.winner == 0:
-                    name = 'records' if self.original else 'records_fair'    # the two modes are not comparable
+                    name = 'records' + self.kind()                           # the games are not comparable
                     records = load_settings().get(name, {})
                     self.rec = sc.record(records)
                     save_settings(**{name: records})
