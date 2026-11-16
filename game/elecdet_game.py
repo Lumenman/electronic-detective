@@ -431,7 +431,7 @@ class Game:
         self.held[key] = max(cnt, 0)
         if down and cnt == 1 and self.board:
             self.keyq.append(key)
-        if down and cnt == 1:
+        if down and cnt == 1 and not self.deaf():
             dec = self.decoder
             was_setup, entry = dec.context[0] == 'setup', list(dec.entry)
             dec.key(key)
@@ -448,6 +448,16 @@ class Game:
                 line = self.score.end_turn()
                 if line:
                     self.note = line
+
+    def deaf(self):
+        """The board will not take a key now (a sound is playing), so the status line must not follow it either."""
+        b = self.board
+        if b is None or not b.powered:
+            return True
+        if isinstance(b, Machine):
+            return b.cycles < b.busy_until
+        # shortcut: the ROM's other sounds are not known here, only the wait for ON; read its sound state if that matters
+        return self.decoder.context[0] == 'setup' and not b.display().strip()
 
     # --- par: turns the methodical detective of research/solver needs for this case ---
     def start_par(self):
