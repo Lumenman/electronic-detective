@@ -12,6 +12,7 @@ be false is not used: the set may be a little too large.)
     python alibi.py full [n]            is the case solvable when everything has been asked?
     python alibi.py play [n] [level]    turns of the methodical detective taught the rule
     python alibi.py naive [n] [level]   where the usual routine ends when it trusts everybody
+    add 'one' for a single false alibi of anybody (murderer or not)
     add 'check' for the variant where the two lie in the alibi only (a question to them can then test it)
 """
 import os, sys
@@ -22,6 +23,7 @@ from solver import ADDR, LETTERS, place_all, suspects
 import frame
 
 OWN = (9, 10, 11, 12, 13, 14)
+ONE = False          # the variant 'one': a single false alibi, of anybody (the murderer or not)
 CHECK = False        # the variant 'check': the liars lie in the alibi only and answer every question truthfully
 
 
@@ -35,8 +37,12 @@ def lie_case(rng):
     # the one of the same kind at another place without a gun (the murderer is never at a gun: nobody would say so)
     doubles = lambda s, second: [o for o in people if col_of(o) == col_of(s) and row_of[o] not in (row_of[s], 1, 2)
                                  and o not in (murderer, second)]
-    second = rng.choice([s for s in people if s != murderer and doubles(s, s) and doubles(murderer, s)])
-    for s in (murderer, second):
+    if ONE:
+        doubles = lambda s, second: [o for o in people if col_of(o) == col_of(s) and row_of[o] not in (row_of[s], 1, 2)]
+        second = rng.choice([s for s in people if doubles(s, s)])
+    else:
+        second = rng.choice([s for s in people if s != murderer and doubles(s, s) and doubles(murderer, s)])
+    for s in (second,) if ONE else (murderer, second):
         o = rng.choice(doubles(s, second))
         row = rows[row_of[o]]
         obs['alibi'][s] = dict(obs['alibi'][o])
@@ -77,6 +83,7 @@ def lie_suspects(obs, worlds=None, pairs=None):
     spoke = sorted(alibi if CHECK else set(alibi) | {s for (s, q) in ans if q in OWN})   # said what may be a lie
     silent = [s for s in people if s not in spoke]
     choices = [()] * (len(silent) > 1) + [(a,) for a in spoke] + list(combinations(spoke, 2))
+    if ONE: choices = [()] * bool(silent) + [(a,) for a in spoke]
     cats = [[s for s in people if col_of(s) == c] for c in range(4)]
     free = {s: {l for l in places if not (three and l == three and col_of(s) == col_of(victim))} for s in people}
     found, done = set(), set()
@@ -86,14 +93,14 @@ def lie_suspects(obs, worlds=None, pairs=None):
         dom = {s: {l for l in free[s] if unary(s, l, *amap[l])} for s in people}
         loose = {s: {l for l in free[s] if unary(s, l, *amap[l], False)} for s in spoke} if CHECK else free
         lost = {s for s in people if not dom[s]}
-        if len(lost) > 2: continue
+        if len(lost) > (1 if ONE else 2): continue
         xs = [l for l in places if l not in (l38, l45)
               and (m_east is None or (m_east == 'Y') == (amap[l][0] == 2))
               and (m_area is None or int(m_area) == amap[l][1])
               and (m_abc is None or (m_abc == 'Y') == (l in 'ABC'))]
         for liars in choices:
             if not lost <= set(liars): continue
-            ms = liars if len(liars) == 2 else silent + list(liars)
+            ms = people if ONE else liars if len(liars) == 2 else silent + list(liars)
             ms = [m for m in ms if (liars, m) not in done and (pairs is not None or m not in found)
                   and (m_male is None or (m_male == 'Y') == male(m))]
             if not ms: continue
@@ -119,7 +126,9 @@ def lie_suspects(obs, worlds=None, pairs=None):
                     if ok: break
                 if ok:
                     found.add(m); done.add((liars, m))
-                    if pairs is not None:
+                    if pairs is not None and ONE:
+                        pairs.update((m, c) for c in (liars or silent))
+                    elif pairs is not None:
                         others = [c for c in liars if c != m] if m in liars and len(liars) == 2 else                             silent if m in liars else list(liars) if liars else silent
                         pairs.update((m, c) for c in others if c != m)
     return found
@@ -127,8 +136,8 @@ def lie_suspects(obs, worlds=None, pairs=None):
 
 def run(job):
     import random
-    global CHECK
-    kind, seed, level, CHECK = job
+    global CHECK, ONE
+    kind, seed, level, CHECK, ONE = job
     obs, murderer, second = lie_case(random.Random(seed))
     if kind == 'full':
         pairs = set()
@@ -142,7 +151,7 @@ def run(job):
             return 'contradiction' if any(t[2] == 0 for t in trace) else 'stuck'
         visited = {t[0] for t in trace}; asked = {(t[0], q) for t in trace for q in t[1]}
         name = suspects(frame.partial(obs, asked, visited)).pop()
-        return 'murderer' if name == murderer else 'second liar' if name == second else 'other'
+        return 'murderer' if name == murderer else 'the liar' if name == second else 'other'
     return frame.methodical(obs, level, sus=lie_suspects, framed=(), check=CHECK)
 
 
@@ -152,11 +161,13 @@ if __name__ == '__main__':
     from multiprocessing import Pool
     CHECK = 'check' in sys.argv
     if CHECK: sys.argv.remove('check'); print('variant: the liars answer every question truthfully')
+    ONE = 'one' in sys.argv
+    if ONE: sys.argv.remove('one'); print('variant: one false alibi, of anybody')
     kind = sys.argv[1]; n = int(sys.argv[2]) if len(sys.argv) > 2 else 100
     level = int(sys.argv[3]) if len(sys.argv) > 3 else 3
     t0 = time.time()
     with Pool(2) as p:                                   # half of the cores stay free
-        res = p.map(run, [(kind, i, level, CHECK) for i in range(n)], chunksize=1)
+        res = p.map(run, [(kind, i, level, CHECK, ONE) for i in range(n)], chunksize=1)
     if kind == 'full':
         c = Counter(r[0] for r in res)
         print('everything asked, %d cases: names left %s' % (n, ' '.join('%d:%d' % kv for kv in sorted(c.items()))))

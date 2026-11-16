@@ -27,7 +27,8 @@ def partial(obs, asked, visited):
             'ans': {k: obs['ans'][k] for k in asked}}
 
 
-def methodical(obs, level, cap=120, trace=None):
+def methodical(obs, level, cap=120, trace=None, once=False):
+    """once: a draft rule - every suspect can be visited one time only."""
     people = sorted(obs['alibi'])
     visited, asked = set(), set()
     cand, worlds = set(people), {}
@@ -71,7 +72,7 @@ def methodical(obs, level, cap=120, trace=None):
             if s not in visited: v += (6 if s in cand else 2) + 3 * splits(s, 0, 1, 2)   # the alibi itself
             return v, -s
 
-        open_ = [s for s in people if s not in visited or questions(s, {})]
+        open_ = [s for s in people if s not in visited or questions(s, {}) and not once]
         if not open_:
             return None
         s = max(open_, key=value)             # when nothing is worth anything, this still asks what is left

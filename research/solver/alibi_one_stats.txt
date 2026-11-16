@@ -1,0 +1,27 @@
+variant: the liars answer every question truthfully
+variant: one false alibi, of anybody
+everything asked, 500 cases: names left 1:500
+  the pair of liars known exactly in 474
+  (70 s)
+variant: the liars answer every question truthfully
+variant: one false alibi, of anybody
+level 3, 200 cases, the detective who trusts everybody ends with: murderer 140  contradiction 53  the liar 5  other 2
+  (216 s)
+variant: the liars answer every question truthfully
+variant: one false alibi, of anybody
+level 3, 200 cases: solved 200 of 200
+  turns min 4  median 8  mean 8.3  max 18   4:2 5:5 6:31 7:35 8:44 9:38 10:19 11:17 12:3 13:2 14:1 15:1 17:1 18:1
+  two or fewer names left: median turn 7, mean 7.0
+  (180 s)
+variant: the liars answer every question truthfully
+variant: one false alibi, of anybody
+level 2, 200 cases: solved 200 of 200
+  turns min 4  median 9  mean 9.5  max 19   4:1 5:2 6:4 7:20 8:41 9:38 10:41 11:24 12:17 13:5 14:2 15:2 16:1 17:1 19:1
+  two or fewer names left: median turn 8, mean 8.0
+  (252 s)
+variant: the liars answer every question truthfully
+variant: one false alibi, of anybody
+level 1, 200 cases: solved 200 of 200
+  turns min 8  median 12  mean 12.4  max 21   8:2 9:11 10:41 11:43 12:30 13:22 14:8 15:9 16:14 17:7 18:4 19:3 20:5 21:1
+  two or fewer names left: median turn 10, mean 10.5
+  (419 s)
