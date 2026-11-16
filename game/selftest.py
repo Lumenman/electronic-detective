@@ -118,7 +118,7 @@ def wait(s):
 def click(k): g.press(k, True); g.press(k, False)     # down and up in the same frame
 
 
-g.press('ON', True, original=True); wait(6.3)   # the ROM's own deal: the same case every run
+g.press('1', True); g.press('ON', True); g.press('1', False); wait(6.3)   # the ROM's own deal: the same case every run
 click('3'); click('1'); click('ENTER'); wait(58)      # typed with no pause at all
 g.press('SUSPECT', True); g.press('1', True); g.press('SUSPECT', False); g.press('1', False)   # rollover
 click('2'); click('ENTER'); wait(2)
@@ -174,8 +174,11 @@ assert r[-1] == 'EE', r                                                # questio
 r = play('A %s E w600 T' % ' '.join(str(murderer)), case)
 assert r[-1] != 'off', r                                               # no batteries to save
 print('oddities left out OK')
-g.press('OFF', True); g.press('ON', True, original=True)                # Shift+ON: the ROM
+g.press('OFF', True); g.press('1', True); g.press('ON', True); g.press('1', False)    # 1 + ON: the ROM
 assert g.original and not isinstance(g.board, Machine)
+g.press('OFF', True); g.press('2', True); g.press('ON', True); g.press('2', False)    # 2 + ON: nothing yet
+assert not g.board.powered
+g.press('ON', True); assert g.board.powered and not g.original                         # ON alone: our machine
 print('own machine OK')
 
 # running score against par: the last differences are kept per level and summed in the final line

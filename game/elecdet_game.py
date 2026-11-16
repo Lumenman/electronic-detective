@@ -1,10 +1,11 @@
 """Electronic Detective (Ideal, 1979) in a window.
 
-    python elecdet_game.py [path to ROM folder or elecdet.zip]      (the ROM is needed only for Shift+ON)
+    python elecdet_game.py [path to ROM folder or elecdet.zip]      (the ROM is needed only for 1 + ON)
 
 Keys: 0-9, S = Suspect, Q = Private Question, A = I Accuse, Enter, T = End Turn, O = On, X = Off.
 ON starts our own machine (machine.py: same rules and behaviour, cases dealt at random, no ROM needed).
-Shift+ON (key or mouse) runs the original ROM in the emulator, with the regularities of its deals.
+ON pressed while 1 is held runs the original ROM in the emulator, with the regularities of its deals;
+2 + ON is kept for a game with rules of our own (not made yet: the machine stays off).
 Suspect cards are not shown: use the paper cards or the PDF.
 """
 import array, json, os, re, subprocess, sys, threading
@@ -48,7 +49,7 @@ PAD = [('1', '1', pygame.K_1, 0, 0, 1), ('2', '2', pygame.K_2, 1, 0, 1), ('3', '
        ('END TURN', 'ENDTURN', pygame.K_t, 3, 4, 2)]   # layout of the original: 5 columns x 5 rows
 NUMPAD = {getattr(pygame, 'K_KP%d' % i): str(i) for i in range(10)}
 NUMPAD[pygame.K_KP_ENTER] = 'ENTER'
-OFF_HINT = 'Press ON to start a game without patterns (the shell deals the case), or Shift+ON for an original game.'
+OFF_HINT = 'Press ON to start a game without patterns (the shell deals the case), or hold 1 and press ON for an original game.'
 
 
 def num(s):
@@ -301,7 +302,7 @@ class Game:
     par = par_msg = None                 # the solver's process for this case; its line in the final summary
 
     def __init__(self, files=None, rom=None):
-        self.files, self.rom = files, rom   # the ROM (loaded files, or where to look) is asked for on Shift+ON only
+        self.files, self.rom = files, rom   # the ROM (loaded files, or where to look) is asked for on 1 + ON only
         self.original = False
         self.board = None
         self._level = self._last = 0
@@ -391,8 +392,11 @@ class Game:
                 self.buf += samples.tobytes()
 
     # --- input ---
-    def press(self, key, down, original=False):
+    def press(self, key, down):
         if key in ('ON', 'OFF'):
+            original = bool(self.held.get('1'))      # a held digit picks the game: 1 + ON, 2 + ON
+            if key == 'ON' and down and self.held.get('2'):
+                return                       # the game with our own rules is not made yet
             if key == 'ON' and self.board is not None and self.board.powered:
                 return                       # already on: the real switch does nothing either
             if down:
@@ -599,7 +603,7 @@ class Game:
                 if e.type in (pygame.KEYDOWN, pygame.KEYUP) and e.key in keymap:
                     if e.type == pygame.KEYDOWN and getattr(e, 'repeat', False):
                         continue
-                    self.press(keymap[e.key], e.type == pygame.KEYDOWN, bool(pygame.key.get_mods() & pygame.KMOD_SHIFT))
+                    self.press(keymap[e.key], e.type == pygame.KEYDOWN)
                 elif e.type in (pygame.KEYDOWN, pygame.KEYUP) and e.key == pygame.K_SPACE:
                     self.peek_key = e.type == pygame.KEYDOWN
                 elif e.type == pygame.MOUSEBUTTONDOWN and e.button == 1 and (
@@ -610,7 +614,7 @@ class Game:
                 elif e.type == pygame.MOUSEBUTTONDOWN and e.button == 1:
                     for r, _, key in self.buttons:
                         if r.collidepoint(e.pos):
-                            mouse_key = key; self.press(key, True, bool(pygame.key.get_mods() & pygame.KMOD_SHIFT))
+                            mouse_key = key; self.press(key, True)
                 elif e.type == pygame.MOUSEBUTTONUP and e.button == 1 and mouse_key:
                     self.press(mouse_key, False); mouse_key = None
             if self.audio is not None:
