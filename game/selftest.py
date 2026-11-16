@@ -181,6 +181,11 @@ assert g.original and not isinstance(g.board, Machine)
 g.press('OFF', True); g.press('2', True); g.press('ON', True); g.press('2', False)    # 2 + ON: nothing yet
 assert not g.board.powered
 g.press('ON', True); assert g.board.powered and not g.original                         # ON alone: our machine
+eg.save_settings(records_fair={'3': [4, 9]}, par_fair={'3': [1]})
+g.press('OFF', True); g.press('0', True); g.press('ON', True); g.press('0', False)     # 0 + ON: a clean sheet, still off
+st = eg.load_settings()
+assert not g.board.powered and g.wiped and st['records_fair'] == st['par_fair'] == st['records'] == {} and 'rom' in st
+g.press('ON', True); assert g.board.powered and not g.wiped
 print('own machine OK')
 
 # running score against par: the last differences are kept per level and summed in the final line

@@ -1,4 +1,4 @@
-# Trial Android package: our own machine only (no ROM, no par). Built by build.sh in WSL.
+# Trial Android package: our own machine only (no ROM). Built by build.sh in WSL.
 [app]
 title = Electronic Detective
 package.name = elecdet

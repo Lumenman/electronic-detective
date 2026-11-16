@@ -18,7 +18,7 @@ TALLY = 10                               # solved cases kept for the running sco
 PAR = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'research', 'solver', 'par.py')
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-ANDROID = 'ANDROID_ARGUMENT' in os.environ      # packed by android/build.sh: touch screen, no ROM, no par (see there)
+ANDROID = 'ANDROID_ARGUMENT' in os.environ      # packed by android/build.sh: touch screen, no ROM (see there)
 SETTINGS = os.path.join(os.environ.get('ANDROID_PRIVATE', HERE), 'settings.json')   # the app folder is replaced on update
 RATE = 24000                        # 400 samples per 1/60 s; SDL resamples for the device
 CHUNK = 1 / 60                      # seconds of emulation per step
@@ -297,6 +297,31 @@ def find_rom(arg):
             sys.exit('No ROM selected.')
 
 
+class ParThread(threading.Thread):
+    """The phone has no second process: the solver counts in a thread, behind the few calls used of a process."""
+
+    def __init__(self, case, level):
+        super().__init__(daemon=True)
+        self.case, self.level, self.out, self.stdout = case, level, '', self
+        sys.setswitchinterval(0.001)     # the sound must not wait long for its turn
+        self.start()
+
+    def run(self):
+        sys.path.append(os.path.dirname(PAR))        # on the phone the solver lies beside this file
+        import par
+        from rules import observe
+        self.out = str(par.methodical(observe(self.case)[0], self.level))
+
+    def poll(self):
+        return None if self.is_alive() else 0
+
+    def read(self):
+        return self.out
+
+    def kill(self):
+        pass                             # shortcut: counts to its end (seconds); the answer is then dropped
+
+
 class Game:
     HINT = 'S Suspect   Q Question   A Accuse   T End Turn   O/X On/Off   Space Peek'
     M, U, KEY_H, GAP = 24, 91, 56, 12    # outer margin, key width/height, gap
@@ -327,6 +352,7 @@ class Game:
         self.KEY_H = (wh - self.PAD_TOP - self.M - 5 * self.GAP) // 6
 
     par = par_msg = None                 # the solver's process for this case; its line in the final summary
+    wiped = False                        # 0 + ON was pressed: say so until the machine is switched on
 
     def __init__(self, files=None, rom=None):
         self.files, self.rom = files, rom   # the ROM (loaded files, or where to look) is asked for on 1 + ON only
@@ -356,6 +382,7 @@ class Game:
         self.fingers = {}                # finger id -> the key it holds (None: it lifts the cover)
         pygame.display.set_caption('Electronic Detective')
         self.font = pygame.font.SysFont('arial', int(15 * self.Z * self.K))
+        self.fine = pygame.font.SysFont('arial', int(15 * self.Z * self.K * 4 / 5))   # five lines where four do not do
         self.small = pygame.font.SysFont('arial', int(self.LABEL * self.Z * self.K), bold=True)
         self.big = pygame.font.SysFont('arial', int(26 * self.Z * self.K), bold=True)
         self.hint_img = self.small.render(self.HINT, True, (110, 110, 100))
@@ -431,6 +458,10 @@ class Game:
     def press(self, key, down):
         if key in ('ON', 'OFF'):
             original = bool(self.held.get('1'))      # a held digit picks the game: 1 + ON, 2 + ON
+            if key == 'ON' and down and self.held.get('0') and not (self.board and self.board.powered):
+                save_settings(records={}, records_fair={}, par={}, par_fair={})      # 0 + ON: a clean sheet
+                self.wiped = True
+                return
             if key == 'ON' and down and (self.held.get('2') or original and ANDROID and self.files is None):
                 return                       # the game with our own rules is not made yet
             if key == 'ON' and self.board is not None and self.board.powered:
@@ -446,7 +477,7 @@ class Game:
                 self.stop_par()
                 if key == 'ON' and (self.board is None or not self.board.powered):
                     self.board = ElecDet(self.files) if original else Machine()
-                    self.original, self._level = original, 0
+                    self.original, self._level, self.wiped = original, 0, False
                     self.keyq, self.cur_key, self.key_rest = [], None, 0
                     self.board.power_on()
                 elif key == 'OFF' and self.board:
@@ -488,10 +519,10 @@ class Game:
     def start_par(self):
         """Counted by a separate process while the game goes on (seconds of work; this one must not stall)."""
         b = self.board
-        if ANDROID:                      # shortcut: no second process on Android, so no par there; a thread could count it
-            self.par = False
-            return
         case = b.case if hasattr(b, 'case') else from_ram(b.cpu.ram)     # the ROM's case is ready once keys are taken
+        if ANDROID:
+            self.par = ParThread(json.loads(json.dumps(case)), self.score.level)   # the same form the process gets
+            return
         try:
             self.par = subprocess.Popen([sys.executable, PAR, 'case', json.dumps(case), str(self.score.level)],
                                         stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, text=True,
@@ -560,6 +591,8 @@ class Game:
         if self.board is not None and not self.board.powered:
             self.final = None
             self.status = 'Switched off. ' + OFF_HINT
+        if self.wiped and not (self.board and self.board.powered):
+            self.status = 'Records and the running score are cleared. ' + OFF_HINT
         if self.final and not self.decoder.entry:
             self.status = self.final + self.par_text()
         if self.score and not self.score.over and self.decoder.context[0] == 'turn' and self.score.n > 1 \
@@ -608,10 +641,10 @@ class Game:
         return '%sTurn %d  -  %d question%s' % (sc.name(sc.cur) + '  -  ' if sc.n > 1 else '', sc.turns[sc.cur] + 1,
                                                 q, '' if q == 1 else 's')
 
-    def wrap(self, text, width):
+    def wrap(self, text, width, font=None):
         lines, cur = [], ''
         for w in text.split(' '):
-            if cur and self.font.size(cur + ' ' + w)[0] > width:
+            if cur and (font or self.font).size(cur + ' ' + w)[0] > width:
                 lines.append(cur); cur = w
             else:
                 cur = cur + ' ' + w if cur else w
@@ -638,9 +671,11 @@ class Game:
         self.update_status()
         pin = self.running()
         if (self.status, pin) != getattr(self, '_status_src', None):
+            f, room, self._step = self.font, self.LINES - bool(pin), self.px(19 * self.Z)
+            if self.LINES > 2 and len(self.wrap(self.status, self.CW - self.px(24))) > room:
+                f, room, self._step = self.fine, 5, self.px(19 * self.Z * 4 / 5)     # the phone's long final summary
             self._status_src, self._status_lines = (self.status, pin), [
-                self.font.render(t, True, (20, 20, 20))
-                for t in self.wrap(self.status, self.CW - self.px(24))[:self.LINES - bool(pin)]]
+                f.render(t, True, (20, 20, 20)) for t in self.wrap(self.status, self.CW - self.px(24), f)[:room]]
             self._pin = self.font.render(pin, True, (120, 120, 110))
         lines = self._status_lines
         if pin:
@@ -650,8 +685,9 @@ class Game:
             c = self.decoder.context
             lines = [self.font.render(t, True, (20, 20, 20)) for t in self.wrap(
                 'Q%s for %s: %s here to see the answer.' % (c[1], who(c[2]), 'touch' if ANDROID else 'hold SPACE or click'), self.CW - self.px(24))[:self.LINES]]
+        step = self._step if lines is self._status_lines else self.px(19 * self.Z)
         for k, img in enumerate(lines):
-            sc.blit(img, (self.STATUS.x + self.px(12), self.STATUS.y + self.px(7) + k * self.px(19 * self.Z)))
+            sc.blit(img, (self.STATUS.x + self.px(12), self.STATUS.y + self.px(7) + k * step))
         for r, label, key in self.buttons:
             if self.held.get(key, 0) > 0:
                 self.button(sc, r, label, key, True)
