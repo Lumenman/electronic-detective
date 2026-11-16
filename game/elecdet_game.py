@@ -18,7 +18,8 @@ TALLY = 10                               # solved cases kept for the running sco
 PAR = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'research', 'solver', 'par.py')
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-SETTINGS = os.path.join(HERE, 'settings.json')
+ANDROID = 'ANDROID_ARGUMENT' in os.environ      # packed by android/build.sh: touch screen, no ROM, no par (see there)
+SETTINGS = os.path.join(os.environ.get('ANDROID_PRIVATE', HERE), 'settings.json')   # the app folder is replaced on update
 RATE = 24000                        # 400 samples per 1/60 s; SDL resamples for the device
 CHUNK = 1 / 60                      # seconds of emulation per step
 AHEAD = 0.1                         # seconds of audio kept buffered (also how far the display runs ahead)
@@ -319,7 +320,14 @@ class Game:
         except Exception as e:           # no audio device: run on the wall clock
             print('Sound disabled:', e)
             self.audio = None
-        self.screen = pygame.display.set_mode((self.W, self.H))
+        self.window = self.screen = pygame.display.set_mode((0, 0) if ANDROID else (self.W, self.H))
+        if ANDROID:                      # draw at the desktop size, show it as large as the screen allows
+            self.screen = pygame.Surface((self.W, self.H))
+        ww, wh = self.window.get_size()
+        self.zoom = min(ww / self.W, wh / self.H)
+        self.shown = pygame.Rect(0, 0, round(self.W * self.zoom), round(self.H * self.zoom))
+        self.shown.center = (ww // 2, wh // 2)
+        self.fingers = {}                # finger id -> the key it holds (None: it lifts the cover)
         pygame.display.set_caption('Electronic Detective')
         self.font = pygame.font.SysFont('arial', 15)
         self.small = pygame.font.SysFont('arial', 13, bold=True)
@@ -395,7 +403,7 @@ class Game:
     def press(self, key, down):
         if key in ('ON', 'OFF'):
             original = bool(self.held.get('1'))      # a held digit picks the game: 1 + ON, 2 + ON
-            if key == 'ON' and down and self.held.get('2'):
+            if key == 'ON' and down and (self.held.get('2') or original and ANDROID and self.files is None):
                 return                       # the game with our own rules is not made yet
             if key == 'ON' and self.board is not None and self.board.powered:
                 return                       # already on: the real switch does nothing either
@@ -442,6 +450,9 @@ class Game:
     def start_par(self):
         """Counted by a separate process while the game goes on (seconds of work; this one must not stall)."""
         b = self.board
+        if ANDROID:                      # shortcut: no second process on Android, so no par there; a thread could count it
+            self.par = False
+            return
         case = b.case if hasattr(b, 'case') else from_ram(b.cpu.ram)     # the ROM's case is ready once keys are taken
         try:
             self.par = subprocess.Popen([sys.executable, PAR, 'case', json.dumps(case), str(self.score.level)],
@@ -578,7 +589,7 @@ class Game:
             self._status_src, self._status_lines = self.status, [
                 self.font.render(t, True, (20, 20, 20)) for t in self.wrap(self.status, self.CW - 24)[:2]]
         lines = self._status_lines
-        if self.decoder.is_private(self.d) and not (self.peek_key or self.peek_mouse):
+        if self.decoder.is_private(self.d) and not (self.peek_key or self.peek_mouse or None in self.fingers.values()):
             self.draw_cover(sc)
             c = self.decoder.context
             lines = [self.font.render(t, True, (20, 20, 20)) for t in self.wrap(
@@ -588,7 +599,10 @@ class Game:
         for r, label, key in self.buttons:
             if self.held.get(key, 0) > 0:
                 self.button(sc, r, label, key, True)
-        sc.blit(self.hint_img, self.hint_img.get_rect(center=(self.W // 2, self.H - 22)))
+        if not ANDROID:
+            sc.blit(self.hint_img, self.hint_img.get_rect(center=(self.W // 2, self.H - 22)))
+        if sc is not self.window:
+            self.window.blit(pygame.transform.scale(sc, self.shown.size), self.shown)
         pygame.display.flip()
 
     def run(self):
@@ -606,6 +620,21 @@ class Game:
                     self.press(keymap[e.key], e.type == pygame.KEYDOWN)
                 elif e.type in (pygame.KEYDOWN, pygame.KEYUP) and e.key == pygame.K_SPACE:
                     self.peek_key = e.type == pygame.KEYDOWN
+                elif e.type == pygame.FINGERDOWN:           # every finger is a key of its own: 1 + ON needs two
+                    ww, wh = self.window.get_size()
+                    pos = ((e.x * ww - self.shown.x) / self.zoom, (e.y * wh - self.shown.y) / self.zoom)
+                    key = next((k for r, _, k in self.buttons if r.collidepoint(pos)), None)
+                    if key:
+                        self.press(key, True)
+                    elif not (self.DISP.collidepoint(pos) or self.STATUS.collidepoint(pos)):
+                        continue
+                    self.fingers[e.finger_id] = key
+                elif e.type == pygame.FINGERUP and e.finger_id in self.fingers:
+                    key = self.fingers.pop(e.finger_id)
+                    if key:
+                        self.press(key, False)
+                elif e.type in (pygame.MOUSEBUTTONDOWN, pygame.MOUSEBUTTONUP) and getattr(e, 'touch', False):
+                    pass                                    # the same touch again, as a mouse: already handled
                 elif e.type == pygame.MOUSEBUTTONDOWN and e.button == 1 and (
                         self.DISP.collidepoint(e.pos) or self.STATUS.collidepoint(e.pos)):
                     self.peek_mouse = True

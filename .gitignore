@@ -14,3 +14,4 @@ research/dasm/tr_*.txt
 research/emu/ref/
 game/settings.json
 research/emu/diff_big.txt
+android/bin/
