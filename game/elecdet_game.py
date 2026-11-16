@@ -246,6 +246,12 @@ class Score:
         return 'Best on level %d: %d turns, %d questions.' % (self.level, *best)
 
 
+def font(size, bold=False):
+    """Arial; where the apk brought DejaVu Sans beside this file (the phone has no Arial), that one."""
+    path = os.path.join(HERE, 'DejaVuSans-Bold.ttf' if bold else 'DejaVuSans.ttf')
+    return pygame.font.Font(path, round(size * 0.9)) if os.path.exists(path) else pygame.font.SysFont('arial', size, bold=bold)
+
+
 def draw_digit(surf, x, y, w, h, segs, on, off):
     """Seven-segment digit; bit 0..6 = a..g."""
     t = max(3, w // 6)
@@ -436,10 +442,10 @@ class Game:
             self.fit(ww, wh)
         self.fingers = {}                # finger id -> the key it holds (None: it lifts the cover)
         pygame.display.set_caption('Electronic Detective')
-        self.font = pygame.font.SysFont('arial', int(15 * self.Z * self.K))
-        self.fine = pygame.font.SysFont('arial', int(15 * self.Z * self.K * 4 / 5))   # five lines where four do not do
-        self.small = pygame.font.SysFont('arial', int(self.LABEL * self.Z * self.K), bold=True)
-        self.big = pygame.font.SysFont('arial', int(26 * self.Z * self.K), bold=True)
+        self.font = font(int(15 * self.Z * self.K))
+        self.fine = font(int(15 * self.Z * self.K * 4 / 5))   # five lines where four do not do
+        self.small = font(int(self.LABEL * self.Z * self.K), bold=True)
+        self.big = font(int(26 * self.Z * self.K), bold=True)
         self.hint_img = self.small.render(self.HINT, True, (110, 110, 100))
         self.buttons = []
         for label, key, _, col, row, w in PAD:
@@ -738,7 +744,7 @@ class Game:
         if getattr(self, '_fonts_src', None) != self.size:
             px = 15 * self.K * (self.Z if self.LINES > 2 else 1) * 1.12 ** self.size
             self._fonts_src = self.size
-            self._fonts = pygame.font.SysFont('arial', int(px)), pygame.font.SysFont('arial', int(px * 1.15), bold=True)
+            self._fonts = font(int(px)), font(int(px * 1.15), bold=True)
         return self._fonts
 
     def help_pages(self):
@@ -750,7 +756,7 @@ class Game:
             texts = HELP[self.lang]
 
             def cut(text):
-                if text.startswith('# '): return [(head, text[2:])]
+                if text.startswith('# '): return [(head, t) for t in self.wrap(text[2:], self.CW, head)]
                 return [(body, t) for t in self.wrap(text, self.CW, body)] if text else [(None, '')]
             for k, text in enumerate(texts):
                 lines = cut(text)                                                   # a heading keeps two paragraphs

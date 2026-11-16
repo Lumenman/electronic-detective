@@ -95,9 +95,9 @@ HELP = {
         '',
         '# Two False Alibis (2 + ON)',
         'Everything as above, except:',
-        '1. Two suspects lie in their alibi: the murderer, and one more who has something else to hide. Each says he or '
-        'she was where they were not, naming the place and companions as somebody of the same sex and parity who '
-        'really was there would.',
+        '1. Two suspects lie in their alibi: the murderer, and one more who has something else to hide. Each of them '
+        "simply repeats somebody else's alibi: that of another suspect of the same sex and parity, who was at a "
+        'different place.',
         '2. Private questions are answered as always - by these two as well. So an alibi can be tested by a question '
         'about the place (9-11) to the same suspect, or by the word of those who were there.',
         '3. Nobody claims to have been where a gun lies.',
@@ -163,9 +163,9 @@ HELP = {
         '',
         '# Два ложных алиби (2 + ON)',
         'Всё как выше, кроме следующего:',
-        '1. Двое лгут в алиби: убийца и ещё один подозреваемый, которому есть что скрывать. Каждый говорит, что был '
-        'там, где не был: называет место и спутников так, как сказал бы человек его пола и чётности, действительно '
-        'бывший там.',
+        '1. Двое лгут в алиби: убийца и ещё один подозреваемый, которому есть что скрывать. Каждый из них просто '
+        'повторяет чужое алиби: алиби другого подозреваемого того же пола и той же чётности, который был в другом '
+        'месте.',
         '2. На частные вопросы все отвечают как всегда - и эти двое тоже. Поэтому алиби можно проверить вопросом '
         'о месте (9-11) тому же подозреваемому или показаниями тех, кто там был.',
         '3. Никто не говорит, что был там, где лежит оружие.',
