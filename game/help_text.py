@@ -40,9 +40,10 @@ HELP = {
         'ON - a game dealt fairly, without the patterns of the original.',
         'Hold 1 and press ON - the original (needs its ROM; not on the phone).',
         'Hold 2 and press ON - the game of Two False Alibis (see the last section).',
-        'Hold 3 as well (3 + ON, or 2 + 3 + ON) - the machine first asks for the number of the case, 1 to 999999. '
+        'Hold 9 and press ON - choose a case by its number: type a number from 1 to 9999999 and press ENTER. The '
+        'machine remembers it and goes dark; the next game you start (ON, or 2 + ON) plays that case. '
         'The same number is the same case on any device: give it to a friend, or agree to play the date as the case '
-        'of the day. Every case shows its number at the start and in the final summary. A case played by its number '
+        'of the day. Every case shows its number at the start and in the final summary. A case chosen by its number '
         'does not go to the records or the running score.',
         'Hold 0 and press ON - clear the records and the running score.',
         '',
@@ -116,9 +117,10 @@ HELP = {
         'ON - игра с честной раздачей, без закономерностей оригинала.',
         'Удерживая 1, нажмите ON - оригинал (нужен его ROM; на телефоне нет).',
         'Удерживая 2, нажмите ON - игра «Два ложных алиби» (см. последний раздел).',
-        'Удерживая ещё и 3 (3 + ON или 2 + 3 + ON) - машина сначала спросит номер дела, от 1 до 999999. Один номер - '
+        'Удерживая 9, нажмите ON - выбор дела по номеру: введите номер от 1 до 9999999 и нажмите ENTER. Машина '
+        'запомнит его и погаснет; следующая игра, которую вы начнёте (ON или 2 + ON), будет этим делом. Один номер - '
         'одно и то же дело на любом устройстве: продиктуйте его другу или договоритесь играть дату как дело дня. '
-        'Номер каждого дела показан в начале и в итоге. Дело, сыгранное по номеру, в рекорды и накопленный счёт '
+        'Номер каждого дела показан в начале и в итоге. Дело, выбранное по номеру, в рекорды и накопленный счёт '
         'не идёт.',
         'Удерживая 0, нажмите ON - стереть рекорды и накопленный счёт.',
         '',

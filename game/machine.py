@@ -19,7 +19,7 @@ GLYPH = {'A': 'A', 'B': 'b', 'C': 'C', 'D': 'd', 'E': 'E', 'F': 'F'}
 MASK = {ch: m for m, ch in SEG.items() if m != 0x67}
 BLANK, EE, END, ON = ' ' * 7, '     EE', '  ENd  ', '     0N'
 SEC = int(IPS)
-NUMBER = 6                                         # digits in the number of a case
+NUMBER = 7                                         # digits in the number of a case
 
 
 def number_rng(number, lies):
@@ -34,10 +34,10 @@ def digits(n, width=2):
 
 
 class Machine:
-    def __init__(self, rng=None, case=None, rom_like=False, lies=False, take=None, ask=False):
+    def __init__(self, rng=None, case=None, rom_like=False, lies=False, take=None, ask=False, number=None):
         self.rng, self.fixed_case, self.rom_like = rng or random.SystemRandom(), case, rom_like
         self.lies, self.take = lies, take        # two false alibis; take() gives (number, case) dealt ahead, or None
-        self.ask = ask                           # the player types the number of the case before level and players
+        self.ask, self.given = ask, number       # switched on only to take the number of a case; the case to play
         self.powered = False
         self.cycles = self.busy_until = 0
         self.off_at = None
@@ -75,7 +75,7 @@ class Machine:
     # --- power, display ---
     def power_on(self):
         self.powered, self.state = True, 'number' if self.ask else 'setup'
-        self.number = None                # of the case: the same number is the same case (none for a case given from outside)
+        self.number = self.given          # of the case: the same number is the same case (none for a case given from outside)
         self.timeline, self.sound_queue = [], []
         self.typed, self.fresh, self.off_at = '', False, None
         self.show(BLANK)
@@ -113,8 +113,9 @@ class Machine:
             self.typed = (self.typed + k)[-NUMBER:]; self.echo()
         else:
             t, self.typed = self.typed, ''
-            if k == 'ENTER' and t and int(t): self.number, self.state = int(t), 'setup'
-            self.show(ON)
+            if k == 'ENTER' and t and int(t):
+                self.number = int(t); self.power_off()       # the window keeps it for the next game; the screen goes dark
+            else: self.show(ON)
 
     def key_setup(self, k):
         if k.isdigit():

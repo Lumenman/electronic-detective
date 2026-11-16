@@ -5,8 +5,8 @@
 Keys: 0-9, S = Suspect, Q = Private Question, A = I Accuse, Enter, T = End Turn, O = On, X = Off.
 ON starts our own machine (machine.py: same rules and behaviour, cases dealt at random, no ROM needed).
 ON pressed while 1 is held runs the original ROM in the emulator, with the regularities of its deals;
-2 + ON is the game of two false alibis; with 3 held as well as ON (or as 2 and ON) the machine first asks for
-the number of the case: the same number is the same case on any device.
+2 + ON is the game of two false alibis. 9 + ON asks for the number of a case and switches off again: the next game
+(ON or 2 + ON) plays that case - the same number is the same case on any device.
 Suspect cards are not shown: use the paper cards or the PDF.
 """
 import array, json, os, random, re, subprocess, sys, threading, time
@@ -59,10 +59,10 @@ TALL = {'ON': (0, 0, 1), 'OFF': (1, 0, 1), 'ACCUSE': (2, 0, 1),
 NUMPAD = {getattr(pygame, 'K_KP%d' % i): str(i) for i in range(10)}
 NUMPAD[pygame.K_KP_ENTER] = 'ENTER'
 OFF_HINT = ('Press ON to start a game without patterns (the shell deals the case), hold 1 and press ON for an original game, '
-            'or hold 2 and press ON for the game of two false alibis. Hold 3 as well to enter the number of a case.')
+            'or hold 2 and press ON for the game of two false alibis. Hold 9 and press ON to choose a case by its number.')
 if 'ANDROID_ARGUMENT' in os.environ:      # no ROM on the phone
     OFF_HINT = ('Press ON to start a game, or hold 2 and press ON for the game of two false alibis. '
-                'Hold 3 as well to enter the number of a case.')
+                'Hold 9 and press ON to choose a case by its number.')
 
 
 def num(s):
@@ -96,7 +96,7 @@ class Decoder:
             n = int(digits) if digits else None
             self.seq += 1
             if self.context[0] == 'number':
-                if n: self.context = ('setup',)
+                if n: self.context = ('off',)                # remembered for the next game: the machine goes dark
             elif self.context[0] == 'setup':
                 if len(digits) == 2 and digits[0] in '123' and digits[1] in '1234':   # anything else: ON again
                     self.context = ('crime',)
@@ -340,7 +340,7 @@ class Stock(threading.Thread):
         except ImportError:
             return                       # no solver here: the machine deals unchecked
         while True:
-            if len(load_settings().get('lies_ahead', [])) >= STOCK:
+            if len(load_settings().get('lies_dealt', [])) >= STOCK:
                 time.sleep(1); continue
             number, skip = random.SystemRandom().randrange(1, 10 ** NUMBER), 0
             rng = number_rng(number, True)
@@ -351,7 +351,7 @@ class Stock(threading.Thread):
                 if good: break
                 skip += 1
             with LOCK:
-                save_settings(lies_ahead=load_settings().get('lies_ahead', []) + [[number, skip]])
+                save_settings(lies_dealt=load_settings().get('lies_dealt', []) + [[number, skip]])
 
 
 class ParThread(threading.Thread):
@@ -411,7 +411,8 @@ class Game:
     par = par_msg = None                 # the solver's process for this case; its line in the final summary
     wiped = False                        # 0 + ON was pressed: say so until the machine is switched on
     lies = False                         # the game of two false alibis (2 + ON)
-    numbered = False                     # the player typed the number of the case (3 + ON): no records, no running score
+    numbered = False                     # the case was chosen by its number: no records, no running score
+    pending = None                       # the number typed after 9 + ON, kept for the next game
     help = None                          # the page of the '?' screen that is open
     timing = {}                          # seconds of the last deal check and par count in this process (shown in the help)
 
@@ -423,10 +424,10 @@ class Game:
     def take(self):
         """A case dealt ahead for the game of two false alibis, with its number, or None."""
         with LOCK:
-            stock = load_settings().get('lies_ahead', [])
+            stock = load_settings().get('lies_dealt', [])
             if not stock:
                 return None
-            save_settings(lies_ahead=stock[1:])
+            save_settings(lies_dealt=stock[1:])
         (number, skip), rng = stock[0], number_rng(stock[0][0], True)
         for _ in range(skip): deal_lies(rng)
         return number, deal_lies(rng)
@@ -541,12 +542,13 @@ class Game:
     # --- input ---
     def press(self, key, down):
         if key in ('ON', 'OFF'):
-            original = bool(self.held.get('1'))      # a held digit picks the game: 1 + ON, 2 + ON
+            ask = bool(self.held.get('9'))           # 9 + ON: only to type the number of the next case
+            original = bool(self.held.get('1')) and not ask    # a held digit picks the game: 1 + ON, 2 + ON
             if key == 'ON' and down and self.held.get('0') and not (self.board and self.board.powered):
                 save_settings(records={}, records_fair={}, records_lies={}, par={}, par_fair={}, par_lies={})   # 0 + ON
                 self.wiped = True
                 return
-            lies = bool(self.held.get('2')) and not original                      # 2 + ON: two false alibis
+            lies = bool(self.held.get('2')) and not original and not ask          # 2 + ON: two false alibis
             if key == 'ON' and down and original and ANDROID and self.files is None:
                 return                       # no ROM on the phone
             if key == 'ON' and self.board is not None and self.board.powered:
@@ -561,10 +563,12 @@ class Game:
                 self.score = self.note = self.final = None
                 self.stop_par()
                 if key == 'ON' and (self.board is None or not self.board.powered):
-                    self.numbered = bool(self.held.get('3')) and not original     # 3 + ON: the case by its number
-                    self.board = ElecDet(self.files) if original else Machine(lies=lies, take=self.take, ask=self.numbered)
+                    number = None if ask or original else self.pending            # the ROM's cases have no numbers
+                    self.board = ElecDet(self.files) if original else Machine(lies=lies, take=self.take, ask=ask, number=number)
                     self.original, self.lies, self._level, self.wiped = original, lies, 0, False
-                    if self.numbered: self.decoder.context = ('number',)
+                    self.numbered = number is not None
+                    if number: self.pending = None                                # played once
+                    if ask: self.decoder.context = ('number',)
                     self.keyq, self.cur_key, self.key_rest = [], None, 0
                     self.board.power_on()
                 elif key == 'OFF' and self.board:
@@ -683,6 +687,12 @@ class Game:
             self.status = 'Switched off. ' + OFF_HINT
         if self.lies and self.decoder.context[0] in ('number', 'setup') and self.board and self.board.powered:
             self.status = 'Two false alibis: the murderer and one more suspect lie about where they were. ' + self.status
+        b = self.board
+        if isinstance(b, Machine) and b.ask and not b.powered and b.number:
+            self.pending, b.number = b.number, None
+        if self.pending and not (b and b.powered):
+            self.status = ('Case %d is set. Press ON to play it, or hold 2 and press ON to play it as two false alibis.'
+                           % self.pending)
         if self.wiped and not (self.board and self.board.powered):
             self.status = 'Records and the running score are cleared. ' + OFF_HINT
         if self.final and not self.decoder.entry:
