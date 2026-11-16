@@ -438,7 +438,6 @@ class Game:
         pygame.display.set_caption('Electronic Detective')
         self.font = pygame.font.SysFont('arial', int(15 * self.Z * self.K))
         self.fine = pygame.font.SysFont('arial', int(15 * self.Z * self.K * 4 / 5))   # five lines where four do not do
-        self.read = pygame.font.SysFont('arial', int(15 * self.K * (0.9 * self.Z if self.LINES > 2 else 1)))   # the help
         self.small = pygame.font.SysFont('arial', int(self.LABEL * self.Z * self.K), bold=True)
         self.big = pygame.font.SysFont('arial', int(26 * self.Z * self.K), bold=True)
         self.hint_img = self.small.render(self.HINT, True, (110, 110, 100))
@@ -457,7 +456,7 @@ class Game:
         self.d = ''
         self.static = self.screen.copy()
         self.paint_static(self.static)
-        self.timing, self.lang = {}, load_settings().get('help_lang', 'en')
+        self.timing, self.lang, self.size = {}, load_settings().get('help_lang', 'en'), load_settings().get('help_size', 0)
         Stock(self)
 
     # --- emulation & sound ---
@@ -729,31 +728,47 @@ class Game:
         return pygame.Rect(self.STATUS.right - s - self.px(6), self.STATUS.bottom - s - self.px(6), s, s)
 
     def help_bar(self):
-        """The four keys under a page: back, the other language, forward, close."""
-        h, w = self.KEY_H * 3 // 4, (self.CW - 3 * self.GAP) // 4
-        names = ('<', 'RU' if self.lang == 'en' else 'EN', '>', 'X')
+        """The keys under a page: back, smaller and larger text, the other language, forward, close."""
+        h, w = self.KEY_H * 3 // 4, (self.CW - 5 * self.GAP) // 6
+        names = ('<', 'A-', 'A+', 'RU' if self.lang == 'en' else 'EN', '>', 'X')
         return [(pygame.Rect(self.M + i * (w + self.GAP), self.H - self.M - h, w, h), n) for i, n in enumerate(names)]
+
+    def help_fonts(self):
+        """Text and headings of the help, in the size the reader chose (steps of 12 %)."""
+        if getattr(self, '_fonts_src', None) != self.size:
+            px = 15 * self.K * (self.Z if self.LINES > 2 else 1) * 1.12 ** self.size
+            self._fonts_src = self.size
+            self._fonts = pygame.font.SysFont('arial', int(px)), pygame.font.SysFont('arial', int(px * 1.15), bold=True)
+        return self._fonts
 
     def help_pages(self):
         """The text of the current language as pages of (font, line): wrapped to the width, cut to the height."""
-        if getattr(self, '_help_src', None) != self.lang:
-            body = self.read
+        if getattr(self, '_help_src', None) != (self.lang, self.size):
+            body, head = self.help_fonts()
             step, room = body.get_linesize(), self.help_bar()[0][0].top - self.M - 2 * body.get_linesize()
             pages, page, y = [], [], 0
-            cut = lambda text: [(self.small, text[2:])] if text.startswith('# ') else                 [(body, t) for t in self.wrap(text, self.CW, body)] if text else [(None, '')]
             texts = HELP[self.lang]
+
+            def cut(text):
+                if text.startswith('# '): return [(head, text[2:])]
+                return [(body, t) for t in self.wrap(text, self.CW, body)] if text else [(None, '')]
             for k, text in enumerate(texts):
-                lines = cut(text)
-                need = len(lines) + (sum(len(cut(t)) for t in texts[k + 1:k + 3]) if text.startswith('# ') else 0)   # a heading keeps
-                if y + step * need > room:                                          # its first two paragraphs
+                lines = cut(text)                                                   # a heading keeps two paragraphs
+                need = len(lines) + (sum(len(cut(t)) for t in texts[k + 1:k + 3]) if text.startswith('# ') else 0)
+                if y + step * need > room and page:
                     pages.append(page); page, y = [], 0
                 if page or text:                                                    # no gap at the top of a page
                     page += lines; y += step * len(lines)
-            self._help_src, self._help_pages = self.lang, pages + [page]
+            self._help_src, self._help_pages = (self.lang, self.size), pages + [page]
         return self._help_pages
 
     def help_do(self, name):
         if name == 'X': self.help = None
+        elif name in ('A-', 'A+'):
+            first = self.help_pages()[self.help][0][1]              # stay at the text that was being read
+            self.size = max(-2, min(5, self.size + (1 if name == 'A+' else -1))); save_settings(help_size=self.size)
+            self.help = next((k for k, pg in enumerate(self.help_pages()) if any(t == first for _, t in pg)),
+                             min(self.help, len(self.help_pages()) - 1))
         elif name in ('EN', 'RU'):
             self.lang = name.lower(); save_settings(help_lang=self.lang)
             self.help = min(self.help, len(self.help_pages()) - 1)
@@ -773,13 +788,13 @@ class Game:
     def draw_help(self):
         sc, pages = self.screen, self.help_pages()
         sc.fill((250, 248, 240))
-        body = self.read
+        body = self.help_fonts()[0]
         for k, (f, t) in enumerate(pages[self.help]):
             if t: sc.blit(f.render(t, True, (20, 20, 20) if f is body else (40, 105, 175)), (self.M, self.M + k * body.get_linesize()))
         note = '%d / %d' % (self.help + 1, len(pages)) + ''.join(
             '     %s %.1f s' % (n, self.timing[n]) for n in ('deal', 'par') if self.timing.get(n))
         bar = self.help_bar()
-        sc.blit(body.render(note, True, (120, 120, 110)), (self.M, bar[0][0].top - body.get_linesize() * 3 // 2))
+        sc.blit(self.font.render(note, True, (120, 120, 110)), (self.M, bar[0][0].top - self.font.get_linesize() * 3 // 2))
         for r, name in bar:
             self.button(sc, r, name, 'help', False)
         pygame.display.flip()
@@ -838,7 +853,8 @@ class Game:
                 if e.type == pygame.KEYDOWN and (e.key == pygame.K_F1 or self.help is not None):
                     if self.help is None: self.help = 0
                     else: self.help_do({pygame.K_LEFT: '<', pygame.K_RIGHT: '>', pygame.K_SPACE: '>',
-                                        pygame.K_l: self.help_bar()[1][1]}.get(e.key, 'X'))
+                                        pygame.K_l: self.help_bar()[3][1], pygame.K_MINUS: 'A-', pygame.K_KP_MINUS: 'A-',
+                                        pygame.K_EQUALS: 'A+', pygame.K_KP_PLUS: 'A+'}.get(e.key, 'X'))
                     continue
                 if e.type in (pygame.KEYDOWN, pygame.KEYUP) and e.key in keymap:
                     if e.type == pygame.KEYDOWN and getattr(e, 'repeat', False):
