@@ -304,6 +304,7 @@ class Game:
     W = CW + 2 * M
     K, Z, LINES = 1, 1, 2                # pixels per unit of this layout, text size, lines of status
     DIGIT = 44, 68                       # a digit of the display
+    LABEL, CMD = 13, (60, 140, 210)      # size of a word on a key; colour of the command keys
     DISP = pygame.Rect(M, M, CW, 100)
     STATUS = pygame.Rect(M, DISP.bottom + 14, CW, 52)
     PAD_TOP = STATUS.bottom + 16
@@ -315,7 +316,8 @@ class Game:
     def fit(self, ww, wh):
         """The phone: the whole upright screen, drawn at its own resolution (sharp text) - larger text, 3 x 6 keys."""
         # shortcut: upright screens only (the apk is locked to portrait); a wide one needs side margins
-        self.K, self.Z, self.LINES, self.DIGIT = ww / self.W, 1.8, 4, (48, 96)
+        self.K, self.Z, self.LINES, self.DIGIT = ww / self.W, 1.8, 4, (48, 82)
+        self.LABEL, self.CMD = 15, (40, 105, 175)                               # the commands stand out from the digits
         self.M, self.GAP, self.W, self.H = self.px(24), self.px(12), ww, wh
         self.CW = ww - 2 * self.M
         self.U = (self.CW - 2 * self.GAP) // 3
@@ -354,7 +356,7 @@ class Game:
         self.fingers = {}                # finger id -> the key it holds (None: it lifts the cover)
         pygame.display.set_caption('Electronic Detective')
         self.font = pygame.font.SysFont('arial', int(15 * self.Z * self.K))
-        self.small = pygame.font.SysFont('arial', int(13 * self.Z * self.K), bold=True)
+        self.small = pygame.font.SysFont('arial', int(self.LABEL * self.Z * self.K), bold=True)
         self.big = pygame.font.SysFont('arial', int(26 * self.Z * self.K), bold=True)
         self.hint_img = self.small.render(self.HINT, True, (110, 110, 100))
         self.buttons = []
@@ -524,7 +526,7 @@ class Game:
 
     # --- drawing ---
     def button(self, sc, r, label, key, down):
-        color = {'ON': (50, 160, 90), 'OFF': (205, 70, 60)}.get(key, (60, 140, 210))
+        color = {'ON': (50, 160, 90), 'OFF': (205, 70, 60)}.get(key, (60, 140, 210) if key.isdigit() else self.CMD)
         if down:
             color = tuple(min(255, c + 60) for c in color)
         pygame.draw.rect(sc, color, r, border_radius=self.px(8))
@@ -597,6 +599,15 @@ class Game:
                 head = ('YES! %s is the murderer.' if sc.winner is not None else 'The murderer was %s.') % who(num(m.group(1)))
                 self.final = ('%s %s %s' % (head, sc.summary(), self.rec)).strip()
 
+    def running(self):
+        """The phone's bottom line of the status field: where the game stands, all the time."""
+        sc = self.score
+        if self.LINES < 3 or not sc or sc.over:
+            return ''
+        q = sc.questions[sc.cur]
+        return '%sTurn %d  -  %d question%s' % (sc.name(sc.cur) + '  -  ' if sc.n > 1 else '', sc.turns[sc.cur] + 1,
+                                                q, '' if q == 1 else 's')
+
     def wrap(self, text, width):
         lines, cur = [], ''
         for w in text.split(' '):
@@ -625,10 +636,15 @@ class Game:
             draw_digit(sc, self.DISP.centerx - self.px(232) + i * self.px(70), self.DISP.centery - self.px(self.DIGIT[1] / 2),
                        self.px(self.DIGIT[0]), self.px(self.DIGIT[1]), s, (255, 40, 40), (55, 18, 18))
         self.update_status()
-        if self.status != getattr(self, '_status_src', None):
-            self._status_src, self._status_lines = self.status, [
-                self.font.render(t, True, (20, 20, 20)) for t in self.wrap(self.status, self.CW - self.px(24))[:self.LINES]]
+        pin = self.running()
+        if (self.status, pin) != getattr(self, '_status_src', None):
+            self._status_src, self._status_lines = (self.status, pin), [
+                self.font.render(t, True, (20, 20, 20))
+                for t in self.wrap(self.status, self.CW - self.px(24))[:self.LINES - bool(pin)]]
+            self._pin = self.font.render(pin, True, (120, 120, 110))
         lines = self._status_lines
+        if pin:
+            sc.blit(self._pin, (self.STATUS.x + self.px(12), self.STATUS.y + self.px(7) + (self.LINES - 1) * self.px(19 * self.Z)))
         if self.decoder.is_private(self.d) and not (self.peek_key or self.peek_mouse or None in self.fingers.values()):
             self.draw_cover(sc)
             c = self.decoder.context
