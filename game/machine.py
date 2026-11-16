@@ -170,16 +170,18 @@ class Machine:
     def enter_question(self, q, repeat=False):
         """The order of the checks is the original's, found by comparing with the ROM."""
         limit = self.used >= self.level and not self.over           # a closed case can be reviewed without limit
+        if q is None and self.rom_like:   # nothing typed: the ROM reads the number from the right end of the display,
+            t = self.shown[5:7].strip()   # blank after a mode key, YES, a letter or a number; no number after NO and EE
+            q, repeat = (None if not t else int(t) if t.isdigit() else 0), False
         if q is not None and not 1 <= q <= 14:
             return self.answer(EE)        # no such question: costs nothing, even when the turn is used up
         if repeat:                        # ENTER again: END once the turn is used up, unless EE is showing
             return self.end() if limit and not self.last_ee else self.answer(EE)
-        if q is None:                     # nothing typed after the mode key: a lost question, if one was left
-            if not limit and not self.over: self.used += 1
-            return self.answer(EE)
         if limit:
             return self.end()
-        if not self.over: self.used += 1  # a question that is not on the card is lost as well
+        if not self.over: self.used += 1  # nothing typed, or a question that is not on the card: lost as well
+        if q is None:
+            return self.answer(EE)
         if self.who is None: self.deviation = True                 # the victim first: the original answers nonsense
         a = self.obs['ans'].get((self.who, q), self.obs['hidden'].get((self.who, q)) if self.rom_like else None)
         self.answer(EE if a is None else '  4E5  ' if a == 'Y' else '     N0' if a == 'N' else '0000000' if a == '?'
