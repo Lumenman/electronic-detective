@@ -14,6 +14,7 @@ The accusation itself is not counted.
     python par.py fair [n] [level]       random deals, as game/dealer.py makes them
     python par.py classic [n] [level]    deals of the ROM (emulator sweep)
     add 'ideal' to compute the floor too (slow)
+    python par.py case <case as JSON> <level>    one case, prints the methodical number (the game window calls this)
 """
 import os, sys
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', 'game'))
@@ -120,6 +121,9 @@ def run(job):
 
 if __name__ == '__main__':
     import json, os, sys
+    if sys.argv[1] == 'case':
+        from rules import observe
+        print(methodical(observe(json.loads(sys.argv[2]))[0], int(sys.argv[3]))); sys.exit()
     from collections import Counter
     from multiprocessing import Pool
     args = [a for a in sys.argv[1:] if a != 'ideal']; want_ideal = 'ideal' in sys.argv

@@ -1,7 +1,7 @@
 """Real-time GUI test of the per-turn score line, final summary and records (1 player, level 3).
 The murderer is read from emulator RAM and never printed. Records go to a temporary settings file.
     python test_score.py <ROM folder>"""
-import os, sys, tempfile, time
+import os, re, sys, tempfile, time
 import pygame
 import elecdet_game as g
 from board import load_romset
@@ -60,6 +60,8 @@ def turn_plan():
     t = tap(t + 1.0, 'ACCUSE', *str(murderer()), 'ENTER')
     check(t + 10.0, 'final summary in the status line',
           lambda: 'Solved after 2 turns, 3 questions.' in game.status and 'First record for level 3.' in game.status)
+    check(t + 10.05, 'par shown with the summary',
+          lambda: re.search('Par for this case: [0-9]+ turns - you are [0-9]+ under par[.]', game.status))
     check(t + 10.1, 'record saved', lambda: g.load_settings().get('records_fair') == {'3': [2, 3]})   # default mode: no patterns
     at(t + 11, lambda: pygame.event.post(pygame.event.Event(pygame.QUIT)))
 

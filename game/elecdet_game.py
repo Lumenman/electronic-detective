@@ -7,10 +7,13 @@ ON starts our own machine (machine.py: same rules and behaviour, cases dealt at 
 Shift+ON (key or mouse) runs the original ROM in the emulator, with the regularities of its deals.
 Suspect cards are not shown: use the paper cards or the PDF.
 """
-import array, json, os, re, sys, threading
+import array, json, os, re, subprocess, sys, threading
 import pygame
 from board import ElecDet, IPS, SEG, load_romset
 from machine import Machine
+from rules import from_ram
+
+PAR = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'research', 'solver', 'par.py')
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 SETTINGS = os.path.join(HERE, 'settings.json')
@@ -198,6 +201,8 @@ class Score:
 
     def accused(self, correct):
         p = self.cur
+        if self.acted:                       # accusing right after questioning: that turn counts too
+            self.turns[p] += 1; self.acted = False
         if correct:
             self.winner = p
         else:
@@ -291,6 +296,8 @@ class Game:
     STATUS = pygame.Rect(M, DISP.bottom + 14, CW, 52)
     PAD_TOP = STATUS.bottom + 16
     H = PAD_TOP + 5 * KEY_H + 4 * GAP + 44
+
+    par = par_turns = None               # the solver's process for this case; its answer
 
     def __init__(self, files=None, rom=None):
         self.files, self.rom = files, rom   # the ROM (loaded files, or where to look) is asked for on Shift+ON only
@@ -395,6 +402,7 @@ class Game:
                         return
                 self.decoder.key(key)
                 self.score = self.note = self.final = None
+                self.stop_par()
                 if key == 'ON' and (self.board is None or not self.board.powered):
                     self.board = ElecDet(self.files) if original else Machine()
                     self.original, self._level = original, 0
@@ -418,10 +426,45 @@ class Game:
                 self.score = Score(dec.level, dec.players)
             elif self.score and key == 'ENTER' and entry[:1] == ['SUSPECT']:
                 self.score.suspect()
+                if self.par is None:
+                    self.start_par()
             elif self.score and key == 'ENDTURN':
                 line = self.score.end_turn()
                 if line:
                     self.note = line
+
+    # --- par: turns the methodical detective of research/solver needs for this case ---
+    def start_par(self):
+        """Counted by a separate process while the game goes on (seconds of work; this one must not stall)."""
+        b = self.board
+        case = b.case if hasattr(b, 'case') else from_ram(b.cpu.ram)     # the ROM's case is ready once keys are taken
+        try:
+            self.par = subprocess.Popen([sys.executable, PAR, 'case', json.dumps(case), str(self.score.level)],
+                                        stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, text=True,
+                                        creationflags=getattr(subprocess, 'CREATE_NO_WINDOW', 0))
+        except OSError:
+            self.par = False                 # no solver here: play without par
+
+    def stop_par(self):
+        if self.par and self.par.poll() is None:
+            self.par.kill()
+        self.par = self.par_turns = None
+
+    def par_text(self):
+        """Shown with the final summary, won or lost; nothing while it is still being counted."""
+        if not self.par or self.par.poll() is None:
+            return ''
+        if self.par_turns is None:
+            out = self.par.stdout.read().strip()
+            self.par_turns = int(out) if out.isdigit() else 0
+        par, sc = self.par_turns, self.score
+        if not par:
+            return ''
+        text = ' Par for this case: %d turns' % par
+        if sc and sc.n == 1 and sc.winner == 0:
+            d = sc.turns[0] - par
+            text += ' - you are %s' % ('on par' if d == 0 else '%d %s par' % (abs(d), 'over' if d > 0 else 'under'))
+        return text + '.'
 
     # --- drawing ---
     def button(self, sc, r, label, key, down):
@@ -457,7 +500,7 @@ class Game:
             self.final = None
             self.status = 'Switched off. ' + OFF_HINT
         if self.final and not self.decoder.entry:
-            self.status = self.final
+            self.status = self.final + self.par_text()
         if self.score and not self.score.over and self.decoder.context[0] == 'turn' and self.score.n > 1 \
                 and not d.strip() and not self.decoder.entry:
             self.status = '%s: SUSPECT, number, ENTER.' % self.score.name(self.score.cur)
