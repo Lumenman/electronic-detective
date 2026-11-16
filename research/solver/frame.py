@@ -90,7 +90,7 @@ def partial(obs, asked, visited):
             'ans': {k: obs['ans'][k] for k in asked}}
 
 
-def methodical(obs, level, cap=150, sus=None, framed=FRAMED):
+def methodical(obs, level, cap=150, sus=None, framed=FRAMED, check=False):
     """par.methodical taught the rule: a framed fact counts as known once three agree on it.
     Returns (turns until one name is left, turns until two or fewer are left)."""
     people = sorted(obs['alibi'])
@@ -127,7 +127,7 @@ def methodical(obs, level, cap=150, sus=None, framed=FRAMED):
             if q == 12:
                 if place and fact[5] and fact[6] or told(s, 13) or told(s, 14): return 0
                 return 4 if splits(s, 3) else 3 if s in cand else 1 if sex in (None, male(s)) else 0
-            if {9: 'side', 10: 'area', 11: 'place'}[q] in a: return 0
+            if {9: 'side', 10: 'area', 11: 'place'}[q] in a: return 5 if check else 0     # check: it tests the alibi
             return 4 if splits(s, {9: 1, 10: 2, 11: 0}[q]) else 3 if s in cand else 0
 
         def questions(s, a):
