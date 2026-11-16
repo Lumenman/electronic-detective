@@ -314,12 +314,15 @@ class Game:
         pygame.init()                    # also brings up SDL audio, needed by AudioDevice
         self.buf, self.lock, self.underruns = bytearray(), threading.Lock(), 0
         try:
-            from pygame._sdl2 import audio
+            from pygame._sdl2 import audio, sdl2
+            pygame.mixer.quit()          # Android has one playback device, and pygame.init() gave it to the mixer
+            sdl2.init_subsystem(sdl2.INIT_AUDIO)
             self.audio = audio.AudioDevice(None, False, RATE, audio.AUDIO_S16, 1, 512, 0, self.fill_audio)
             self.audio.pause(0)
         except Exception as e:           # no audio device: run on the wall clock
             print('Sound disabled:', e)
             self.audio = None
+            self.status = 'Sound disabled: %s. %s' % (e, OFF_HINT)
         self.window = self.screen = pygame.display.set_mode((0, 0) if ANDROID else (self.W, self.H))
         if ANDROID:                      # draw at the desktop size, show it as large as the screen allows
             self.screen = pygame.Surface((self.W, self.H))
