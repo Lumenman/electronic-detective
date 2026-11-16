@@ -5,6 +5,7 @@ package.name = elecdet
 package.domain = local.games
 source.dir = app
 source.include_exts = py,ttf
+icon.filename = icon.png
 version = 0.1
 requirements = python3,pygame
 orientation = portrait
