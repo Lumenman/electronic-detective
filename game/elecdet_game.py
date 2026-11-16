@@ -304,7 +304,6 @@ class ParThread(threading.Thread):
     def __init__(self, case, level):
         super().__init__(daemon=True)
         self.case, self.level, self.out, self.stdout = case, level, '', self
-        sys.setswitchinterval(0.001)     # the sound must not wait long for its turn
         self.start()
 
     def run(self):
@@ -369,6 +368,7 @@ class Game:
         self.held = {}                   # board key -> number of sources holding it (mouse/keyboard)
         self.keyq, self.cur_key, self.key_age, self.key_rest = [], None, 0, 0   # presses waiting for the board
         pygame.init()                    # also brings up SDL audio, needed by AudioDevice
+        sys.setswitchinterval(0.001)     # threads count the deal and the par: the sound must not wait long for its turn
         self.buf, self.lock, self.underruns = bytearray(), threading.Lock(), 0
         try:
             from pygame._sdl2 import audio, sdl2

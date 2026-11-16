@@ -71,8 +71,11 @@ class Machine:
         self.timeline, self.sound_queue = [], []
         self.typed, self.fresh, self.off_at = '', False, None
         self.show(BLANK)
-        self.at(self.sound('power_on'), lambda: self.show(ON))
-        if self.lies and not self.fixed_case:
+        self.at(self.sound('power_on'), self.switched_on)
+
+    def switched_on(self):
+        self.show(ON)
+        if self.lies and not self.fixed_case:        # dealt in the silence after the tune: counting makes a sound stutter
             self.ready = threading.Thread(target=self.deal_solvable, daemon=True); self.ready.start()
 
     def power_off(self):
