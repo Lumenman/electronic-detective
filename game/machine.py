@@ -19,6 +19,7 @@ GLYPH = {'A': 'A', 'B': 'b', 'C': 'C', 'D': 'd', 'E': 'E', 'F': 'F'}
 MASK = {ch: m for m, ch in SEG.items() if m != 0x67}
 BLANK, EE, END, ON = ' ' * 7, '     EE', '  ENd  ', '     0N'
 SEC = int(IPS)
+NUMBER = 6                                         # digits in the number of a case
 BLINK, BLINK_NO = (0.44, 0.14), (0.26, 0.14)       # seconds on, off
 OFF_AFTER, OFF_EXTEND = 240, 177                   # a finished game switches itself off; END TURN gives more time
 
@@ -28,9 +29,10 @@ def digits(n, width=2):
 
 
 class Machine:
-    def __init__(self, rng=None, case=None, rom_like=False, lies=False, take=None):
+    def __init__(self, rng=None, case=None, rom_like=False, lies=False, take=None, ask=False):
         self.rng, self.fixed_case, self.rom_like = rng or random.SystemRandom(), case, rom_like
-        self.lies, self.take = lies, take        # the game of two false alibis; take() gives a case dealt ahead, or None
+        self.lies, self.take = lies, take        # two false alibis; take() gives (number, case) dealt ahead, or None
+        self.ask = ask                           # the player types the number of the case before level and players
         self.powered = False
         self.cycles = self.busy_until = 0
         self.off_at = None
@@ -67,7 +69,8 @@ class Machine:
 
     # --- power, display ---
     def power_on(self):
-        self.powered, self.state = True, 'setup'
+        self.powered, self.state = True, 'number' if self.ask else 'setup'
+        self.number = None                # of the case: the same number is the same case (none for a case given from outside)
         self.timeline, self.sound_queue = [], []
         self.typed, self.fresh, self.off_at = '', False, None
         self.show(BLANK)
@@ -94,11 +97,19 @@ class Machine:
     def key(self, k):
         if not self.powered or self.cycles < self.busy_until:
             return                        # a sound is playing: the original does not look at the keys either
-        (self.key_setup if self.state == 'setup' else self.key_play)(k)
+        {'number': self.key_number, 'setup': self.key_setup}.get(self.state, self.key_play)(k)
 
     def echo(self):
         t = self.typed.lstrip('0') or self.typed[-1:]
         self.show(digits(t, 7))
+
+    def key_number(self, k):
+        if k.isdigit():
+            self.typed = (self.typed + k)[-NUMBER:]; self.echo()
+        else:
+            t, self.typed = self.typed, ''
+            if k == 'ENTER' and t and int(t): self.number, self.state = int(t), 'setup'
+            self.show(ON)
 
     def key_setup(self, k):
         if k.isdigit():
@@ -111,22 +122,28 @@ class Machine:
             else:
                 self.show(ON)
 
-    def deal_solvable(self):
-        """A case with two false alibis that logic can still solve (about 1 in 25 cannot: dealt again)."""
+    def deal_solvable(self, rng):
+        """A case with two false alibis that logic can still solve (about 1 in 25 cannot: the next deal of rng is taken;
+        the thread that deals ahead in elecdet_game.py walks the same way)."""
         sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'research', 'solver'))
         try:
             from solver import lie_suspects      # on the phone the solver lies beside this file
         except ImportError:
             lie_suspects = None                  # no solver here: the case is played unchecked
         while True:
-            case = deal_lies(self.rng)
+            case = deal_lies(rng)
             if lie_suspects is None or len(lie_suspects(observe(case)[0])) == 1: return case
 
     def start_case(self, typed):
-        if self.fixed_case or not self.lies:
-            self.case = self.fixed_case or deal(self.rng)
-        else:                             # shortcut: nothing dealt ahead - dealt here, the machine waits (seconds on a phone)
-            self.case = self.take and self.take() or self.deal_solvable()
+        ahead = self.lies and self.number is None and self.take and self.take()
+        if self.fixed_case:
+            self.case = self.fixed_case
+        elif ahead:
+            self.number, self.case = ahead
+        else:                             # shortcut: two false alibis are checked here - the machine waits (seconds on a phone)
+            self.number = self.number or self.rng.randrange(1, 10 ** NUMBER)
+            rng = random.Random(self.number)
+            self.case = self.deal_solvable(rng) if self.lies else deal(rng)
         self.obs, self.murderer = observe(self.case)
         self.victim = self.obs['victim']
         self.over = self.deviation = False   # solved, or everybody is out; known difference from the ROM met
