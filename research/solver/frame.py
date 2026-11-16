@@ -90,7 +90,7 @@ def partial(obs, asked, visited):
             'ans': {k: obs['ans'][k] for k in asked}}
 
 
-def methodical(obs, level, cap=150):
+def methodical(obs, level, cap=150, sus=None, framed=FRAMED):
     """par.methodical taught the rule: a framed fact counts as known once three agree on it.
     Returns (turns until one name is left, turns until two or fewer are left)."""
     people = sorted(obs['alibi'])
@@ -99,10 +99,10 @@ def methodical(obs, level, cap=150):
     for turn in range(1, cap + 1):
         def known(q):
             v = [obs['ans'][k] for k in asked if k[1] == q]
-            if q not in FRAMED: return v[0] if v else None
+            if q not in framed: return v[0] if v else None
             return next((a for a in set(v) if v.count(a) >= 3), None)
         fact = {q: known(q) for q in range(1, 9)}
-        heard = {q: sum(1 for k in asked if k[1] == q) for q in FRAMED}
+        heard = {q: sum(1 for k in asked if k[1] == q) for q in framed}
         sex = None if fact[2] is None else fact[2] == 'Y'
         weapon_q = None if fact[4] is None else 13 if fact[4] == 'Y' else 14
         told = lambda s, q: obs['ans'][(s, q)] if (s, q) in asked else None
@@ -114,7 +114,7 @@ def methodical(obs, level, cap=150):
         def worth(s, q, a):
             if q <= 8:
                 if fact[q] is not None or q == 2 and len({male(c) for c in cand}) == 1: return 0
-                if q in FRAMED and heard[q]: return 7                  # heard, not yet sure: a second and third voice
+                if q in framed and heard[q]: return 7                  # heard, not yet sure: a second and third voice
                 k = {1: 0, 3: 1, 8: 2}.get(q)
                 return 10 if k is None or len(spots) != 1 and len({v[k] for v in spots}) != 1 else 3
             place = a.get('place')
@@ -147,7 +147,7 @@ def methodical(obs, level, cap=150):
         visited.add(s)
         asked.update((s, q) for q in questions(s, obs['alibi'][s])[:level])
         worlds = {}
-        cand = frame_suspects(partial(obs, asked, visited), worlds=worlds)
+        cand = (sus or frame_suspects)(partial(obs, asked, visited), worlds=worlds)
         if two is None and len(cand) <= 2: two = turn
         if len(cand) == 1:
             return turn, two

@@ -21,8 +21,8 @@ LETTERS = 'ABCDEF'
 ADDR = [(s, a) for s in (1, 2) for a in (3, 4, 5)]
 
 
-def suspects(obs, limit=None, worlds=None):
-    """Set of possible murderers. limit: stop as soon as more than this many are found.
+def suspects(obs, limit=None, worlds=None, only=None):
+    """Set of possible murderers. limit: stop as soon as more than this many are found. only: look at these names only.
     worlds: a dict that receives one possible state of affairs per murderer: (place -> address, suspect -> place)."""
     victim, scene, alibi, ans = obs['victim'], obs['scene'], obs['alibi'], obs['ans']
     people = [s for s in range(1, 21) if s != victim]
@@ -60,7 +60,7 @@ def suspects(obs, limit=None, worlds=None):
               and (m_area is None or int(m_area) == amap[l][1])
               and (m_abc is None or (m_abc == 'Y') == (l in 'ABC'))]
         for m in people:
-            if m in found or (m_male is not None and (m_male == 'Y') != male(m)): continue
+            if m in found or only is not None and m not in only or (m_male is not None and (m_male == 'Y') != male(m)): continue
             for x in xs:
                 if x not in dom[m]: continue
                 for weapon38 in ((w38 == 'Y',) if w38 is not None else (True, False)):
