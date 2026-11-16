@@ -10,7 +10,7 @@ so the window can drive either. Time is counted in CPU cycles of the original (I
 
     m = Machine(); m.power_on(); m.run(3 * SEC); m.key('3'); m.key('1'); m.key('ENTER'); m.run(6 * SEC); m.display()
 """
-import os, random, sys, threading
+import os, random, sys
 from board import IPS, SEG
 from rules import deal, deal_lies, observe
 from sounds import SOUNDS
@@ -28,9 +28,9 @@ def digits(n, width=2):
 
 
 class Machine:
-    def __init__(self, rng=None, case=None, rom_like=False, lies=False):
+    def __init__(self, rng=None, case=None, rom_like=False, lies=False, take=None):
         self.rng, self.fixed_case, self.rom_like = rng or random.SystemRandom(), case, rom_like
-        self.lies, self.ready = lies, None       # the game of two false alibis; the thread that deals its case
+        self.lies, self.take = lies, take        # the game of two false alibis; take() gives a case dealt ahead, or None
         self.powered = False
         self.cycles = self.busy_until = 0
         self.off_at = None
@@ -71,12 +71,7 @@ class Machine:
         self.timeline, self.sound_queue = [], []
         self.typed, self.fresh, self.off_at = '', False, None
         self.show(BLANK)
-        self.at(self.sound('power_on'), self.switched_on)
-
-    def switched_on(self):
-        self.show(ON)
-        if self.lies and not self.fixed_case:        # dealt in the silence after the tune: counting makes a sound stutter
-            self.ready = threading.Thread(target=self.deal_solvable, daemon=True); self.ready.start()
+        self.at(self.sound('power_on'), lambda: self.show(ON))
 
     def power_off(self):
         self.powered = False
@@ -125,15 +120,13 @@ class Machine:
             lie_suspects = None                  # no solver here: the case is played unchecked
         while True:
             case = deal_lies(self.rng)
-            if lie_suspects is None or len(lie_suspects(observe(case)[0])) == 1: break
-        self.dealt = case
+            if lie_suspects is None or len(lie_suspects(observe(case)[0])) == 1: return case
 
     def start_case(self, typed):
-        if self.ready:                    # shortcut: waits here if the deal is not done yet (seconds on a phone)
-            self.ready.join(); self.ready = None
-            self.case = self.dealt
-        else:
+        if self.fixed_case or not self.lies:
             self.case = self.fixed_case or deal(self.rng)
+        else:                             # shortcut: nothing dealt ahead - dealt here, the machine waits (seconds on a phone)
+            self.case = self.take and self.take() or self.deal_solvable()
         self.obs, self.murderer = observe(self.case)
         self.victim = self.obs['victim']
         self.over = self.deviation = False   # solved, or everybody is out; known difference from the ROM met

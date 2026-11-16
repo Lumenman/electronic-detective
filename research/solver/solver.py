@@ -80,11 +80,12 @@ def suspects(obs, limit=None, worlds=None, only=None):
     return found
 
 
-def lie_suspects(obs, worlds=None):
+def lie_suspects(obs, worlds=None, pause=None):
     """suspects() for the game of two false alibis (rules.deal_lies): the murderer and one more suspect lie in the
     alibi, every answer to a question is true. m is possible if, for some second liar, everything fits once the
     alibis of the two are set aside. Per arrangement of addresses every choice of up to two heard alibis is tried
-    (it must cover everybody whose word fits no place). That the two alibis must be false is not used."""
+    (it must cover everybody whose word fits no place). That the two alibis must be false is not used.
+    pause: called between arrangements; the game holds the counting there while a sound plays."""
     from itertools import combinations
     victim, scene, alibi, ans = obs['victim'], obs['scene'], obs['alibi'], obs['ans']
     people = [s for s in range(1, 21) if s != victim]
@@ -118,6 +119,7 @@ def lie_suspects(obs, worlds=None):
         dom = {s: {l for l in places if unary(s, l, *amap[l], True)} for s in people}
         lost = {s for s in people if not dom[s]}
         if len(lost) > 2: continue
+        if pause: pause()
         loose = {s: {l for l in places if unary(s, l, *amap[l], False)} for s in spoke}
         xs = [l for l in places if l not in (l38, l45)
               and (m_east is None or (m_east == 'Y') == (amap[l][0] == 2))

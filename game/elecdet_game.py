@@ -8,12 +8,14 @@ ON pressed while 1 is held runs the original ROM in the emulator, with the regul
 2 + ON is kept for a game with rules of our own (not made yet: the machine stays off).
 Suspect cards are not shown: use the paper cards or the PDF.
 """
-import array, json, os, re, subprocess, sys, threading
+import array, json, os, random, re, subprocess, sys, threading, time
 import pygame
 from board import ElecDet, IPS, SEG, load_romset
 from machine import Machine
-from rules import from_ram
+from rules import deal_lies, from_ram, observe
+from help_text import HELP
 
+STOCK = 3                                # cases of the game of two false alibis kept dealt ahead
 TALLY = 10                               # solved cases kept for the running score against par
 PAR = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'research', 'solver', 'par.py')
 
@@ -278,9 +280,13 @@ def load_settings():
         return {}
 
 
+LOCK = threading.RLock()                 # the settings are written by the window and by the thread that deals ahead
+
+
 def save_settings(**changes):
-    data = load_settings(); data.update(changes)
-    json.dump(data, open(SETTINGS, 'w'), indent=1)
+    with LOCK:
+        data = load_settings(); data.update(changes)
+        json.dump(data, open(SETTINGS, 'w'), indent=1)
 
 
 def find_rom(arg):
@@ -298,6 +304,32 @@ def find_rom(arg):
             sys.exit('No ROM selected.')
 
 
+class Stock(threading.Thread):
+    """Cases of the game of two false alibis, dealt and checked ahead while nothing sounds: 2 + ON then starts at once.
+    Kept in the settings as the seeds of the deals (a number tells nothing about the case)."""
+
+    def __init__(self, game):
+        super().__init__(daemon=True)
+        self.game = game
+        self.start()
+
+    def run(self):
+        sys.path.append(os.path.dirname(PAR))        # on the phone the solver lies beside this file
+        try:
+            from solver import lie_suspects
+        except ImportError:
+            return                       # no solver here: the machine deals unchecked
+        while True:
+            if len(load_settings().get('lies_stock', [])) >= STOCK:
+                time.sleep(1); continue
+            seed, t = random.SystemRandom().getrandbits(48), time.thread_time()
+            good = len(lie_suspects(observe(deal_lies(random.Random(seed)))[0], pause=self.game.quiet)) == 1
+            self.game.timing['deal'] = time.thread_time() - t
+            if good:
+                with LOCK:
+                    save_settings(lies_stock=load_settings().get('lies_stock', []) + [seed])
+
+
 class ParThread(threading.Thread):
     """The phone has no second process: the solver counts in a thread, behind the few calls used of a process."""
 
@@ -309,7 +341,9 @@ class ParThread(threading.Thread):
     def run(self):
         sys.path.append(os.path.dirname(PAR))        # on the phone the solver lies beside this file
         import par
+        t = time.thread_time()
         self.out = str(par.case_par(self.case, self.level))
+        self.seconds = time.thread_time() - t
 
     def poll(self):
         return None if self.is_alive() else 0
@@ -353,6 +387,22 @@ class Game:
     par = par_msg = None                 # the solver's process for this case; its line in the final summary
     wiped = False                        # 0 + ON was pressed: say so until the machine is switched on
     lies = False                         # the game of two false alibis (2 + ON)
+    help = None                          # the page of the '?' screen that is open
+    timing = {}                          # seconds of the last deal check and par count in this process (shown in the help)
+
+    def quiet(self):
+        """Holds the thread that deals ahead while the machine sounds (its counting would make the sound stutter)."""
+        while isinstance(self.board, Machine) and self.board.powered and self.board.cycles < self.board.busy_until:
+            time.sleep(0.02)
+
+    def take(self):
+        """A case dealt ahead for the game of two false alibis, or None."""
+        with LOCK:
+            stock = load_settings().get('lies_stock', [])
+            if not stock:
+                return None
+            save_settings(lies_stock=stock[1:])
+        return deal_lies(random.Random(stock[0]))
 
     def kind(self):
         """The game being played, as the ending of its records in the settings."""
@@ -406,6 +456,8 @@ class Game:
         self.d = ''
         self.static = self.screen.copy()
         self.paint_static(self.static)
+        self.timing, self.lang = {}, load_settings().get('help_lang', 'en')
+        Stock(self)
 
     # --- emulation & sound ---
     def feed_keys(self):
@@ -482,7 +534,7 @@ class Game:
                 self.score = self.note = self.final = None
                 self.stop_par()
                 if key == 'ON' and (self.board is None or not self.board.powered):
-                    self.board = ElecDet(self.files) if original else Machine(lies=lies)
+                    self.board = ElecDet(self.files) if original else Machine(lies=lies, take=self.take)
                     self.original, self.lies, self._level, self.wiped = original, lies, 0, False
                     self.keyq, self.cur_key, self.key_rest = [], None, 0
                     self.board.power_on()
@@ -547,6 +599,7 @@ class Game:
             return ''
         if self.par_msg is None:             # once per game: read the answer, keep the tally
             out = self.par.stdout.read().strip()
+            self.timing['par'] = getattr(self.par, 'seconds', None)
             par, sc, self.par_msg = int(out) if out.isdigit() else 0, self.score, ''
             rel = lambda d: 'on par' if d == 0 else '%d %s par' % (abs(d), 'over' if d > 0 else 'under')
             if par:
@@ -669,7 +722,69 @@ class Game:
         sc.blit(t, t.get_rect(center=r.center))
         pygame.draw.rect(sc, (255, 255, 250), self.STATUS.inflate(-2, -2), border_radius=self.px(6))
 
+    # --- the '?' screen: the rules, in pages
+    def help_rect(self):
+        s = self.px(18 * self.Z)
+        return pygame.Rect(self.STATUS.right - s - self.px(6), self.STATUS.bottom - s - self.px(6), s, s)
+
+    def help_bar(self):
+        """The four keys under a page: back, the other language, forward, close."""
+        h, w = self.KEY_H * 3 // 4, (self.CW - 3 * self.GAP) // 4
+        names = ('<', 'RU' if self.lang == 'en' else 'EN', '>', 'X')
+        return [(pygame.Rect(self.M + i * (w + self.GAP), self.H - self.M - h, w, h), n) for i, n in enumerate(names)]
+
+    def help_pages(self):
+        """The text of the current language as pages of (font, line): wrapped to the width, cut to the height."""
+        if getattr(self, '_help_src', None) != self.lang:
+            body = self.fine if self.LINES > 2 else self.font
+            step, room = body.get_linesize(), self.help_bar()[0][0].top - self.M - 2 * body.get_linesize()
+            pages, page, y = [], [], 0
+            for text in HELP[self.lang]:
+                lines = [(self.small, text[2:])] if text.startswith('# ') else \
+                    [(body, t) for t in self.wrap(text, self.CW, body)] if text else [(None, '')]
+                if y + step * (len(lines) + text.startswith('# ')) > room:          # a heading takes its first line along
+                    pages.append(page); page, y = [], 0
+                if page or text:                                                    # no gap at the top of a page
+                    page += lines; y += step * len(lines)
+            self._help_src, self._help_pages = self.lang, pages + [page]
+        return self._help_pages
+
+    def help_do(self, name):
+        if name == 'X': self.help = None
+        elif name in ('EN', 'RU'):
+            self.lang = name.lower(); save_settings(help_lang=self.lang)
+            self.help = min(self.help, len(self.help_pages()) - 1)
+        else: self.help = max(0, min(len(self.help_pages()) - 1, self.help + (1 if name == '>' else -1)))
+
+    def tap(self, pos):
+        """A touch or a click: the '?' and its screen take it before the keys of the machine do."""
+        if self.help is None:
+            if self.help_rect().inflate(self.px(20), self.px(20)).collidepoint(pos):
+                self.help = 0
+                return True
+            return False
+        for r, name in self.help_bar():
+            if r.collidepoint(pos): self.help_do(name)
+        return True
+
+    def draw_help(self):
+        sc, pages = self.screen, self.help_pages()
+        sc.fill((250, 248, 240))
+        body = self.fine if self.LINES > 2 else self.font
+        for k, (f, t) in enumerate(pages[self.help]):
+            if t: sc.blit(f.render(t, True, (20, 20, 20) if f is body else (40, 105, 175)), (self.M, self.M + k * body.get_linesize()))
+        note = '%d / %d' % (self.help + 1, len(pages)) + ''.join(
+            '     %s %.1f s' % (n, self.timing[n]) for n in ('deal', 'par') if self.timing.get(n))
+        bar = self.help_bar()
+        sc.blit(body.render(note, True, (120, 120, 110)), (self.M, bar[0][0].top - body.get_linesize() * 3 // 2))
+        for r, name in bar:
+            self.button(sc, r, name, 'help', False)
+        pygame.display.flip()
+
     def draw(self):
+        if self.help is not None:
+            self.update_status()                 # the game goes on behind the page
+            return self.draw_help()
         sc = self.screen
         sc.blit(self.static, (0, 0))
         segs = self.board.segments() if self.board else [0] * 7
@@ -680,10 +795,11 @@ class Game:
         pin = self.running()
         if (self.status, pin) != getattr(self, '_status_src', None):
             f, room, self._step = self.font, self.LINES - bool(pin), self.px(19 * self.Z)
-            if self.LINES > 2 and len(self.wrap(self.status, self.CW - self.px(24))) > room:
+            wide = self.CW - self.px(24) - self.help_rect().w
+            if self.LINES > 2 and len(self.wrap(self.status, wide)) > room:
                 f, room, self._step = self.fine, 5, self.px(19 * self.Z * 4 / 5)     # the phone's long final summary
             self._status_src, self._status_lines = (self.status, pin), [
-                f.render(t, True, (20, 20, 20)) for t in self.wrap(self.status, self.CW - self.px(24), f)[:room]]
+                f.render(t, True, (20, 20, 20)) for t in self.wrap(self.status, wide, f)[:room]]
             self._pin = self.font.render(pin, True, (120, 120, 110))
         lines = self._status_lines
         if pin:
@@ -696,6 +812,10 @@ class Game:
         step = self._step if lines is self._status_lines else self.px(19 * self.Z)
         for k, img in enumerate(lines):
             sc.blit(img, (self.STATUS.x + self.px(12), self.STATUS.y + self.px(7) + k * step))
+        r = self.help_rect()
+        pygame.draw.circle(sc, (150, 150, 140), r.center, r.w // 2, max(1, self.px(1.5)))
+        t = self.small.render('?', True, (110, 110, 100))
+        sc.blit(t, t.get_rect(center=r.center))
         for r, label, key in self.buttons:
             if self.held.get(key, 0) > 0:
                 self.button(sc, r, label, key, True)
@@ -712,6 +832,11 @@ class Game:
             for e in pygame.event.get():
                 if e.type == pygame.QUIT:
                     return
+                if e.type == pygame.KEYDOWN and (e.key == pygame.K_F1 or self.help is not None):
+                    if self.help is None: self.help = 0
+                    else: self.help_do({pygame.K_LEFT: '<', pygame.K_RIGHT: '>', pygame.K_SPACE: '>',
+                                        pygame.K_l: self.help_bar()[1][1]}.get(e.key, 'X'))
+                    continue
                 if e.type in (pygame.KEYDOWN, pygame.KEYUP) and e.key in keymap:
                     if e.type == pygame.KEYDOWN and getattr(e, 'repeat', False):
                         continue
@@ -721,6 +846,8 @@ class Game:
                 elif e.type == pygame.FINGERDOWN:           # every finger is a key of its own: 1 + ON needs two
                     ww, wh = self.window.get_size()
                     pos = (e.x * ww, e.y * wh)
+                    if self.tap(pos):
+                        continue
                     key = next((k for r, _, k in self.buttons if r.collidepoint(pos)), None)
                     if key:
                         self.press(key, True)
@@ -733,6 +860,8 @@ class Game:
                         self.press(key, False)
                 elif e.type in (pygame.MOUSEBUTTONDOWN, pygame.MOUSEBUTTONUP) and getattr(e, 'touch', False):
                     pass                                    # the same touch again, as a mouse: already handled
+                elif e.type == pygame.MOUSEBUTTONDOWN and e.button == 1 and self.tap(e.pos):
+                    pass
                 elif e.type == pygame.MOUSEBUTTONDOWN and e.button == 1 and (
                         self.DISP.collidepoint(e.pos) or self.STATUS.collidepoint(e.pos)):
                     self.peek_mouse = True
