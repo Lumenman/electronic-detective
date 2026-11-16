@@ -149,7 +149,7 @@ assert 180 < loud < 260, loud
 # the four oddities of the original that our machine leaves out
 import random
 from machine import SEC
-from rules import CARDS, deal, observe
+from rules import CARDS, deal, deal_lies, observe
 def play(keys, case):
     m = Machine(case=case); m.power_on(); m.run(4 * SEC)
     for k in ['3', '1', 'ENTER']: m.key(k)
@@ -205,3 +205,44 @@ assert g.par_text() == g.par_text() == (' Par for this case: 7 turns - you are 1
                                         ' Your last 3 solved cases on level 3: 1 under par in total.')
 assert eg.load_settings()['par_fair'] == {'3': [1, -3, 1]}
 print('par tally OK')
+
+# --- the number of a case: 3 + ON asks for it; the same number must stay the same case on every device and Python ---
+c1 = deal(random.Random(1)); o1, m1 = observe(c1)
+assert (o1['victim'], o1['scene'], m1, c1['w38']) == (17, 'E', 6, False), 'a number no longer gives its case'
+assert deal_lies(random.Random(171126))['lies'] == [[15, 13], [4, 2]]
+g = eg.Game.__new__(eg.Game)
+g.files, g.board, g.decoder, g.held, g._level, g.rom, g.original = files, None, Decoder(), {}, 0, None, False
+g.keyq, g.cur_key, g.key_age, g.key_rest = [], None, 0, 0
+g.score = g.note = g.final = None
+g.d, g.counted = '', -1
+g.press('9', True); g.press('ON', True); g.press('9', False); wait(3.5)     # 9 + ON: only to type the number
+assert g.decoder.context == ('number',) and g.board.display() == '     0N'
+click('SUSPECT'); assert not g.decoder.entry                       # ON is showing: the command keys say nothing
+for ch in '90000001': click(ch)                                    # seven digits are kept, as on the display
+wait(2); assert g.decoder.typing() == '0 0 0 0 0 0 1' and g.board.display().strip() == '1', g.board.display()
+click('ENTER'); wait(1); g.update_status(); print(g.status)
+assert not g.board.powered and g.pending == 1 and g.status.startswith('Case 1 is set.'), g.status
+g.press('OFF', True); g.update_status()                            # OFF forgets it
+assert g.pending is None and g.status.startswith('Switched off.'), g.status
+g.press('9', True); g.press('ON', True); g.press('9', False); wait(3.5)
+click('1'); click('ENTER'); wait(1); g.update_status(); assert g.pending == 1
+g.press('ON', True); wait(3.5)                                     # the next game plays it
+assert g.numbered and g.pending is None and g.decoder.context == ('setup',)
+click('ENDTURN'); assert g.decoder.context == ('setup',)
+click('5'); click('1'); click('ENTER'); wait(1)                    # no such level: still ON, no game yet
+assert g.decoder.context == ('setup',) and g.score is None and g.board.display() == '     0N'
+for ch in '731': click(ch)
+wait(1); assert g.decoder.typing() == '3 1'                        # two digits, as on the display
+click('ENTER'); wait(6)
+assert g.board.case == c1 and g.score and g.decoder.context == ('crime',)
+g.update_status(); print(g.status)
+assert g.status.startswith('Case 1. The victim is #17 '), g.status
+g.press('OFF', True); g.press('ON', True); wait(3.5)               # and the one after it is dealt at random again
+assert not g.numbered and g.board.given is None
+m = Machine(); m.power_on(); m.run(4 * SEC)                         # a game without a typed number has one all the same
+for k in '31': m.key(k)
+m.key('ENTER'); assert 0 < m.number < 10 ** 7 and m.case == deal(random.Random(m.number))
+m = Machine(lies=True, number=1); m.power_on(); m.run(4 * SEC)      # the same number in the other game: another murder
+for k in '31': m.key(k)
+m.key('ENTER'); assert m.number == 1 and m.case['rows'] != c1['rows']
+print('case number OK')
