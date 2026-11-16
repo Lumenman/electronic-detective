@@ -21,8 +21,9 @@ LETTERS = 'ABCDEF'
 ADDR = [(s, a) for s in (1, 2) for a in (3, 4, 5)]
 
 
-def suspects(obs, limit=None):
-    """Set of possible murderers. limit: stop as soon as more than this many are found."""
+def suspects(obs, limit=None, worlds=None):
+    """Set of possible murderers. limit: stop as soon as more than this many are found.
+    worlds: a dict that receives one possible state of affairs per murderer: (place -> address, suspect -> place)."""
     victim, scene, alibi, ans = obs['victim'], obs['scene'], obs['alibi'], obs['ans']
     people = [s for s in range(1, 21) if s != victim]
     places = [l for l in LETTERS if l != scene]
@@ -69,15 +70,19 @@ def suspects(obs, limit=None):
                         for s in people:
                             a = ans.get((s, qw))
                             if a in ('Y', 'N') and male(s) == male(m) and (a == 'Y') != (m % 2 == 1): d[s].discard(lw)
-                    if all(d.values()) and place_all(d, cats, mates, places, three):
-                        found.add(m); break
+                    loc = all(d.values()) and place_all(d, cats, mates, places, three)
+                    if loc:
+                        found.add(m)
+                        if worlds is not None: worlds[m] = (amap, loc)
+                        break
                 if m in found: break
             if limit is not None and len(found) > limit: return found
     return found
 
 
 def place_all(dom, cats, mates, places, three):
-    """Can everybody be placed? One of each category per place of four; companions together."""
+    """Can everybody be placed? One of each category per place of four; companions together.
+    Returns one such placement (suspect -> place), or False."""
     dom = {s: set(v) for s, v in dom.items()}
     cat_of = {s: c for c, members in enumerate(cats) for s in members}
     pairs = {}
@@ -111,11 +116,12 @@ def place_all(dom, cats, mates, places, three):
     def search():
         open_ = [s for s in dom if len(dom[s]) > 1]
         if not open_:
-            return ok_final()
+            return ok_final() and {s: next(iter(v)) for s, v in dom.items()}
         s = min(open_, key=lambda x: len(dom[x]))
         for l in sorted(dom[s]):
             trail = []
-            if assign(s, l, trail) and search(): return True
+            r = assign(s, l, trail) and search()
+            if r: return r
             for o, old in reversed(trail): dom[o] = old
         return False
 

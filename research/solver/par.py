@@ -2,9 +2,10 @@
 
 Two numbers per case and level (1, 2, 3 = private questions per turn):
 
-  methodical  a fixed, sensible routine that sees only what a player sees: first collect the facts of the murder
-              from the cards that carry them, then question suspects of the murderer's sex, asking about the
-              fingerprints where it can matter. Stops when solver.suspects() leaves one name.
+  methodical  a sensible routine that sees only what a player sees: each turn it goes to the suspect whose alibi
+              and questions can still tell the most (unknown facts of the murder first, then those who can still
+              be the murderer, and the fingerprints where they can matter), and never asks what is already known
+              while anything else is left. Stops when solver.suspects() leaves one name.
   ideal       the fewest turns found when every choice is made knowing the answers in advance (greedy search,
               so an upper bound of the true minimum). Nobody plays like this; it is the floor.
 
@@ -25,39 +26,60 @@ def partial(obs, asked, visited):
             'ans': {k: obs['ans'][k] for k in asked}}
 
 
-def methodical(obs, level, cap=120):
+def methodical(obs, level, cap=120, trace=None):
     people = sorted(obs['alibi'])
     visited, asked = set(), set()
-    cand = set(people)
+    cand, worlds = set(people), {}
     for turn in range(1, cap + 1):
         fact = {q: next((obs['ans'][k] for k in asked if k[1] == q), None) for q in range(1, 9)}
         sex = None if fact[2] is None else fact[2] == 'Y'
         weapon_q = None if fact[4] is None else 13 if fact[4] == 'Y' else 14
+        told = lambda s, q: obs['ans'][(s, q)] if (s, q) in asked else None
+        guns = (fact[5], fact[6])
+        # what the possible states of affairs (one per remaining name) say about s: (place, side, area, at a gun)
+        views = lambda s: {(loc[s], *amap[loc[s]], loc[s] in guns) for amap, loc in worlds.values()}
+        spots = {(amap[loc[m]][0], amap[loc[m]][1], loc[m] in 'ABC') for m, (amap, loc) in worlds.items()}
+        splits = lambda s, *i: len({tuple(v[k] for k in i) for v in views(s)}) > 1      # they disagree about s
 
-        def questions(s):
+        def worth(s, q, a):
+            """What an answer can be worth, judged from what is known (a = the alibi of s, {} before the visit)."""
+            if q <= 8:                                                 # a fact of the murder
+                if fact[q] is not None or q == 2 and len({male(c) for c in cand}) == 1: return 0
+                k = {1: 0, 3: 1, 8: 2}.get(q)                          # about the murderer's place: do they disagree?
+                return 10 if k is None or len(spots) != 1 and len({v[k] for v in spots}) != 1 else 3
+            place = a.get('place')
+            if q in (13, 14):
+                gun = fact[q - 8]                                      # where that gun lies
+                if place and gun and place != gun or told(s, 12) == 'N': return 0   # not there: no prints to tell
+                if q == weapon_q and sex in (None, male(s)) and len({c % 2 for c in cand}) > 1:   # parity still open
+                    return 8 if place and place == gun else 5
+                return 2 if weapon_q is None else 1 if s in cand else 0
+            if q == 12:                                                # at a gun or not
+                if place and fact[5] and fact[6] or told(s, 13) or told(s, 14): return 0
+                return 4 if splits(s, 3) else 3 if s in cand else 1 if sex in (None, male(s)) else 0
+            if {9: 'side', 10: 'area', 11: 'place'}[q] in a: return 0  # the alibi said it already
+            return 4 if splits(s, {9: 1, 10: 2, 11: 0}[q]) else 3 if s in cand else 0
+
+        def questions(s, a):
             left = [q for q in CARDS[s] + (13, 14) if (s, q) not in asked]
-            def rank(q):
-                if q <= 8: return 0 if fact[q] is None else 9          # a fact of the murder not known yet
-                if q in (13, 14):
-                    if weapon_q is None: return 5
-                    return 1 if q == weapon_q and sex in (None, male(s)) else 8
-                return 3                                               # about the suspect's own place
-            return sorted(left, key=lambda q: (rank(q), q)), rank
+            return sorted(left, key=lambda q: (-worth(s, q, a), q))
 
         def value(s):
-            qs, rank = questions(s)
-            new_facts = sum(1 for q in qs[:level] if rank(q) == 0)
-            fresh = s not in visited
-            fits = sex is None or male(s) == sex
-            return (new_facts, fresh and fits, fresh, s in cand, bool(qs), -s)
+            a = obs['alibi'][s] if s in visited else {}
+            v = sum(worth(s, q, a) for q in questions(s, a)[:level])
+            if s not in visited: v += (6 if s in cand else 2) + 3 * splits(s, 0, 1, 2)   # the alibi itself
+            return v, -s
 
-        open_ = [s for s in people if s not in visited or questions(s)[0]]   # somebody who can still tell something
+        open_ = [s for s in people if s not in visited or questions(s, {})]
         if not open_:
             return None
-        s = max(open_, key=value)
-        qs, _ = questions(s)
-        visited.add(s); asked.update((s, q) for q in qs[:level])
-        cand = suspects(partial(obs, asked, visited))
+        s = max(open_, key=value)             # when nothing is worth anything, this still asks what is left
+        visited.add(s)
+        qs = questions(s, obs['alibi'][s])[:level]                 # chosen after hearing the alibi
+        asked.update((s, q) for q in qs)
+        worlds = {}
+        cand = suspects(partial(obs, asked, visited), worlds=worlds)
+        if trace is not None: trace.append((s, qs, len(cand)))
         if len(cand) == 1:
             return turn
     return None
