@@ -13,6 +13,7 @@ pip -q install buildozer cython setuptools
 rm -f "$work"/app/*.py
 for f in main elecdet_game board tms0980 machine rules sounds; do cp "$here/../game/$f.py" "$work/app/"; done
 cp "$here/buildozer.spec" "$work/"
+rm -rf "$work/recipes"; cp -r "$here/recipes" "$work/"
 cd "$work"
 export MAKEFLAGS=-j2 CMAKE_BUILD_PARALLEL_LEVEL=2        # leave half of the cores free
 buildozer android debug

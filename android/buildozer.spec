@@ -13,6 +13,8 @@ android.archs = arm64-v8a
 # the build downloads Google's Android SDK and NDK and accepts their licence without asking
 android.accept_sdk_license = True
 p4a.bootstrap = sdl2
+# pygame-ce instead of the toolchain's old pygame
+p4a.local_recipes = recipes
 
 [buildozer]
 log_level = 2
