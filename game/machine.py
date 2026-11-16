@@ -20,6 +20,11 @@ MASK = {ch: m for m, ch in SEG.items() if m != 0x67}
 BLANK, EE, END, ON = ' ' * 7, '     EE', '  ENd  ', '     0N'
 SEC = int(IPS)
 NUMBER = 6                                         # digits in the number of a case
+
+
+def number_rng(number, lies):
+    """The deals of a case number. The two games draw apart: the same number must not be the same murder in both."""
+    return random.Random(number + lies * 10 ** NUMBER)
 BLINK, BLINK_NO = (0.44, 0.14), (0.26, 0.14)       # seconds on, off
 OFF_AFTER, OFF_EXTEND = 240, 177                   # a finished game switches itself off; END TURN gives more time
 
@@ -142,7 +147,7 @@ class Machine:
             self.number, self.case = ahead
         else:                             # shortcut: two false alibis are checked here - the machine waits (seconds on a phone)
             self.number = self.number or self.rng.randrange(1, 10 ** NUMBER)
-            rng = random.Random(self.number)
+            rng = number_rng(self.number, self.lies)
             self.case = self.deal_solvable(rng) if self.lies else deal(rng)
         self.obs, self.murderer = observe(self.case)
         self.victim = self.obs['victim']

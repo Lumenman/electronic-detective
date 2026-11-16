@@ -232,4 +232,7 @@ assert g.status.startswith('Case 1. The victim is #17 '), g.status
 m = Machine(); m.power_on(); m.run(4 * SEC)                         # a game without a typed number has one all the same
 for k in '31': m.key(k)
 m.key('ENTER'); assert 0 < m.number < 10 ** 6 and m.case == deal(random.Random(m.number))
+m = Machine(lies=True, ask=True); m.power_on(); m.run(4 * SEC)       # the same number in the other game: another murder
+for k in ['1', 'ENTER', '3', '1', 'ENTER']: m.key(k)
+assert m.number == 1 and m.case['rows'] != c1['rows']
 print('case number OK')

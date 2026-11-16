@@ -12,7 +12,7 @@ Suspect cards are not shown: use the paper cards or the PDF.
 import array, json, os, random, re, subprocess, sys, threading, time
 import pygame
 from board import ElecDet, IPS, SEG, load_romset
-from machine import Machine, NUMBER
+from machine import Machine, NUMBER, number_rng
 from rules import CARDS, deal_lies, from_ram, observe
 from help_text import HELP
 
@@ -340,10 +340,10 @@ class Stock(threading.Thread):
         except ImportError:
             return                       # no solver here: the machine deals unchecked
         while True:
-            if len(load_settings().get('lies_cases', [])) >= STOCK:
+            if len(load_settings().get('lies_ahead', [])) >= STOCK:
                 time.sleep(1); continue
             number, skip = random.SystemRandom().randrange(1, 10 ** NUMBER), 0
-            rng = random.Random(number)
+            rng = number_rng(number, True)
             while True:                  # as Machine.deal_solvable does for a number typed by the player
                 t = time.thread_time()
                 good = len(lie_suspects(observe(deal_lies(rng))[0], pause=self.game.quiet)) == 1
@@ -351,7 +351,7 @@ class Stock(threading.Thread):
                 if good: break
                 skip += 1
             with LOCK:
-                save_settings(lies_cases=load_settings().get('lies_cases', []) + [[number, skip]])
+                save_settings(lies_ahead=load_settings().get('lies_ahead', []) + [[number, skip]])
 
 
 class ParThread(threading.Thread):
@@ -423,11 +423,11 @@ class Game:
     def take(self):
         """A case dealt ahead for the game of two false alibis, with its number, or None."""
         with LOCK:
-            stock = load_settings().get('lies_cases', [])
+            stock = load_settings().get('lies_ahead', [])
             if not stock:
                 return None
-            save_settings(lies_cases=stock[1:])
-        (number, skip), rng = stock[0], random.Random(stock[0][0])
+            save_settings(lies_ahead=stock[1:])
+        (number, skip), rng = stock[0], number_rng(stock[0][0], True)
         for _ in range(skip): deal_lies(rng)
         return number, deal_lies(rng)
 
