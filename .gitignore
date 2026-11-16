@@ -15,3 +15,5 @@ research/emu/ref/
 game/settings.json
 research/emu/diff_big.txt
 android/bin/
+# the key the trial apk is signed with: kept beside the project, never in git
+android/keys/
