@@ -78,6 +78,21 @@ HELP = {
         "prints, or may not. Where there is no gun the answer to 13 and 14 is 'I don't know'.",
         '5. The murderer is never at the place of the body, nor where either gun lies.',
         '',
+        '# How to solve a case',
+        'You need all the facts of the murder (section 1 of the fact sheet): only one suspect fits them.',
+        'Sex of the murderer - question 2.',
+        'The weapon (.38 or .45) - question 4.',
+        'Where the weapon lies - question 5 or 6.',
+        "Odd or even prints on the weapon - question 13 or 14 to a suspect of the murderer's sex from the place "
+        'where the weapon lies.',
+        'Where the murderer could not go - the place of the body; the places of both guns; A-C if somebody answered '
+        'NO to question 8, D-F if YES.',
+        'Where the murderer is - alibis; questions 1 and 3 (about the murderer), 9 and 10 (about the one questioned).',
+        'You can also go by elimination: if the murderer is an odd man and every odd man but one is, by the alibis, '
+        'where the murderer cannot be, the one left is the murderer.',
+        'The fact sheet: section 1 - the facts of the murder; 2 - who was where (places, addresses, guns); '
+        '3 - scratch notes (who said what); 4 - your answer.',
+        '',
         '# Two False Alibis (2 + ON)',
         'Everything as above, except:',
         '1. Two suspects lie in their alibi: the murderer, and one more who has something else to hide. Each says he or '
@@ -130,6 +145,21 @@ HELP = {
         'только подозреваемый того же пола, что убийца, скрывшийся туда, где лежит это орудие. Остальные у оружия '
         'могут солгать про отпечатки, а могут и нет. Там, где оружия нет, на вопросы 13 и 14 отвечают «не знаю».',
         '5. Убийцы никогда нет на месте тела и там, где лежит любой из пистолетов.',
+        '',
+        '# Как раскрыть дело',
+        'Нужно знать все факты убийства (раздел 1 листа): им соответствует только один подозреваемый.',
+        'Пол убийцы - вопрос 2.',
+        'Орудие (.38 или .45) - вопрос 4.',
+        'Где лежит орудие - вопрос 5 или 6.',
+        'Чётность отпечатков на орудии - вопрос 13 или 14 подозреваемому того же пола, что убийца, из места, '
+        'где лежит орудие.',
+        'Куда убийца не мог скрыться - место тела; места обоих пистолетов; A-C, если кто-то ответил NO на вопрос 8, '
+        'D-F, если YES.',
+        'Где убийца - алиби; вопросы 1 и 3 (про убийцу), 9 и 10 (про допрашиваемого).',
+        'Можно идти и от противного: если убийца - нечётный мужчина, а все нечётные мужчины, кроме одного, по алиби '
+        'находятся там, где убийцы быть не может, - оставшийся и есть убийца.',
+        'Лист записей: раздел 1 - факты убийства; 2 - кто где (места, адреса, оружие); 3 - черновик (кто что сказал); '
+        '4 - ваш ответ.',
         '',
         '# Два ложных алиби (2 + ON)',
         'Всё как выше, кроме следующего:',

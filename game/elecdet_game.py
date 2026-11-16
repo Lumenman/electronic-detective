@@ -438,6 +438,7 @@ class Game:
         pygame.display.set_caption('Electronic Detective')
         self.font = pygame.font.SysFont('arial', int(15 * self.Z * self.K))
         self.fine = pygame.font.SysFont('arial', int(15 * self.Z * self.K * 4 / 5))   # five lines where four do not do
+        self.read = pygame.font.SysFont('arial', int(15 * self.K * (0.9 * self.Z if self.LINES > 2 else 1)))   # the help
         self.small = pygame.font.SysFont('arial', int(self.LABEL * self.Z * self.K), bold=True)
         self.big = pygame.font.SysFont('arial', int(26 * self.Z * self.K), bold=True)
         self.hint_img = self.small.render(self.HINT, True, (110, 110, 100))
@@ -736,7 +737,7 @@ class Game:
     def help_pages(self):
         """The text of the current language as pages of (font, line): wrapped to the width, cut to the height."""
         if getattr(self, '_help_src', None) != self.lang:
-            body = self.fine if self.LINES > 2 else self.font
+            body = self.read
             step, room = body.get_linesize(), self.help_bar()[0][0].top - self.M - 2 * body.get_linesize()
             pages, page, y = [], [], 0
             for text in HELP[self.lang]:
@@ -770,7 +771,7 @@ class Game:
     def draw_help(self):
         sc, pages = self.screen, self.help_pages()
         sc.fill((250, 248, 240))
-        body = self.fine if self.LINES > 2 else self.font
+        body = self.read
         for k, (f, t) in enumerate(pages[self.help]):
             if t: sc.blit(f.render(t, True, (20, 20, 20) if f is body else (40, 105, 175)), (self.M, self.M + k * body.get_linesize()))
         note = '%d / %d' % (self.help + 1, len(pages)) + ''.join(
