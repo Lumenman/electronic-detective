@@ -48,8 +48,10 @@ PAD = [('1', '1', pygame.K_1, 0, 0, 1), ('2', '2', pygame.K_2, 1, 0, 1), ('3', '
        ('SUSPECT', 'SUSPECT', pygame.K_s, 3, 0, 2), ('PRIVATE QUESTION', 'PQ', pygame.K_q, 3, 1, 2),
        ('I ACCUSE', 'ACCUSE', pygame.K_a, 3, 2, 2), ('ENTER', 'ENTER', pygame.K_RETURN, 3, 3, 2),
        ('END TURN', 'ENDTURN', pygame.K_t, 3, 4, 2)]   # layout of the original: 5 columns x 5 rows
-# the phone's keypad: 3 columns x 6 rows, digits on top, the five commands below
-TALL = {'ON': (0, 3, 1), 'OFF': (1, 3, 1), '0': (2, 3, 1), 'SUSPECT': (0, 4, 1), 'PQ': (1, 4, 1), 'ACCUSE': (2, 4, 1),
+# the phone's keypad: 3 columns x 6 rows; the rarely used keys on top, the digits in the middle
+TALL = {'ON': (0, 0, 1), 'OFF': (1, 0, 1), 'ACCUSE': (2, 0, 1),
+        '1': (0, 1, 1), '2': (1, 1, 1), '3': (2, 1, 1), '4': (0, 2, 1), '5': (1, 2, 1), '6': (2, 2, 1),
+        '7': (0, 3, 1), '8': (1, 3, 1), '9': (2, 3, 1), 'SUSPECT': (0, 4, 1), 'PQ': (1, 4, 1), '0': (2, 4, 1),
         'ENTER': (0, 5, 2), 'ENDTURN': (2, 5, 1)}
 NUMPAD = {getattr(pygame, 'K_KP%d' % i): str(i) for i in range(10)}
 NUMPAD[pygame.K_KP_ENTER] = 'ENTER'
@@ -301,6 +303,7 @@ class Game:
     CW = 5 * U + 4 * GAP                 # keypad width = width of every area
     W = CW + 2 * M
     K, Z, LINES = 1, 1, 2                # pixels per unit of this layout, text size, lines of status
+    DIGIT = 44, 68                       # a digit of the display
     DISP = pygame.Rect(M, M, CW, 100)
     STATUS = pygame.Rect(M, DISP.bottom + 14, CW, 52)
     PAD_TOP = STATUS.bottom + 16
@@ -312,7 +315,7 @@ class Game:
     def fit(self, ww, wh):
         """The phone: the whole upright screen, drawn at its own resolution (sharp text) - larger text, 3 x 6 keys."""
         # shortcut: upright screens only (the apk is locked to portrait); a wide one needs side margins
-        self.K, self.Z, self.LINES = ww / self.W, 1.6, 3
+        self.K, self.Z, self.LINES, self.DIGIT = ww / self.W, 1.8, 4, (48, 96)
         self.M, self.GAP, self.W, self.H = self.px(24), self.px(12), ww, wh
         self.CW = ww - 2 * self.M
         self.U = (self.CW - 2 * self.GAP) // 3
@@ -619,8 +622,8 @@ class Game:
         sc.blit(self.static, (0, 0))
         segs = self.board.segments() if self.board else [0] * 7
         for i, s in enumerate(segs):
-            draw_digit(sc, self.DISP.centerx - self.px(232) + i * self.px(70), self.DISP.centery - self.px(34),
-                       self.px(44), self.px(68), s, (255, 40, 40), (55, 18, 18))
+            draw_digit(sc, self.DISP.centerx - self.px(232) + i * self.px(70), self.DISP.centery - self.px(self.DIGIT[1] / 2),
+                       self.px(self.DIGIT[0]), self.px(self.DIGIT[1]), s, (255, 40, 40), (55, 18, 18))
         self.update_status()
         if self.status != getattr(self, '_status_src', None):
             self._status_src, self._status_lines = self.status, [
