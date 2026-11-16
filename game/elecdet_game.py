@@ -18,7 +18,8 @@ TALLY = 10                               # solved cases kept for the running sco
 PAR = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'research', 'solver', 'par.py')
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-SETTINGS = os.path.join(HERE, 'settings.json')
+ANDROID = 'ANDROID_ARGUMENT' in os.environ      # packed by android/build.sh: touch screen, no ROM, no par (see there)
+SETTINGS = os.path.join(os.environ.get('ANDROID_PRIVATE', HERE), 'settings.json')   # the app folder is replaced on update
 RATE = 24000                        # 400 samples per 1/60 s; SDL resamples for the device
 CHUNK = 1 / 60                      # seconds of emulation per step
 AHEAD = 0.1                         # seconds of audio kept buffered (also how far the display runs ahead)
@@ -47,9 +48,16 @@ PAD = [('1', '1', pygame.K_1, 0, 0, 1), ('2', '2', pygame.K_2, 1, 0, 1), ('3', '
        ('SUSPECT', 'SUSPECT', pygame.K_s, 3, 0, 2), ('PRIVATE QUESTION', 'PQ', pygame.K_q, 3, 1, 2),
        ('I ACCUSE', 'ACCUSE', pygame.K_a, 3, 2, 2), ('ENTER', 'ENTER', pygame.K_RETURN, 3, 3, 2),
        ('END TURN', 'ENDTURN', pygame.K_t, 3, 4, 2)]   # layout of the original: 5 columns x 5 rows
+# the phone's keypad: 3 columns x 6 rows; the rarely used keys on top, the digits in the middle
+TALL = {'ON': (0, 0, 1), 'OFF': (1, 0, 1), 'ACCUSE': (2, 0, 1),
+        '1': (0, 1, 1), '2': (1, 1, 1), '3': (2, 1, 1), '4': (0, 2, 1), '5': (1, 2, 1), '6': (2, 2, 1),
+        '7': (0, 3, 1), '8': (1, 3, 1), '9': (2, 3, 1), 'SUSPECT': (0, 4, 1), 'PQ': (1, 4, 1), '0': (2, 4, 1),
+        'ENTER': (0, 5, 2), 'ENDTURN': (2, 5, 1)}
 NUMPAD = {getattr(pygame, 'K_KP%d' % i): str(i) for i in range(10)}
 NUMPAD[pygame.K_KP_ENTER] = 'ENTER'
 OFF_HINT = 'Press ON to start a game without patterns (the shell deals the case), or hold 1 and press ON for an original game.'
+if 'ANDROID_ARGUMENT' in os.environ:      # no ROM on the phone
+    OFF_HINT = 'Press ON to start a game.'
 
 
 def num(s):
@@ -294,10 +302,29 @@ class Game:
     M, U, KEY_H, GAP = 24, 91, 56, 12    # outer margin, key width/height, gap
     CW = 5 * U + 4 * GAP                 # keypad width = width of every area
     W = CW + 2 * M
+    K, Z, LINES = 1, 1, 2                # pixels per unit of this layout, text size, lines of status
+    DIGIT = 44, 68                       # a digit of the display
+    LABEL, CMD = 13, (60, 140, 210)      # size of a word on a key; colour of the command keys
     DISP = pygame.Rect(M, M, CW, 100)
     STATUS = pygame.Rect(M, DISP.bottom + 14, CW, 52)
     PAD_TOP = STATUS.bottom + 16
     H = PAD_TOP + 5 * KEY_H + 4 * GAP + 44
+
+    def px(self, n):
+        return round(n * self.K)
+
+    def fit(self, ww, wh):
+        """The phone: the whole upright screen, drawn at its own resolution (sharp text) - larger text, 3 x 6 keys."""
+        # shortcut: upright screens only (the apk is locked to portrait); a wide one needs side margins
+        self.K, self.Z, self.LINES, self.DIGIT = ww / self.W, 1.8, 4, (48, 82)
+        self.LABEL, self.CMD = 15, (40, 105, 175)                               # the commands stand out from the digits
+        self.M, self.GAP, self.W, self.H = self.px(24), self.px(12), ww, wh
+        self.CW = ww - 2 * self.M
+        self.U = (self.CW - 2 * self.GAP) // 3
+        self.DISP = pygame.Rect(self.M, self.M, self.CW, 2 * self.px(7) + self.LINES * self.px(19 * self.Z))
+        self.STATUS = self.DISP.move(0, self.DISP.h + self.px(14))             # the same size as the display
+        self.PAD_TOP = self.STATUS.bottom + self.px(16)
+        self.KEY_H = (wh - self.PAD_TOP - self.M - 5 * self.GAP) // 6
 
     par = par_msg = None                 # the solver's process for this case; its line in the final summary
 
@@ -313,20 +340,29 @@ class Game:
         pygame.init()                    # also brings up SDL audio, needed by AudioDevice
         self.buf, self.lock, self.underruns = bytearray(), threading.Lock(), 0
         try:
-            from pygame._sdl2 import audio
+            from pygame._sdl2 import audio, sdl2
+            pygame.mixer.quit()          # Android has one playback device, and pygame.init() gave it to the mixer
+            sdl2.init_subsystem(sdl2.INIT_AUDIO)
             self.audio = audio.AudioDevice(None, False, RATE, audio.AUDIO_S16, 1, 512, 0, self.fill_audio)
             self.audio.pause(0)
         except Exception as e:           # no audio device: run on the wall clock
             print('Sound disabled:', e)
             self.audio = None
-        self.screen = pygame.display.set_mode((self.W, self.H))
+            self.status = 'Sound disabled: %s. %s' % (e, OFF_HINT)
+        self.window = self.screen = pygame.display.set_mode((0, 0) if ANDROID else (self.W, self.H))
+        ww, wh = self.window.get_size()
+        if ANDROID:
+            self.fit(ww, wh)
+        self.fingers = {}                # finger id -> the key it holds (None: it lifts the cover)
         pygame.display.set_caption('Electronic Detective')
-        self.font = pygame.font.SysFont('arial', 15)
-        self.small = pygame.font.SysFont('arial', 13, bold=True)
-        self.big = pygame.font.SysFont('arial', 26, bold=True)
+        self.font = pygame.font.SysFont('arial', int(15 * self.Z * self.K))
+        self.small = pygame.font.SysFont('arial', int(self.LABEL * self.Z * self.K), bold=True)
+        self.big = pygame.font.SysFont('arial', int(26 * self.Z * self.K), bold=True)
         self.hint_img = self.small.render(self.HINT, True, (110, 110, 100))
         self.buttons = []
         for label, key, _, col, row, w in PAD:
+            if ANDROID:
+                col, row, w = TALL.get(key, (col, row, w))
             x = self.M + col * (self.U + self.GAP)
             r = pygame.Rect(x, self.PAD_TOP + row * (self.KEY_H + self.GAP), w * self.U + (w - 1) * self.GAP, self.KEY_H)
             self.buttons.append((r, label, key))
@@ -395,7 +431,7 @@ class Game:
     def press(self, key, down):
         if key in ('ON', 'OFF'):
             original = bool(self.held.get('1'))      # a held digit picks the game: 1 + ON, 2 + ON
-            if key == 'ON' and down and self.held.get('2'):
+            if key == 'ON' and down and (self.held.get('2') or original and ANDROID and self.files is None):
                 return                       # the game with our own rules is not made yet
             if key == 'ON' and self.board is not None and self.board.powered:
                 return                       # already on: the real switch does nothing either
@@ -420,7 +456,7 @@ class Game:
         self.held[key] = max(cnt, 0)
         if down and cnt == 1 and self.board:
             self.keyq.append(key)
-        if down and cnt == 1:
+        if down and cnt == 1 and not self.deaf():
             dec = self.decoder
             was_setup, entry = dec.context[0] == 'setup', list(dec.entry)
             dec.key(key)
@@ -438,10 +474,23 @@ class Game:
                 if line:
                     self.note = line
 
+    def deaf(self):
+        """The board will not take a key now (a sound is playing), so the status line must not follow it either."""
+        b = self.board
+        if b is None or not b.powered:
+            return True
+        if isinstance(b, Machine):
+            return b.cycles < b.busy_until
+        # shortcut: the ROM's other sounds are not known here, only the wait for ON; read its sound state if that matters
+        return self.decoder.context[0] == 'setup' and not b.display().strip()
+
     # --- par: turns the methodical detective of research/solver needs for this case ---
     def start_par(self):
         """Counted by a separate process while the game goes on (seconds of work; this one must not stall)."""
         b = self.board
+        if ANDROID:                      # shortcut: no second process on Android, so no par there; a thread could count it
+            self.par = False
+            return
         case = b.case if hasattr(b, 'case') else from_ram(b.cpu.ram)     # the ROM's case is ready once keys are taken
         try:
             self.par = subprocess.Popen([sys.executable, PAR, 'case', json.dumps(case), str(self.score.level)],
@@ -477,20 +526,23 @@ class Game:
 
     # --- drawing ---
     def button(self, sc, r, label, key, down):
-        color = (120, 185, 235) if down else (60, 140, 210)
-        pygame.draw.rect(sc, color, r, border_radius=8)
+        color = {'ON': (50, 160, 90), 'OFF': (205, 70, 60)}.get(key, (60, 140, 210) if key.isdigit() else self.CMD)
+        if down:
+            color = tuple(min(255, c + 60) for c in color)
+        pygame.draw.rect(sc, color, r, border_radius=self.px(8))
         f = self.big if len(label) == 1 else self.small
         words = label.split(' ') if len(label) > 10 else [label]
         for k, wd in enumerate(words):
             t = f.render(wd, True, (245, 245, 245))
-            sc.blit(t, (r.centerx - t.get_width() // 2, r.centery - len(words) * 8 + k * 16 - (4 if f is self.big else 0)))
+            sc.blit(t, (r.centerx - t.get_width() // 2,
+                        r.centery + int((k * 16 - len(words) * 8 - (4 if f is self.big else 0)) * self.Z * self.K)))
 
     def paint_static(self, sc):
         """Everything that does not change: drawn once, blitted every frame."""
         sc.fill((236, 232, 222))
-        pygame.draw.rect(sc, (25, 10, 10), self.DISP, border_radius=8)
-        pygame.draw.rect(sc, (255, 255, 250), self.STATUS, border_radius=6)
-        pygame.draw.rect(sc, (150, 150, 140), self.STATUS, 1, border_radius=6)
+        pygame.draw.rect(sc, (25, 10, 10), self.DISP, border_radius=self.px(8))
+        pygame.draw.rect(sc, (255, 255, 250), self.STATUS, border_radius=self.px(6))
+        pygame.draw.rect(sc, (150, 150, 140), self.STATUS, 1, border_radius=self.px(6))
         for r, label, key in self.buttons:
             self.button(sc, r, label, key, False)
 
@@ -547,6 +599,15 @@ class Game:
                 head = ('YES! %s is the murderer.' if sc.winner is not None else 'The murderer was %s.') % who(num(m.group(1)))
                 self.final = ('%s %s %s' % (head, sc.summary(), self.rec)).strip()
 
+    def running(self):
+        """The phone's bottom line of the status field: where the game stands, all the time."""
+        sc = self.score
+        if self.LINES < 3 or not sc or sc.over:
+            return ''
+        q = sc.questions[sc.cur]
+        return '%sTurn %d  -  %d question%s' % (sc.name(sc.cur) + '  -  ' if sc.n > 1 else '', sc.turns[sc.cur] + 1,
+                                                q, '' if q == 1 else 's')
+
     def wrap(self, text, width):
         lines, cur = [], ''
         for w in text.split(' '):
@@ -558,37 +619,44 @@ class Game:
 
     def draw_cover(self, sc):
         r = self.DISP
-        pygame.draw.rect(sc, (70, 70, 80), r, border_radius=8)
-        sc.set_clip(r.inflate(-12, -12))                       # hatching inside the rounded frame
-        for x in range(r.x - r.h, r.right, 14):
-            pygame.draw.line(sc, (90, 90, 100), (x, r.y), (x + r.h, r.bottom), 5)
+        pygame.draw.rect(sc, (70, 70, 80), r, border_radius=self.px(8))
+        sc.set_clip(r.inflate(-self.px(12), -self.px(12)))     # hatching inside the rounded frame
+        for x in range(r.x - r.h, r.right, self.px(14)):
+            pygame.draw.line(sc, (90, 90, 100), (x, r.y), (x + r.h, r.bottom), self.px(5))
         sc.set_clip(None)
-        t = self.small.render('PRIVATE ANSWER  -  hold SPACE', True, (240, 240, 240))
+        t = self.small.render('PRIVATE ANSWER  -  ' + ('touch here' if ANDROID else 'hold SPACE'), True, (240, 240, 240))
         sc.blit(t, t.get_rect(center=r.center))
-        pygame.draw.rect(sc, (255, 255, 250), self.STATUS.inflate(-2, -2), border_radius=6)
+        pygame.draw.rect(sc, (255, 255, 250), self.STATUS.inflate(-2, -2), border_radius=self.px(6))
 
     def draw(self):
         sc = self.screen
         sc.blit(self.static, (0, 0))
         segs = self.board.segments() if self.board else [0] * 7
         for i, s in enumerate(segs):
-            draw_digit(sc, self.DISP.centerx - 232 + i * 70, self.DISP.y + 16, 44, 68, s, (255, 40, 40), (55, 18, 18))
+            draw_digit(sc, self.DISP.centerx - self.px(232) + i * self.px(70), self.DISP.centery - self.px(self.DIGIT[1] / 2),
+                       self.px(self.DIGIT[0]), self.px(self.DIGIT[1]), s, (255, 40, 40), (55, 18, 18))
         self.update_status()
-        if self.status != getattr(self, '_status_src', None):
-            self._status_src, self._status_lines = self.status, [
-                self.font.render(t, True, (20, 20, 20)) for t in self.wrap(self.status, self.CW - 24)[:2]]
+        pin = self.running()
+        if (self.status, pin) != getattr(self, '_status_src', None):
+            self._status_src, self._status_lines = (self.status, pin), [
+                self.font.render(t, True, (20, 20, 20))
+                for t in self.wrap(self.status, self.CW - self.px(24))[:self.LINES - bool(pin)]]
+            self._pin = self.font.render(pin, True, (120, 120, 110))
         lines = self._status_lines
-        if self.decoder.is_private(self.d) and not (self.peek_key or self.peek_mouse):
+        if pin:
+            sc.blit(self._pin, (self.STATUS.x + self.px(12), self.STATUS.y + self.px(7) + (self.LINES - 1) * self.px(19 * self.Z)))
+        if self.decoder.is_private(self.d) and not (self.peek_key or self.peek_mouse or None in self.fingers.values()):
             self.draw_cover(sc)
             c = self.decoder.context
             lines = [self.font.render(t, True, (20, 20, 20)) for t in self.wrap(
-                'Q%s for %s: hold SPACE or click here to see the answer.' % (c[1], who(c[2])), self.CW - 24)[:2]]
+                'Q%s for %s: %s here to see the answer.' % (c[1], who(c[2]), 'touch' if ANDROID else 'hold SPACE or click'), self.CW - self.px(24))[:self.LINES]]
         for k, img in enumerate(lines):
-            sc.blit(img, (self.STATUS.x + 12, self.STATUS.y + 7 + k * 19))
+            sc.blit(img, (self.STATUS.x + self.px(12), self.STATUS.y + self.px(7) + k * self.px(19 * self.Z)))
         for r, label, key in self.buttons:
             if self.held.get(key, 0) > 0:
                 self.button(sc, r, label, key, True)
-        sc.blit(self.hint_img, self.hint_img.get_rect(center=(self.W // 2, self.H - 22)))
+        if not ANDROID:
+            sc.blit(self.hint_img, self.hint_img.get_rect(center=(self.W // 2, self.H - 22)))
         pygame.display.flip()
 
     def run(self):
@@ -606,6 +674,21 @@ class Game:
                     self.press(keymap[e.key], e.type == pygame.KEYDOWN)
                 elif e.type in (pygame.KEYDOWN, pygame.KEYUP) and e.key == pygame.K_SPACE:
                     self.peek_key = e.type == pygame.KEYDOWN
+                elif e.type == pygame.FINGERDOWN:           # every finger is a key of its own: 1 + ON needs two
+                    ww, wh = self.window.get_size()
+                    pos = (e.x * ww, e.y * wh)
+                    key = next((k for r, _, k in self.buttons if r.collidepoint(pos)), None)
+                    if key:
+                        self.press(key, True)
+                    elif not (self.DISP.collidepoint(pos) or self.STATUS.collidepoint(pos)):
+                        continue
+                    self.fingers[e.finger_id] = key
+                elif e.type == pygame.FINGERUP and e.finger_id in self.fingers:
+                    key = self.fingers.pop(e.finger_id)
+                    if key:
+                        self.press(key, False)
+                elif e.type in (pygame.MOUSEBUTTONDOWN, pygame.MOUSEBUTTONUP) and getattr(e, 'touch', False):
+                    pass                                    # the same touch again, as a mouse: already handled
                 elif e.type == pygame.MOUSEBUTTONDOWN and e.button == 1 and (
                         self.DISP.collidepoint(e.pos) or self.STATUS.collidepoint(e.pos)):
                     self.peek_mouse = True

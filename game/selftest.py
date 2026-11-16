@@ -130,6 +130,8 @@ print('key queue OK')
 from machine import Machine
 g.press('OFF', True); g.press('ON', True)
 assert isinstance(g.board, Machine) and not g.original
+click('3'); click('1'); click('ENTER')                # typed before ON shows: neither the board nor the status line takes it
+assert g.decoder.context == ('setup',) and not g.decoder.entry and g.score is None
 wait(3.5); assert g.board.display() == '     0N', g.board.display()
 click('3'); click('1'); click('ENTER'); wait(6)
 crime = g.decoder.status(g.board.display()); print(repr(g.board.display()), crime)

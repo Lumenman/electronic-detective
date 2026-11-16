@@ -100,5 +100,6 @@
 | `tms0980.py` | ядро процессора (копия `research\emu\tms0980.py` с таблицами для скорости; побайтно сверено) |
 | `selftest.py` | проверка без окна: ROM, расшифровка, счёт, выбор ROM — `python selftest.py <ROM>` |
 | `test_private.py`, `test_score.py`, `test_multi.py` | проверки в окне на реальной партии (~1,5 мин каждая) |
+| `main.py`, `test_touch.py` | вход для Android (сборка — `..ndroiduild.sh` в WSL) и проверка касаний на ПК |
 | `probe_multi.py`, `probe_poweroff.py` | исследование поведения машины (несколько игроков, автовыключение) |
 | `probe_patent.py` | проверка утверждений патента: `EE` (вопрос не с карточки) съедает вопрос хода; без `END TURN` → `END`/`EE` |
