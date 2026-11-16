@@ -12,7 +12,7 @@ import array, json, os, random, re, subprocess, sys, threading, time
 import pygame
 from board import ElecDet, IPS, SEG, load_romset
 from machine import Machine
-from rules import deal_lies, from_ram, observe
+from rules import CARDS, deal_lies, from_ram, observe
 from help_text import HELP
 
 STOCK = 3                                # cases of the game of two false alibis kept dealt ahead
@@ -148,7 +148,8 @@ class Decoder:
             mates = [num(d[3:5]), num(d[5:7])]
             mates = [who(m) for m in mates if m]
             if mates: parts.append('with ' + ' and '.join(mates))
-            return '%s: "I was %s."' % (who(s), ', '.join(parts)) if parts else ''
+            card = ' Questions: %s, 13, 14.' % ', '.join(map(str, CARDS[s])) if s in CARDS else ''   # no card at hand
+            return '%s: "I was %s."%s' % (who(s), ', '.join(parts), card) if parts else ''
         if c[0] == 'question':
             q, s = c[1], c[2]
             ans = {'4E5': 'YES', 'N0': 'NO', '0000000': "I don't know"}.get(t)
@@ -753,7 +754,9 @@ class Game:
             body, head = self.help_fonts()
             step, room = body.get_linesize(), self.help_bar()[0][0].top - self.M - 2 * body.get_linesize()
             pages, page, y = [], [], 0
-            texts = HELP[self.lang]
+            texts = [t for text in HELP[self.lang] for t in                         # '@cards': who can be asked what
+                     (['%d %s:  %s' % (s, NAMES[s - 1], ', '.join(map(str, CARDS[s]))) for s in sorted(CARDS)]
+                      if text == '@cards' else [text])]
 
             def cut(text):
                 if text.startswith('# '): return [(head, t) for t in self.wrap(text[2:], self.CW, head)]
