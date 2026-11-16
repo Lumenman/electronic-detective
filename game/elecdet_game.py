@@ -13,6 +13,7 @@ from board import ElecDet, IPS, SEG, load_romset
 from machine import Machine
 from rules import from_ram
 
+TALLY = 10                               # solved cases kept for the running score against par
 PAR = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'research', 'solver', 'par.py')
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -297,7 +298,7 @@ class Game:
     PAD_TOP = STATUS.bottom + 16
     H = PAD_TOP + 5 * KEY_H + 4 * GAP + 44
 
-    par = par_turns = None               # the solver's process for this case; its answer
+    par = par_msg = None                 # the solver's process for this case; its line in the final summary
 
     def __init__(self, files=None, rom=None):
         self.files, self.rom = files, rom   # the ROM (loaded files, or where to look) is asked for on Shift+ON only
@@ -448,23 +449,27 @@ class Game:
     def stop_par(self):
         if self.par and self.par.poll() is None:
             self.par.kill()
-        self.par = self.par_turns = None
+        self.par = self.par_msg = None
 
     def par_text(self):
         """Shown with the final summary, won or lost; nothing while it is still being counted."""
         if not self.par or self.par.poll() is None:
             return ''
-        if self.par_turns is None:
+        if self.par_msg is None:             # once per game: read the answer, keep the tally
             out = self.par.stdout.read().strip()
-            self.par_turns = int(out) if out.isdigit() else 0
-        par, sc = self.par_turns, self.score
-        if not par:
-            return ''
-        text = ' Par for this case: %d turns' % par
-        if sc and sc.n == 1 and sc.winner == 0:
-            d = sc.turns[0] - par
-            text += ' - you are %s' % ('on par' if d == 0 else '%d %s par' % (abs(d), 'over' if d > 0 else 'under'))
-        return text + '.'
+            par, sc, self.par_msg = int(out) if out.isdigit() else 0, self.score, ''
+            rel = lambda d: 'on par' if d == 0 else '%d %s par' % (abs(d), 'over' if d > 0 else 'under')
+            if par:
+                self.par_msg = ' Par for this case: %d turns.' % par
+            if par and sc and sc.n == 1 and sc.winner == 0:
+                name = 'par' if self.original else 'par_fair'              # as with the records: per mode and level
+                tally = load_settings().get(name, {})
+                last = tally[str(sc.level)] = (tally.get(str(sc.level), []) + [sc.turns[0] - par])[-TALLY:]
+                save_settings(**{name: tally})
+                self.par_msg = ' Par for this case: %d turns - you are %s.' % (par, rel(last[-1]))
+                if len(last) > 1:
+                    self.par_msg += ' Your last %d solved cases on level %d: %s in total.' % (len(last), sc.level, rel(sum(last)))
+        return self.par_msg
 
     # --- drawing ---
     def button(self, sc, r, label, key, down):

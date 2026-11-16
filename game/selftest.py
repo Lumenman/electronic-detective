@@ -177,3 +177,14 @@ print('oddities left out OK')
 g.press('OFF', True); g.press('ON', True, original=True)                # Shift+ON: the ROM
 assert g.original and not isinstance(g.board, Machine)
 print('own machine OK')
+
+# running score against par: the last differences are kept per level and summed in the final line
+import types
+eg.save_settings(par_fair={'3': [1, -3]})
+g = eg.Game.__new__(eg.Game); g.original = False
+g.score = Score(3, 1); g.score.turns[0] = 8; g.score.winner = 0
+g.par = types.SimpleNamespace(poll=lambda: 0, stdout=types.SimpleNamespace(read=lambda: '7'))
+assert g.par_text() == g.par_text() == (' Par for this case: 7 turns - you are 1 over par.'
+                                        ' Your last 3 solved cases on level 3: 1 under par in total.')
+assert eg.load_settings()['par_fair'] == {'3': [1, -3, 1]}
+print('par tally OK')
