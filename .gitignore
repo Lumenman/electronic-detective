@@ -11,3 +11,17 @@ research/emu/diff_big.txt
 android/bin/
 # the key the trial apk is signed with: kept beside the project, never in git
 android/keys/
+# listings and traces of the ROM's program: the ROM in another form, not ours to publish
+research/dasm/annotated.txt
+research/dasm/linear.txt
+research/dasm/listing.txt
+research/dasm/setup_excerpt.txt
+research/emu/prints_opp.txt
+research/emu/prints_same.txt
+research/emu/setup_trace.txt
+# redrawn cards with portraits scanned from the original
+print/cards.pdf
+# logs
+research/dbgtest.txt
+research/ramprobe.txt
+research/emu/permute_prints.log

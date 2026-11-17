@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: BSD-3-Clause
+# Port of MAME code: copyright-holders hap (see LICENSE-MAME). The rest of this project is MIT (see LICENSE).
 """Ideal Electronic Detective board around the TMS0980 core (port of MAME hh_tms1k.cpp elecdet_state).
 Same as research/emu/elecdet.py, plus: ROM comes as a {name: bytes} dict, speaker level changes are logged for audio.
 The ROM files are NOT part of this code."""

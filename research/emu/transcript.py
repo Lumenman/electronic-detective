@@ -8,7 +8,7 @@ import os, sys
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', 'game'))
 from board import ElecDet, IPS, load_romset
 
-ROMZIP = 'D:/Downloads/elecdet.zip'
+ROMZIP = os.environ.get('ELECDET_ROM', os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', 'elecdet'))   # the MAME romset (folder or zip)
 ALIAS = {'S': 'SUSPECT', 'Q': 'PQ', 'A': 'ACCUSE', 'E': 'ENTER', 'T': 'ENDTURN'}
 STEP = 0.02
 

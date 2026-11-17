@@ -1,8 +1,9 @@
 """Annotated instruction trace from the emulator: address, mnemonic, A/X/Y/status and RAM writes.
 Usage in code:  with Tracer(ed, 'out.txt', pages={3,5}): ed.run(...)"""
-import re
+import os, re
 
-LISTING = 'D:/claude/GAMES/electronic_detective/research/dasm/listing.txt'
+# made by ../dasm/tms0980_dasm.py from your ROM (not published: it is the ROM's program)
+LISTING = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'dasm', 'listing.txt')
 MN = {}
 for line in open(LISTING):
     m = re.match(r'  ([0-9A-F]):([0-9A-F]{2})  [0-9A-F]{3}  (.*)', line)

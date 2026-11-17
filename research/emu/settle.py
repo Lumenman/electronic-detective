@@ -1,5 +1,5 @@
-from elecdet import ElecDet, IPS
-ed = ElecDet('D:/claude/GAMES/electronic_detective/elecdet')
+from elecdet import ElecDet, IPS, ROM
+ed = ElecDet(ROM)
 ed.power_on(); ed.run_seconds(6.3); ed.press('3'); ed.press('1')
 ed.press('E', gap=0)
 prev = ed.ram(); t = 0; changes = []

@@ -12,7 +12,7 @@ from dealer import Dealer
 from machine import Machine
 from rules import from_ram
 
-ROMZIP = 'D:/Downloads/elecdet.zip'
+ROMZIP = os.environ.get('ELECDET_ROM', os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', 'elecdet'))   # the MAME romset (folder or zip)
 HERE = os.path.dirname(os.path.abspath(__file__))
 SETTLE = 0.7
 

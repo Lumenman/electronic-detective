@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Based on the pygame recipe of python-for-android: Copyright (c) 2010-2017 Kivy Team and other contributors.
 """pygame-ce in place of python-for-android's own pygame recipe (2.1.0, which does not compile for Python 3.11+).
 The body is that recipe's; only the version, the source and the Cython it needs differ."""
 import glob

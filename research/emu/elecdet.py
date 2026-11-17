@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: BSD-3-Clause
+# Port of MAME code: copyright-holders hap (see LICENSE-MAME). The rest of this project is MIT (see LICENSE).
 """Ideal Electronic Detective board around the TMS0980 core (port of MAME hh_tms1k.cpp elecdet_state).
 
     ed = ElecDet(rom_dir)
@@ -8,6 +10,8 @@ The ROM files are NOT part of this code; pass the folder with mp6100a and the *.
 """
 import os
 from tms0980 import TMS0980, PLA
+
+ROM = os.environ.get('ELECDET_ROM', os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', 'elecdet'))   # the MAME romset (folder or zip); not part of this code
 
 CLOCK = 450000
 IPS = CLOCK / 6          # instructions per second

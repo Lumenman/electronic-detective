@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: BSD-3-Clause
+# Port of MAME code: copyright-holders Wilbert Pol, hap, Curt Coder, Aaron Giles (see LICENSE-MAME). The rest of this project is MIT (see LICENSE).
 """TMS0980 CPU core, a line-by-line port of MAME 0.289 (src/devices/cpu/tms1000:
 tms1k_base.cpp, tms0970.cpp, tms0980.cpp) and its Berkeley PLA parser.
 

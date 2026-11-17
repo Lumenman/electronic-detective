@@ -1,10 +1,9 @@
 """Which RAM cells does the program read while answering a given private question?"""
 import random, sys
 from collections import Counter
-from elecdet import ElecDet
+from elecdet import ElecDet, ROM
 from tms0980 import M_MTP, M_MTN, M_DMTP, M_NDMTP
 
-ROM = 'D:/claude/GAMES/electronic_detective/elecdet'
 
 
 def new_game(seed):

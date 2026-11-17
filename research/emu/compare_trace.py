@@ -1,9 +1,8 @@
 """Compare the emulator against a MAME debugger trace (format: 'A X Y | P:PC: mnemonic').
 MAME collapses loops as '(loops for N instructions)': N executed instructions were not printed."""
 import re, sys
-from elecdet import ElecDet
+from elecdet import ElecDet, ROM
 
-ROM = 'D:/claude/GAMES/electronic_detective/elecdet'
 
 
 def mame_entries(path):
