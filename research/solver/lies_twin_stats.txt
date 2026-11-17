@@ -1,0 +1,12 @@
+unsolvable before: 94; with the twin rule still unsolvable: 73
+solvable before (200 checked) that stay solvable: 200
+still unsolvable (seeds): [25, 26, 56, 85, 95, 164, 273, 291, 302, 327, 328, 354, 355, 405, 521, 549, 590, 607, 628, 644, 688, 694, 703, 856, 869, 923, 960, 1043, 1060, 1083, 1091, 1108, 1185, 1224, 1261, 1270, 1368, 1416, 1436, 1517, 1528, 1544, 1562, 1647, 1724, 1823, 1856, 1874, 1878, 1914, 1972, 1978, 1982, 2007, 2032, 2033, 2136, 2177, 2229, 2291, 2320, 2450, 2597, 2622, 2635, 2708, 2750, 2783, 2898, 2915, 2926, 2944, 2986]
+
+# the 73 left (2026-11-17), by hand from the dumps:
+# 65  the murderer and the one whose alibi he tells: no question 9-11 on the murderer's card tells their places
+#     apart, and no honest alibi names either of them as a companion
+#  4  both liars tell the alibi of the same suspect: three identical alibis of one kind, the witness clears the
+#     one who was really there, the two liars stay symmetric (seeds 56, 1517, 2750, 2915)
+#  4  the witness who names the murderer or his double is the one whose alibi the second liar tells, so the
+#     witness may be the liar himself (seeds 607, 1874, 2291, 2898)
+# partial information (60 deals, 8 random visits, half the questions): the murderer was never lost
