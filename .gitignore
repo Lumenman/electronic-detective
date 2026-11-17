@@ -4,6 +4,7 @@ materials/
 # generated
 __pycache__/
 *.pkl
+research/solver/lies_unsolvable.jsonl
 research/dasm/tr_*.txt
 research/emu/ref/
 game/settings.json

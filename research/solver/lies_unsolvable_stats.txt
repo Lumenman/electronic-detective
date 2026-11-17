@@ -1,0 +1,17 @@
+# lies_unsolvable.py 3000 (random.Random(0..2999), rules.deal_lies, solver.lie_suspects), 2026-11-17
+3000 deals, unsolvable 94 (3.1%), murderer lost 0
+candidates per unsolvable deal: {2: 93, 3: 1}
+  other candidate is the second liar           4 of 95
+  other candidate is the one whose alibi the murderer tells (his "double")   87 of 95
+  other candidate is the double of the second liar   7 of 95
+  other candidate is of the murderer's category       95 of 95
+
+# murderer's own card questions 9-11 tell his real place from the double's? (unsolvable, can tell): count
+  (False, False) 1502
+  (False, True) 1404
+  (True, False) 93
+  (True, True) 1
+
+# among deals where questions 9-11 cannot tell: does an honest alibi name the murderer or the double as a companion?
+  nobody names either:   unsolvable 65 of 84
+  one of them is named:  unsolvable 28 of 1511

@@ -1,0 +1,6 @@
+classic, LCG, numbers 1..150: solvable 150
+  level 3: 150 solved, turns median 7 mean 7.0 max 12
+  level 2: 150 solved, turns median 8 mean 8.1 max 13
+  level 1: 150 solved, turns median 10 mean 10.3 max 17
+two false alibis, lcg: 150 deals, unsolvable 10 (6.7%)
+two false alibis, random: 150 deals, unsolvable 6 (4.0%)
