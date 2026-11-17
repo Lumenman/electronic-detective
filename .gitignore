@@ -32,4 +32,3 @@ game/README.ru.md
 PLAYER_RULES.ru.md
 # Russian versions of the research notes: kept locally
 research/*.ru.md
-research/solver/_solver_old.py
