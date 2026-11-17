@@ -199,6 +199,11 @@ st = eg.load_settings()
 assert not g.board.powered and g.wiped and st['records_fair'] == st['par_fair'] == st['records'] == {} and 'rom' in st
 assert st['records_lies'] == st['par_lies'] == {}
 g.press('ON', True); assert g.board.powered and not g.wiped
+wait(3.5); click('3'); click('1'); click('ENTER'); wait(6)
+s3 = 1 if g.decoder.victim != 1 else 2
+click('SUSPECT'); click(str(s3)); click('ENTER'); wait(2)
+click('ENDTURN'); click('SUSPECT'); click(str(s3)); click('ENTER'); wait(3)   # typed ahead into the bong of END TURN
+assert g.board.display().strip() == 'EE' and g.decoder.context == ('turn',), (g.board.display(), g.decoder.context)
 print('own machine OK')
 
 # EE and END are not answers: they cost no question

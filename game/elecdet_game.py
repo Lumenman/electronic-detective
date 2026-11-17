@@ -505,6 +505,8 @@ class Game:
             self.key_rest -= 1
         elif self.keyq:
             self.cur_key, self.key_age = self.keyq.pop(0), 0
+            if not self.deaf():                  # decided now, as the board decides: typed ahead keys can land in a sound
+                self.heard(self.cur_key)
             self.board.set_key(self.cur_key, True)
 
     def emulate(self, seconds):
@@ -590,23 +592,25 @@ class Game:
         cnt = self.held.get(key, 0) + (1 if down else -1)
         self.held[key] = max(cnt, 0)
         if down and cnt == 1 and self.board:
-            self.keyq.append(key)
-        if down and cnt == 1 and not self.deaf():
-            dec = self.decoder
-            was_setup, entry = dec.context[0] == 'setup', list(dec.entry)
-            dec.key(key)
-            if key != 'ENDTURN':
-                self.note = None             # the turn summary goes with the next player's first key
-            if was_setup and dec.context[0] == 'crime':
-                self.score = Score(dec.level, dec.players)
-            elif self.score and key == 'ENTER' and entry[:1] == ['SUSPECT']:
-                self.score.suspect()
-                if self.par is None:
-                    self.start_par()
-            elif self.score and key == 'ENDTURN':
-                line = self.score.end_turn()
-                if line:
-                    self.note = line
+            self.keyq.append(key)            # the status line follows it when it reaches the board (feed_keys)
+
+    def heard(self, key):
+        """A key the board takes now: the status line and the score follow it."""
+        dec = self.decoder
+        was_setup, entry = dec.context[0] == 'setup', list(dec.entry)
+        dec.key(key)
+        if key != 'ENDTURN':
+            self.note = None             # the turn summary goes with the next player's first key
+        if was_setup and dec.context[0] == 'crime':
+            self.score = Score(dec.level, dec.players)
+        elif self.score and key == 'ENTER' and entry[:1] == ['SUSPECT']:
+            self.score.suspect()
+            if self.par is None:
+                self.start_par()
+        elif self.score and key == 'ENDTURN':
+            line = self.score.end_turn()
+            if line:
+                self.note = line
 
     def deaf(self):
         """The board will not take a key now (a sound is playing), so the status line must not follow it either."""
