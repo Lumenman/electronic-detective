@@ -1,0 +1,12 @@
+classic level 3: 150 of 150 reached, turns median 7 mean 7.0 min 4 max 14
+classic level 2: 150 of 150 reached, turns median 8 mean 7.9 min 4 max 13
+classic level 1: 150 of 150 reached, turns median 10 mean 10.7 min 8 max 17
+old     level 3: 150 of 150 reached, turns median 9 mean 9.8 min 4 max 19
+old     level 2: 150 of 150 reached, turns median 10 mean 10.8 min 5 max 19
+old     level 1: 150 of 150 reached, turns median 13 mean 13.3 min 8 max 21
+new     level 3: 150 of 150 reached, turns median 9 mean 9.3 min 4 max 19
+new     level 2: 150 of 150 reached, turns median 9 mean 9.9 min 5 max 20
+new     level 1: 150 of 150 reached, turns median 12 mean 12.4 min 8 max 21
+old - new per case and level: faster 128, same 302, slower 20
+case numbers 1..600 (machine.number_rng, Two False Alibis): another case now for 5 (0.8%): [49, 102, 127, 238, 277]
+game/selftest.py ../elecdet: passed

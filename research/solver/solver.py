@@ -84,7 +84,10 @@ def lie_suspects(obs, worlds=None, pause=None):
     """suspects() for the game of two false alibis (rules.deal_lies): the murderer and one more suspect lie in the
     alibi, every answer to a question is true. m is possible if, for some second liar, everything fits once the
     alibis of the two are set aside. Per arrangement of addresses every choice of up to two heard alibis is tried
-    (it must cover everybody whose word fits no place). That the two alibis must be false is not used.
+    (it must cover everybody whose word fits no place). A heard alibi is set aside only if it can be a lie: a liar
+    repeats the alibi of an honest suspect of his kind, so another one of that kind, not the other liar, must have
+    told the same or not be heard yet (research/solver/lies_twin_stats.txt). That the twin was at another place
+    without a gun is not used.
     pause: called between arrangements; the game holds the counting there while a sound plays."""
     from itertools import combinations
     victim, scene, alibi, ans = obs['victim'], obs['scene'], obs['alibi'], obs['ans']
@@ -111,6 +114,9 @@ def lie_suspects(obs, worlds=None, pause=None):
     spoke = sorted(alibi)
     silent = [s for s in people if s not in alibi]
     choices = [()] * (len(silent) > 1) + [(a,) for a in spoke] + list(combinations(spoke, 2))
+    twin = lambda a, liars: any(o != a and o not in liars and col_of(o) == col_of(a)
+                                and (o not in alibi or alibi[o] == alibi[a]) for o in people)
+    choices = [c for c in choices if all(twin(a, c) for a in c)]
     cats = [[s for s in people if col_of(s) == c] for c in range(4)]
     found, done = set(), set()
 

@@ -1,4 +1,4 @@
-"""Experiment: solver.lie_suspects taught one more thing the player rules say. (SPOILERS: playing logic.)
+"""Experiment (since moved into solver.lie_suspects; the patch below then changes nothing): lie_suspects taught one more thing the player rules say. (SPOILERS: playing logic.)
 
 A liar tells the alibi of an honest suspect of the same kind (sex and parity) who was at another place. So a heard
 alibi can be a lie only if another suspect of that kind, not the other liar, told exactly the same alibi.
