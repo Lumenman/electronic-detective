@@ -381,7 +381,7 @@ class ParThread(threading.Thread):
 
 
 class Game:
-    HINT = 'S Suspect   Q Question   A Accuse   T End Turn   O/X On/Off   Space Peek'
+    HINT = 'S Suspect   Q Question   A Accuse   T End Turn   O/X On/Off   Space Peek   M Sound'
     M, U, KEY_H, GAP = 24, 91, 56, 12    # outer margin, key width/height, gap
     CW = 5 * U + 4 * GAP                 # keypad width = width of every area
     W = CW + 2 * M
@@ -486,6 +486,7 @@ class Game:
         self.static = self.screen.copy()
         self.paint_static(self.static)
         self.timing, self.lang, self.size = {}, load_settings().get('help_lang', 'en'), load_settings().get('help_size', 0)
+        self.muted = load_settings().get('muted', False)
         Stock(self)
 
     # --- emulation & sound ---
@@ -535,7 +536,8 @@ class Game:
     def pump_audio(self):
         """Emulate until AHEAD seconds of sound are buffered: the sound card sets the pace."""
         while len(self.buf) < AHEAD * RATE * 2:
-            samples = array.array('h', (v * 5000 for v in self.emulate(CHUNK)))
+            vol = 0 if self.muted else 5000      # muted: still emulate, the sound card keeps the pace
+            samples = array.array('h', (v * vol for v in self.emulate(CHUNK)))
             self._last = samples[-1]
             with self.lock:
                 self.buf += samples.tobytes()
@@ -776,6 +778,27 @@ class Game:
         s = self.px(18 * self.Z)
         return pygame.Rect(self.STATUS.right - s - self.px(6), self.STATUS.bottom - s - self.px(6), s, s)
 
+    def sound_rect(self):
+        """The speaker above the '?', in the same narrow column: sound on or off."""
+        r = self.help_rect()
+        return r.move(0, self.STATUS.top + self.px(6) - r.y)
+
+    def toggle_sound(self):
+        self.muted = not self.muted; save_settings(muted=self.muted)
+
+    def draw_speaker(self, sc):
+        r, col, w = self.sound_rect(), (110, 110, 100), max(1, self.px(1.5))
+        x, y, u = r.x, r.centery, r.w / 8
+        pygame.draw.polygon(sc, col, [(x + u, y - u), (x + 2.5 * u, y - u), (x + 4.5 * u, y - 3 * u),
+                                      (x + 4.5 * u, y + 3 * u), (x + 2.5 * u, y + u), (x + u, y + u)])
+        if self.muted:
+            pygame.draw.line(sc, col, (x + 5.5 * u, y - 1.5 * u), (x + 8 * u, y + 1.5 * u), w)
+            pygame.draw.line(sc, col, (x + 5.5 * u, y + 1.5 * u), (x + 8 * u, y - 1.5 * u), w)
+        else:
+            for rad in (3.4, 5.6):           # the waves, clear of the cone
+                a = pygame.Rect(0, 0, 2 * rad * u, 2 * rad * u); a.center = (x + 3 * u, y)
+                pygame.draw.arc(sc, col, a, -0.8, 0.8, w)
+
     def help_bar(self):
         """The keys under a page: back, smaller and larger text, the other language, forward, close."""
         h, w = self.KEY_H * 3 // 4, (self.CW - 5 * self.GAP) // 6
@@ -828,6 +851,9 @@ class Game:
     def tap(self, pos):
         """A touch or a click: the '?' and its screen take it before the keys of the machine do."""
         if self.help is None:
+            if self.sound_rect().inflate(self.px(20), self.px(8)).collidepoint(pos):
+                self.toggle_sound()
+                return True
             if self.help_rect().inflate(self.px(20), self.px(20)).collidepoint(pos):
                 self.help = 0
                 return True
@@ -888,6 +914,7 @@ class Game:
         pygame.draw.circle(sc, (150, 150, 140), r.center, r.w // 2, max(1, self.px(1.5)))
         t = self.small.render('?', True, (110, 110, 100))
         sc.blit(t, t.get_rect(center=r.center))
+        self.draw_speaker(sc)
         for r, label, key in self.buttons:
             if self.held.get(key, 0) > 0:
                 self.button(sc, r, label, key, True)
@@ -910,7 +937,9 @@ class Game:
                                         pygame.K_l: self.help_bar()[3][1], pygame.K_MINUS: 'A-', pygame.K_KP_MINUS: 'A-',
                                         pygame.K_EQUALS: 'A+', pygame.K_KP_PLUS: 'A+'}.get(e.key, 'X'))
                     continue
-                if e.type in (pygame.KEYDOWN, pygame.KEYUP) and e.key in keymap:
+                if e.type == pygame.KEYDOWN and e.key == pygame.K_m:
+                    self.toggle_sound()
+                elif e.type in (pygame.KEYDOWN, pygame.KEYUP) and e.key in keymap:
                     if e.type == pygame.KEYDOWN and getattr(e, 'repeat', False):
                         continue
                     self.press(keymap[e.key], e.type == pygame.KEYDOWN)

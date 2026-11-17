@@ -27,6 +27,8 @@ steps = [lambda: (finger(pygame.FINGERDOWN, 1, '1'), finger(pygame.FINGERDOWN, 2
          lambda: finger(pygame.FINGERUP, 3, 'ON'),
          lambda: check('all keys released', not any(game.held.values()) and not game.fingers),
          lambda: check('picture fills the window', wh - 6 <= game.buttons[-1][0].bottom + game.M <= wh and game.buttons[2][0].right + game.M >= ww - 3),
+         lambda: check('the speaker mutes', game.tap(game.sound_rect().center) and game.muted),
+         lambda: check('and unmutes', game.tap(game.sound_rect().center) and not game.muted),
          lambda: check('? opens the rules', game.tap(game.help_rect().center) and game.help == 0),
          lambda: check('the rules have pages in both languages', len(game.help_pages()) > 1 and
                        (game.help_do('RU'), len(game.help_pages()) > 1, game.help_do('EN'))[1]),
