@@ -29,3 +29,5 @@ research/emu/permute_prints.log
 game/README.ru.md
 # the Russian version of PLAYER_RULES.md: kept locally
 PLAYER_RULES.ru.md
+# Russian versions of the research notes: kept locally
+research/*.ru.md

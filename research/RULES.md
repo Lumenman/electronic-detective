@@ -1,273 +1,287 @@
-# Electronic Detective (Ideal, 1979): полные правила и логика оригинала
+# Electronic Detective (Ideal, 1979): the full rules and logic of the original
 
-> ⚠️ **Спойлеры.** Здесь вся логика игры, включая недокументированные закономерности, которые упрощают дедукцию.
-> Разгадок конкретных партий нет. Короткий список только «полезного игроку» — в `SPOILERS.md`.
+> ⚠️ **Spoilers.** All the logic of the game is here, including undocumented patterns that make the deduction
+> easier. There are no solutions of particular games. A short list of only what is "useful to a player" is in
+> `SPOILERS.md`.
 
-Источники: инструкция (`..\materials\rules1`, `..\materials\rules2`), карточки (`..\materials\electronic_detective_cards.pdf`), 300 партий в MAME
-(`data\h_*.tsv`, уровень 3, 1 игрок), эмулятор (`emu\`). Пометки: **[и]** — из инструкции, на машине не проверялось;
-**[д]** — по данным, без исключений; **[к]** — прослежено в коде/RAM. Состояние на 2026-11-13.
+Sources: the instructions and the cards (not included), 300 games in MAME (`data/h_*.tsv`, level 3, 1 player), the
+emulator (`emu/`). Marks: **[i]** — from the instructions, not checked on the machine; **[d]** — from the data, no
+exceptions; **[c]** — traced in the code/RAM. State as of 2026-11-13.
 
 ---
 
-## 1. Мир игры
+## 1. The world of the game
 
-**Подозреваемые** — 20 человек: мужчины 1–10, женщины 11–20. Важны две характеристики: пол и чётность.
-Получаются 4 категории по 5 человек (они же столбцы таблицы в RAM):
+**Suspects** — 20 people: men 1-10, women 11-20. Two properties matter: sex and parity.
+That gives 4 categories of 5 people (they are also the columns of the table in RAM):
 
-| Столбец | Категория | Номера |
+| Column | Category | Numbers |
 |---|---|---|
-| 0 | чётный М | 2, 4, 6, 8, 10 |
-| 1 | нечётный М | 1, 3, 5, 7, 9 |
-| 2 | чётная Ж | 12, 14, 16, 18, 20 |
-| 3 | нечётная Ж | 11, 13, 15, 17, 19 |
+| 0 | even man | 2, 4, 6, 8, 10 |
+| 1 | odd man | 1, 3, 5, 7, 9 |
+| 2 | even woman | 12, 14, 16, 18, 20 |
+| 3 | odd woman | 11, 13, 15, 17, 19 |
 
-**Места** — 6: A Art Show, B Theatre, C Card Party, D Docks, E Embassy, F Factory.
-У каждого места есть адрес: сторона (1 West / 2 East) и район (3 Uptown / 4 Midtown / 5 Downtown).
-6 адресов = все 6 сочетаний, каждое ровно у одного места **[д]**.
+**Places** — 6: A Art Show, B Theatre, C Card Party, D Docks, E Embassy, F Factory.
+Every place has an address: a side (1 West / 2 East) and an area (3 Uptown / 4 Midtown / 5 Downtown).
+6 addresses = all 6 combinations, each at exactly one place **[d]**.
 
-**Оружие** — .38 и .45; одно из них орудие убийства.
+**Weapons** — a .38 and a .45; one of them is the murder weapon.
 
-## 2. Управление и дисплей
+## 2. Keys and display
 
-Клавиши: цифры, `ON`, `OFF`, `SUSPECT`, `PRIVATE QUESTION`, `I ACCUSE`, `ENTER`, `END TURN`.
-Дисплей — 7 разрядов, показ по таблице под экраном.
+Keys: digits, `ON`, `OFF`, `SUSPECT`, `PRIVATE QUESTION`, `I ACCUSE`, `ENTER`, `END TURN`.
+The display has 7 digits, read along the line under the screen.
 
-| Что показано | Значение |
+| What is shown | Meaning |
 |---|---|
-| `NNp` после ENTER при старте | жертва NN, место тела p |
-| алиби `[с][р][м][ss][ss]` | сторона 1/2, район 3/4/5, место A–F, до двух номеров спутников; пустые позиции — не сказано |
+| `NNp` after ENTER at the start | victim NN, place of the body p |
+| alibi `[s][a][p][nn][nn]` | side 1/2, area 3/4/5, place A-F, up to two companion numbers; empty positions — not said |
 | `4E5` / `N0` | YES / NO |
-| `3`/`4`/`5`, `A`…`F` | ответ-район / ответ-место |
-| `0000000` | «не знаю» (и алиби жертвы) |
-| `EE` | ошибка ввода, вопрос не с карточки, другой подозреваемый без END TURN **[д]/[и]**; съедает один вопрос хода (эмулятор, `game/probe_patent.py`; так же в патенте US 4,394,018) |
-| `END` | превышен лимит вопросов за ход **[и]** |
-| `NNd1d` | обвинение неверно, NN — настоящий убийца **[д]** |
-| `NN4E5` | обвинение верно **[д]** |
+| `3`/`4`/`5`, `A`…`F` | an area / a place as the answer |
+| `0000000` | "I don't know" (and the victim's alibi) |
+| `EE` | an entry error, a question not on the card, another suspect without END TURN **[d]/[i]**; it uses up one question of the turn (emulator, `game/probe_patent.py`; the patent US 4,394,018 says the same) |
+| `END` | the question limit of the turn is exceeded **[i]** |
+| `NNd1d` | the accusation is wrong, NN is the real murderer **[d]** |
+| `NN4E5` | the accusation is right **[d]** |
 
-`b` и `6` на дисплее похожи; буква это или цифра — видно по позиции **[и]**.
+`b` and `6` look alike on the display; whether it is a letter or a digit is clear from the position **[i]**.
 
-## 3. Ход игры
+## 3. The course of a game
 
-1. `ON` → три «бонга»; пока они звучат (~6 с), клавиши игнорируются **[к]**.
-2. Уровень: `1` Master Detective (1 частный вопрос за ход), `2` Sleuth (2), `3` Gumshoe (3) **[и]**.
-3. Число игроков `1`–`4`, затем `ENTER`. Выстрелы, траурный марш, на дисплее жертва и место тела.
-   Место тела пусто: там нет ни подозреваемых, ни оружия.
-4. Ход игрока: `SUSPECT` номер `ENTER` → алиби (его видят все); затем до N раз `PRIVATE QUESTION` номер `ENTER`
-   (видит только спрашивающий); `END TURN`. Вопрос можно задать, только если он есть на карточке подозреваемого.
-   Одного подозреваемого можно допрашивать сколько угодно раз; ответы постоянны **[д]**.
-5. Обвинение: `I ACCUSE` номер `ENTER`. Верно — сирена, игрок выиграл. Неверно — выстрелы, марш, игрок выбывает,
-   показывается настоящий убийца. С несколькими игроками игра идёт, пока кто-то не угадает или все не выбудут **[и]**.
+1. `ON` → three "bongs"; while they sound (~6 s) keys are ignored **[c]**.
+2. Level: `1` Master Detective (1 private question per turn), `2` Sleuth (2), `3` Gumshoe (3) **[i]**.
+3. The number of players `1`-`4`, then `ENTER`. Shots, a funeral march, the display shows the victim and the place
+   of the body. The place of the body is empty: neither suspects nor weapons are there.
+4. A player's turn: `SUSPECT` number `ENTER` → the alibi (everybody sees it); then up to N times `PRIVATE QUESTION`
+   number `ENTER` (only the asking player sees it); `END TURN`. A question can be asked only if it is on the
+   suspect's card. A suspect can be questioned any number of times; the answers do not change **[d]**.
+5. Accusation: `I ACCUSE` number `ENTER`. Right — a siren, the player has won. Wrong — shots, a march, the player
+   is out, the real murderer is shown. With several players the game goes on until somebody guesses or everybody is
+   out **[i]**.
 
-## 4. Генерация партии
+## 4. How a game is generated
 
-### 4.1 Таблица «кто где» (RAM, строки 0–5) [к]
+### 4.1 The "who was where" table (RAM, rows 0-5) [c]
 
-| Строка | Роль (фиксирована) |
+| Row | Role (fixed) |
 |---|---|
-| 0 | место убийцы |
-| 1 | место .38 |
-| 2 | место .45 |
-| 3 | второе место на четверых |
-| 4 | место на троих (здесь же «слот» жертвы) |
-| 5 | место преступления (пусто) |
+| 0 | the murderer's place |
+| 1 | the place of the .38 |
+| 2 | the place of the .45 |
+| 3 | the second place of four |
+| 4 | the place of three (it also holds the victim's "slot") |
+| 5 | the scene of the crime (empty) |
 
-Столбцы 0–3 — номера подозреваемых по категориям (строки 0–4), 4 — адрес, 5 — буква места,
-6 — номер шаблона алиби (см. 5.1), 9 — флаги. `4:C` — категория жертвы, `4:D` — категория убийцы.
+Columns 0-3 — the suspects' numbers by category (rows 0-4), 4 — the address, 5 — the letter of the place,
+6 — the number of the alibi template (see 5.1), 9 — flags. `4:C` — the victim's category, `4:D` — the murderer's
+category.
 
-**Убийца** — подозреваемый в строке 0 столбца `4:D`. **Жертва** — в строке 4 столбца `4:C`.
-Поэтому в каждом месте на четверых — по одному человеку из каждой категории, в месте на троих нет категории жертвы,
-а убийца никогда не стоит у оружия, в месте на троих и на месте преступления — это просто следствия ролей строк.
+**The murderer** is the suspect in row 0 of column `4:D`. **The victim** is in row 4 of column `4:C`.
+Hence every place of four has one person of each category, the place of three lacks the victim's category,
+and the murderer is never at a weapon, at the place of three or at the scene of the crime — these simply follow
+from the roles of the rows.
 
-### 4.2 Откуда случайность [к]/[д]
+### 4.2 Where the randomness comes from [c]/[d]
 
-Отдельного генератора нет. Пока игра ждёт, главный цикл «прокручивает» таблицу: циклически сдвигает
-столбцы по строкам. Счётчик по основанию 6: столбец 0 сдвигается почти каждый такт, 1 и 5 — раз в 6,
-2 и 4 — раз в 36, 3 и 6 — раз в 216. Итог зависит от момента нажатия `ENTER`.
+There is no separate generator. While the game waits, the main loop "rolls" the table: it shifts the columns over
+the rows in circles. A base-6 counter: column 0 shifts almost every tick, 1 and 5 once in 6, 2 and 4 once in 36,
+3 and 6 once in 216. The result depends on the moment `ENTER` is pressed.
 
-Циклы столбцов (порядок по строкам 0→4, сдвиг по кругу):
+The cycles of the columns (order over rows 0→4, shifting round):
 
-| Столбец | Цикл |
+| Column | Cycle |
 |---|---|
 | 0 | 10 → 4 → 6 → 8 → 2 |
 | 1 | 9 → 3 → 7 → 1 → 5 |
 | 2 | 6 → 2 → 8 → 4 → 10 |
-| 3 | 1 → 5 → 9 → 3 → 7 (т.е. 11, 15, 19, 13, 17) |
-| 6 | шаблоны 1 → 2 → 3 → 4 → 5 по строкам 0–3 и 5; в строке 4 всегда 6 |
+| 3 | 1 → 5 → 9 → 3 → 7 (i.e. 11, 15, 19, 13, 17) |
+| 6 | templates 1 → 2 → 3 → 4 → 5 over rows 0-3 and 5; row 4 always has 6 |
 
-Столбцы 3 и 6 вращаются вместе: шаблон алиби места привязан к нечётной женщине в нём (5.1).
+Columns 3 and 6 rotate together: the alibi template of a place is tied to the odd woman in it (5.1).
 
-Адреса (столбец 4) и буквы мест (5) в простое — чистые сдвиги по кругу по всем 6 строкам [к]:
+The addresses (column 4) and the letters of the places (5) are pure circular shifts over all 6 rows while idle [c]:
 
-| Столбец | Цикл по строкам 0→5 |
+| Column | Cycle over rows 0→5 |
 |---|---|
-| 4 (адрес) | 5 → 2 → 7 → 1 → 6 → 3 |
-| 5 (буква) | A → D → B → C → E → F |
+| 4 (address) | 5 → 2 → 7 → 1 → 6 → 3 |
+| 5 (letter) | A → D → B → C → E → F |
 
-При генерации, прямо перед страницей 5, к сдвигу добавляется одна перестановка строк; она зависит от `4:D`
-(пол убийцы) и `4:C` (чётность категории жертвы) [к] (`1:24`–`1:5B`, `5:0F`–`5:48`; 400 из 400 партий, `perm45.py`):
+During generation, right before page 5, one permutation of rows is added to the shift; it depends on `4:D`
+(the murderer's sex) and `4:C` (the parity of the victim's category) [c] (`1:24`-`1:5B`, `5:0F`-`5:48`; 400 of 400
+games, `perm45.py`):
 
-| Убийца | Буквы | Адреса |
+| Murderer | Letters | Addresses |
 |---|---|---|
-| мужчина | строки 0 ↔ 5 | без перестановки |
-| женщина, жертва чётная | строки 0 ↔ 4 | строки 0 ↔ 4 |
-| женщина, жертва нечётная | строки 0 ↔ 4 | строки 0 ↔ 2 |
+| a man | rows 0 ↔ 5 | no permutation |
+| a woman, even victim | rows 0 ↔ 4 | rows 0 ↔ 4 |
+| a woman, odd victim | rows 0 ↔ 4 | rows 0 ↔ 2 |
 
-Отсюда 6 × 2 = 12 вариантов букв и 6 × 3 = 18 вариантов адресов. Следствие для игрока — `SPOILERS.md` п. 9.
+That gives 6 × 2 = 12 variants of letters and 6 × 3 = 18 variants of addresses. What it means for a player —
+`SPOILERS.md` item 9.
 
-**Кто убийца и жертва по категориям** — из длительности удержания `ENTER`: пока клавиша нажата, `4:D` работает
-как счётчик; при генерации биты 0–1 → категория убийцы, биты 2–3 → категория жертвы [к].
+**Who is the murderer and the victim by category** — from how long `ENTER` is held: while the key is down, `4:D`
+works as a counter; during generation bits 0-1 → the murderer's category, bits 2-3 → the victim's category [c].
 
-**Орудие убийства** определяется нечётным мужчиной у .38 (строка 1, столбец 1) [д]:
-1, 5, 9 → орудие .38; 3, 7 → орудие .45.
+**The murder weapon** is set by the odd man at the .38 (row 1, column 1) [d]:
+1, 5, 9 → the weapon is the .38; 3, 7 → the .45.
 
-**Запрещённые номера** [к]: столбец 0 после генерации сдвинут только на 0, 2 или 4, поэтому жертвой не бывают
-6 и 10, убийцей — 4 и 8. Причина (найдена 2026-11-14, `emu/col0_parity.py`):
+**Forbidden numbers** [c]: after generation column 0 is shifted only by 0, 2 or 4, so 6 and 10 are never the
+victim, 4 and 8 never the murderer. The reason (found 2026-11-14, `emu/col0_parity.py`):
 
-- За один проход главного цикла счётчик развёртки табло `7:7` делает шаг (8 состояний, 7→0), а младший разряд
-  счётчика прокрутки `0:C` — тоже шаг (6 состояний, 10→15). НОД(8, 6) = 2, поэтому чётность их суммы в простое не меняется.
-- Столбец 0 сдвигается на каждом шаге `0:C`, кроме переноса, то есть его сдвиг = `0:C` − 10 (5 ≡ 0).
-- Нажатие принимается только на проходе, где `7:7` переходит 7→6 (`0:1E`…`0:69` → `1:39`), и на этом проходе
-  прокрутка пропускается: каждая принятая клавиша переворачивает чётность.
-- Прокрутка останавливается при обработке `ENTER` всегда в одной фазе развёртки. После обычного начала
-  (уровень, игроки, `ENTER` — две клавиши до `ENTER`) `0:C` ∈ {10, 12, 14}: сдвиг 0, 2 или 4.
-- Если до `ENTER` принята ещё одна клавиша (например, `END TURN` перед уровнем или третья цифра), `0:C` ∈ {11, 13, 15}:
-  сдвиг 1, 3 или 0. Тогда запрет другой: жертвой не бывают 2 и 4, убийцей — 6 и 10
-  (по 60 партий на вариант: `31E`, `32E`, `34E` против `311E`, `T31E`, без исключений).
+- In one pass of the main loop the display scan counter `7:7` makes a step (8 states, 7→0), and so does the low
+  digit of the rolling counter `0:C` (6 states, 10→15). GCD(8, 6) = 2, so the parity of their sum does not change
+  while idle.
+- Column 0 shifts on every step of `0:C` except the carry, so its shift = `0:C` − 10 (5 ≡ 0).
+- A key press is taken only on the pass where `7:7` goes 7→6 (`0:1E`…`0:69` → `1:39`), and on that pass the rolling
+  is skipped: every key taken flips the parity.
+- The rolling stops while handling `ENTER`, always at the same phase of the scan. After the usual start (level,
+  players, `ENTER` — two keys before `ENTER`) `0:C` ∈ {10, 12, 14}: a shift of 0, 2 or 4.
+- If one more key is taken before `ENTER` (for example `END TURN` before the level, or a third digit),
+  `0:C` ∈ {11, 13, 15}: a shift of 1, 3 or 0. Then the ban is different: 2 and 4 are never the victim, 6 and 10
+  never the murderer (60 games per variant: `31E`, `32E`, `34E` against `311E`, `T31E`, no exceptions).
 
-### 4.2a Сколько партий возможно [к]
+### 4.2a How many games are possible [c]
 
-Перебор на эмуляторе (`emu/count_games.py`): прокрутка возвращается в исходное состояние через 7776 проходов
-(около 9 с); за период таблица принимает 5250 разных состояний. Из них при обычном начале доступны 3150
-(чётность, см. выше). Каждое состояние сочетается с 16 парами «категория убийцы × категория жертвы»
-(длительность удержания `ENTER`), и все пары дают разные партии:
+Enumerated on the emulator (`emu/count_games.py`): the rolling returns to its starting state after 7776 passes
+(about 9 s); within a period the table takes 5250 different states. Of them, 3150 are reachable with the usual
+start (parity, see above). Every state combines with 16 pairs "murderer's category × victim's category" (how long
+`ENTER` is held), and all pairs give different games:
 
-| Начало | Таблиц | Партий |
+| Start | Tables | Games |
 |---|---|---|
-| обычное (уровень, игроки, `ENTER`) | 3150 | 50 400 |
-| с лишней клавишей до `ENTER` | 3150 | 50 400 |
-| оба вместе (1050 таблиц общие) | 5250 | 84 000 |
+| usual (level, players, `ENTER`) | 3150 | 50,400 |
+| with an extra key before `ENTER` | 3150 | 50,400 |
+| both together (1050 tables shared) | 5250 | 84,000 |
 
-В инструкции сказано «более 130 000» — машина столько не даёт. Оговорка: то, что каждая таблица встречается
-со всеми 16 парами, не перебрано полностью; в 400 партиях встретились все 48 сочетаний «пара × фаза `0:C`»,
-и все 400 партий лежат внутри перечисленного множества.
+The instructions say "more than 130,000" — the machine does not give that many. A caveat: that every table meets
+all 16 pairs was not enumerated in full; 400 games met all 48 combinations "pair × phase of `0:C`", and all 400
+games lie within the set above.
 
-### 4.3 Сводка инвариантов [д]
+### 4.3 Summary of invariants [d]
 
-- Размеры мест: 4, 4, 4, 4, 3, 0 (пустое — место тела).
-- В месте на четверых — по одному из каждой категории; в месте на троих — все, кроме категории жертвы.
-- Оружие лежит в разных местах, не на месте тела, не в месте на троих и не там, где убийца.
-- Убийца — не в месте на троих.
-- Жертва и убийца могут быть одного пола (157 из 300) и разного.
+- Sizes of the places: 4, 4, 4, 4, 3, 0 (the empty one is the place of the body).
+- A place of four has one of each category; the place of three has all but the victim's category.
+- The weapons are at different places, not at the place of the body, not at the place of three, and not where the
+  murderer is.
+- The murderer is not at the place of three.
+- The victim and the murderer can be of the same sex (157 of 300) or not.
 
-## 5. Ответы подозреваемых
+## 5. The suspects' answers
 
-### 5.1 Алиби [д]
+### 5.1 Alibis [d]
 
-Алиби всегда правдиво и не меняется в течение партии. Какие поля оно открывает и кого из спутников называет,
-задаёт **шаблон места**; внутри шаблона позиция определяется категорией подозреваемого.
-Обозначения: `с` — сторона, `р` — район, `м` — место; «→ X» — называет спутников из столбцов X.
+An alibi is always true and does not change during a game. Which fields it reveals and which companions it names is
+set by the **template of the place**; within the template, the position is given by the suspect's category.
+Notation: `s` — side, `a` — area, `p` — place; "→ X" — names companions from columns X.
 
-Место на четверых: шаблон задаёт нечётная женщина в этом месте.
+A place of four: the template is set by the odd woman at that place.
 
-| нечётная Ж (шаблон) | столбец 0 | столбец 1 | столбец 2 | столбец 3 |
+| odd woman (template) | column 0 | column 1 | column 2 | column 3 |
 |---|---|---|---|---|
-| 11 (1) | с → 1,3 | м | р → 0 | р |
-| 15 (2) | м → 3 | р м | с р | с → 1,2 |
-| 19 (3) | м → 1 | → 2,3 | с | р |
-| 13 (4) | с р | м | → 1,3 | → 0,2 |
-| 17 (5) | с м | р → 0 | → 0,1 | → 1,2 |
+| 11 (1) | s → 1,3 | p | a → 0 | a |
+| 15 (2) | p → 3 | a p | s a | s → 1,2 |
+| 19 (3) | p → 1 | → 2,3 | s | a |
+| 13 (4) | s a | p | → 1,3 | → 0,2 |
+| 17 (5) | s p | a → 0 | → 0,1 | → 1,2 |
 
-Место на троих (шаблон 6): позиции 0 / 1 / 2 = `р м` / `с р → позиция 2` / `с → позиция 0`.
-Позиция совпадает со столбцом, только позицию категории жертвы занимает нечётная женщина
-(если жертва не она сама).
+The place of three (template 6): positions 0 / 1 / 2 = `a p` / `s a → position 2` / `s → position 0`.
+The position is the column, except that the position of the victim's category is taken by the odd woman
+(unless she is the victim herself).
 
-Два спутника на дисплее всегда идут по возрастанию столбца: чётный М, нечётный М, чётная Ж, нечётная Ж
-(1642 алиби из 300 партий, без исключений; `alibi_order.py`). В месте на троих двух спутников не называют.
+The two companions on the display always come in increasing column order: even man, odd man, even woman, odd woman
+(1642 alibis from 300 games, no exceptions; `alibi_order.py`). At the place of three two companions are not named.
 
-**Как это устроено в коде [к]** (`emu/codepath.py` → `emu/codepath.txt`). Страница 9 ищет номер в таблице, пишет
-столбец допрашиваемого в ячейку 7 его строки и копирует строку в строку 6. Страница B берёт столбец (`6:7`)
-и шаблон (`6:6`) и по таблице переходов вызывает готовые кусочки: сторона (`C:60`, бит 2 адреса `6:4`),
-район (`B:11`, младшие биты `6:4`), место (`B:52`, буква `6:5`), спутник из столбца 0/1/2/3
-(`B:27`, `B:0E`, `C:3D`, `C:7A`). Каждый спутник пишется в своё место буфера табло, отсюда порядок по столбцам.
-Все 20 сочетаний «шаблон × столбец» и все 12 для места на троих (подстановкой шаблона и жертвы в RAM)
-дали в точности таблицы выше.
+**How it works in the code [c]** (`emu/codepath.py` → `emu/codepath.txt`). Page 9 looks the number up in the table,
+writes the column of the questioned suspect into cell 7 of its row and copies the row into row 6. Page B takes the
+column (`6:7`) and the template (`6:6`) and through a jump table calls ready-made pieces: side (`C:60`, bit 2 of the
+address `6:4`), area (`B:11`, low bits of `6:4`), place (`B:52`, letter `6:5`), a companion from column 0/1/2/3
+(`B:27`, `B:0E`, `C:3D`, `C:7A`). Each companion is written to its own place in the display buffer, hence the order
+by column. All 20 combinations "template × column" and all 12 for the place of three (by putting the template and the
+victim into RAM) gave exactly the tables above.
 
-### 5.2 Частные вопросы 1–12 [д]
+### 5.2 Private questions 1-12 [d]
 
-Все ответы правдивы. «Убийца» — про убийцу, «я» — про самого допрашиваемого.
+All answers are true. "Murderer" — about the murderer, "I" — about the suspect questioned.
 
-| № | Вопрос (с карточки) | Ответ | У кого на карточке |
+| No. | Question (from the card) | Answer | On whose cards |
 |---|---|---|---|
-| 1 | Did the murderer go to the EAST SIDE? | YES/NO — сторона места убийцы | 1, 5, 9, 14, 18 |
-| 2 | Did a MALE do it? | YES/NO — пол убийцы | 1, 2, 7, 12, 17 |
-| 3 | What AREA did the murderer go to? | 3/4/5 — район места убийцы | 2, 3, 8, 13, 19 |
+| 1 | Did the murderer go to the EAST SIDE? | YES/NO — side of the murderer's place | 1, 5, 9, 14, 18 |
+| 2 | Did a MALE do it? | YES/NO — the murderer's sex | 1, 2, 7, 12, 17 |
+| 3 | What AREA did the murderer go to? | 3/4/5 — area of the murderer's place | 2, 3, 8, 13, 19 |
 | 4 | Was the MURDER WEAPON a .38? | YES/NO | 3, 4, 5, 15, 20 |
-| 5 | Where was the .38 hidden? | A–F | 3, 4, 6, 7, 8, 9 |
-| 6 | Where was the .45 hidden? | A–F | 6, 11, 12, 14, 16 |
-| 7 | Which PLACE contained only 3 suspects? | A–F | 10, 11, 13, 15, 17 |
+| 5 | Where was the .38 hidden? | A-F | 3, 4, 6, 7, 8, 9 |
+| 6 | Where was the .45 hidden? | A-F | 6, 11, 12, 14, 16 |
+| 7 | Which PLACE contained only 3 suspects? | A-F | 10, 11, 13, 15, 17 |
 | 8 | Did the murderer go to PLACE A, B or C? | YES/NO | 10, 16, 18, 19, 20 |
-| 9 | Were you on the EAST SIDE? | YES/NO — я | 1, 2, 4, 5 |
-| 10 | Which AREA were you in? | 3/4/5 — я | 16, 17, 18, 19, 20 |
-| 11 | Were you at PLACE A, B or C? | YES/NO — я | 11, 12, 13, 14, 15 |
-| 12 | Were you where a WEAPON was hidden? | YES/NO — я | 6, 7, 8, 9, 10 |
+| 9 | Were you on the EAST SIDE? | YES/NO — I | 1, 2, 4, 5 |
+| 10 | Which AREA were you in? | 3/4/5 — I | 16, 17, 18, 19, 20 |
+| 11 | Were you at PLACE A, B or C? | YES/NO — I | 11, 12, 13, 14, 15 |
+| 12 | Were you where a WEAPON was hidden? | YES/NO — I | 6, 7, 8, 9, 10 |
 
-Вопросы 13 и 14 есть у всех. Вопрос не с карточки → `EE` (исключение — жертва, см. 5.4).
+Everybody has questions 13 and 14. A question not on the card → `EE` (the exception is the victim, see 5.4).
 
-Какие ячейки читает обработчик каждого вопроса [к] (`emu/codepath.txt`; служебные `5:0`, `5:1`, `5:B`, `6:9`–`6:C`
-и ячейка `6:N` с номером вопроса опущены):
+Which cells the handler of each question reads [c] (`emu/codepath.txt`; the working cells `5:0`, `5:1`, `5:B`,
+`6:9`-`6:C` and the cell `6:N` with the question number are left out):
 
-| Вопрос | Читает | Смысл |
+| Question | Reads | Meaning |
 |---|---|---|
-| 1, 3 | `0:4` | адрес строки убийцы: сторона / район |
-| 2 | `0:9` | флаг пола убийцы |
-| 4 | `1:9` | флаг «орудие — .38» |
-| 5 | `1:5` | буква строки .38 |
-| 6 | `2:5` | буква строки .45 |
-| 7 | `4:5` | буква места на троих |
-| 8 | `0:5` | буква строки убийцы |
-| 9, 10 | `6:4` | свой адрес: сторона / район |
-| 11 | `6:5` | своя буква |
-| 12 | `6:5`, `1:5`, `2:5` | своя буква против букв обоих пистолетов |
+| 1, 3 | `0:4` | address of the murderer's row: side / area |
+| 2 | `0:9` | the murderer's sex flag |
+| 4 | `1:9` | the "weapon is the .38" flag |
+| 5 | `1:5` | letter of the .38 row |
+| 6 | `2:5` | letter of the .45 row |
+| 7 | `4:5` | letter of the place of three |
+| 8 | `0:5` | letter of the murderer's row |
+| 9, 10 | `6:4` | own address: side / area |
+| 11 | `6:5` | own letter |
+| 12 | `6:5`, `1:5`, `2:5` | own letter against the letters of both guns |
 
-Проверка карточки — страницы 7 (№1–9) и 8 (№10–20): вход зависит от номера подозреваемого в `5:0`/`5:1`.
+The card check is on pages 7 (Nos. 1-9) and 8 (Nos. 10-20): the entry depends on the suspect's number in `5:0`/`5:1`.
 
-### 5.3 Отпечатки: вопросы 13 (.38) и 14 (.45) [д]
+### 5.3 Prints: questions 13 (.38) and 14 (.45) [d]
 
-«Are an odd-numbered suspect's PRINTS on the .38 / .45?» Ответ зависит от того, где стоит допрашиваемый.
-«Того же пола» — того же пола, что убийца.
+"Are an odd-numbered suspect's PRINTS on the .38 / .45?" The answer depends on where the suspect questioned is.
+"Same sex" — the same sex as the murderer.
 
-| Где допрашиваемый | Вопрос | Ответ |
+| Where the suspect is | Question | Answer |
 |---|---|---|
-| нет этого пистолета | 13 или 14 | `0000000` |
-| у .45 (орудие или нет) | 14 | того же пола: чётность убийцы; противоположного: всегда NO |
-| у .38, .38 — орудие | 13 | того же пола: чётность убийцы; противоположного: всегда YES |
-| у .38, .38 — не орудие | 13 | чётность самого допрашиваемого: чётный → YES, нечётный → NO |
+| not at this gun | 13 or 14 | `0000000` |
+| at the .45 (the weapon or not) | 14 | same sex: the murderer's parity; opposite sex: always NO |
+| at the .38, the .38 is the weapon | 13 | same sex: the murderer's parity; opposite sex: always YES |
+| at the .38, the .38 is not the weapon | 13 | the parity of the suspect themself: even → YES, odd → NO |
 
-В коде [к]: вопрос 13 сравнивает `6:5` с `1:5`, вопрос 14 — с `2:5`; не совпало → `0000000`. Совпало — читаются
-флаг орудия (`1:9` / `2:9`), флаг пола убийцы `0:9` и служебный флаг `5:9` (назначение не разобрано; вероятно, пол допрашиваемого); только свидетель того же
-пола доходит до чтения `0:A` (младшая цифра номера убийцы) — отсюда его правдивый ответ, у остальных ответ
-без `0:A`, то есть константа. Ветка «.38 не орудие» читает `1:9` и `1:0` и не трогает `0:9`/`0:A`
-(партии seed 1 и seed 9, `emu/codepath_prints9.txt`).
+In the code [c]: question 13 compares `6:5` with `1:5`, question 14 with `2:5`; no match → `0000000`. On a match
+it reads the weapon flag (`1:9` / `2:9`), the murderer's sex flag `0:9` and the working flag `5:9` (purpose not
+worked out; probably the sex of the suspect questioned); only a witness of the same sex gets as far as reading `0:A`
+(the low digit of the murderer's number) — hence their true answer; the others answer without `0:A`, i.e. with a
+constant. The ".38 not the weapon" branch reads `1:9` and `1:0` and does not touch `0:9`/`0:A`
+(games seed 1 and seed 9, `emu/codepath_prints9.txt`).
 
-Флага лжи в RAM нет: «ложь» противоположного пола — это константа, которая совпадает с правдой примерно
-в половине партий. Отсюда видимость «решения на всю партию». Инструкция честно говорит только
-о свидетеле того же пола у орудия убийства (правило 4 на с. 8).
+There is no lie flag in RAM: the "lie" of the opposite sex is a constant that matches the truth in about half of the
+games. Hence the appearance of "a decision for the whole game". The instructions honestly speak only of a witness of
+the same sex at the murder weapon (rule 4 on p. 8).
 
-### 5.4 Жертва
+### 5.4 The victim
 
-Алиби `0000000` [и]/[д]. На частные вопросы машина всё же отвечает, в том числе на вопросы не с карточки жертвы.
+The alibi is `0000000` [i]/[d]. The machine does answer private questions, including questions not on the victim's
+card.
 
-Причина [к] (2026-11-14, `emu/codepath.txt`, блок `victim`): узнав номер жертвы (сравнение с `4:A`/`4:B` на странице 3),
-машина показывает `0000000` и выходит, **не обновив** ни рабочую строку 6, ни номер допрашиваемого в `5:0`/`5:1`.
-Частные вопросы после этого идут по старым данным, то есть жертва отвечает **за предыдущего допрошенного**:
-та же карточка и те же ответы (после №1 — вопросы 1, 2, 9 с ответами №1; после №17 — вопросы 2, 7, 10 с ответами №17).
-Если до жертвы никого не допрашивали, строка 6 пуста, а номер равен 0: карточка как у №20 (вопросы 4, 8, 10),
-вопрос 10 даёт район по нулевому адресу. Это ошибка оригинала, а не отдельное правило.
+The reason [c] (2026-11-14, `emu/codepath.txt`, block `victim`): having recognised the victim's number (a comparison
+with `4:A`/`4:B` on page 3), the machine shows `0000000` and leaves **without updating** either the working row 6 or
+the number of the questioned suspect in `5:0`/`5:1`. Private questions after that run on the old data, i.e. the victim
+answers **for the previously questioned suspect**: the same card and the same answers (after No. 1 — questions 1, 2,
+9 with No. 1's answers; after No. 17 — questions 2, 7, 10 with No. 17's answers). If nobody was questioned before
+the victim, row 6 is empty and the number is 0: the card is like No. 20's (questions 4, 8, 10), and question 10 gives
+the area of a zero address. This is a bug of the original, not a rule of its own.
 
-## 6. Не выяснено
+## 6. Not worked out
 
-1. ~~Перестановки адресов и букв мест~~ — закрыто 2026-11-14, см. 4.2.
-2. ~~Причина запрета сдвигов 1 и 3 у столбца 0~~ — закрыто 2026-11-14, см. 4.2.
-3. ~~Сколько партий достижимо~~ — закрыто 2026-11-14, см. 4.2a: 50 400 при обычном начале.
-4. ~~Порядок спутников в алиби~~ — закрыто 2026-11-14, см. 5.1. (`EE`/`END` по ходу проверены 2026-11-13: после исчерпания лимита на всё `END`, до него — `EE` и минус вопрос.)
-5. ~~Правила раздела 5 в коде~~ — закрыто 2026-11-14: алиби, вопросы 1–14 и жертва сверены с кодом по чтениям RAM и путям исполнения (`emu/codepath.py`). Построчно страницы 6–8 и A не комментировались.
+1. ~~Permutations of the addresses and letters of places~~ — closed 2026-11-14, see 4.2.
+2. ~~Why column 0 cannot shift by 1 or 3~~ — closed 2026-11-14, see 4.2.
+3. ~~How many games are reachable~~ — closed 2026-11-14, see 4.2a: 50,400 with the usual start.
+4. ~~The order of companions in an alibi~~ — closed 2026-11-14, see 5.1. (`EE`/`END` during a turn were checked
+   2026-11-13: once the limit is used up, everything gives `END`; before that, `EE` and one question lost.)
+5. ~~The rules of section 5 in the code~~ — closed 2026-11-14: alibis, questions 1-14 and the victim were checked
+   against the code by RAM reads and execution paths (`emu/codepath.py`). Pages 6-8 and A were not commented line
+   by line.

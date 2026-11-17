@@ -65,7 +65,7 @@ needs). The phone version has our own machine only; the original ROM is not offe
   instructions, plus tools to trace, probe RAM and compare our machine with the ROM key by key;
 - `dasm/` — a disassembler for the ROM (its output is not published: it is the ROM's program);
 - `solver/` — the deduction solver behind par and the Two False Alibis check;
-- MAME Lua scripts and the notes (`NOTES.md`, `RULES.md`, `SPOILERS.md`, in Russian).
+- MAME Lua scripts and the notes (`NOTES.md`, `RULES.md`, `SPOILERS.md`).
 
 Research scripts look for the romset in `elecdet/` next to this file, or wherever `ELECDET_ROM` points.
 
