@@ -11,8 +11,8 @@
 
 | Что | Где |
 |---|---|
-| MAME 0.289 (официальная сборка, SHA256 сверен) | `..\mame\mame.exe` |
-| ROM пользователя (`mp6100a` + 4 PLA) | `..\elecdet\`, копия в `..\mame\roms\elecdet\` |
+| MAME 0.289 (официальная сборка, SHA256 сверен) | `D:\claude\GAMES\mame\mame.exe` (общий, им пользуется и Entex Poker) |
+| ROM пользователя (`mp6100a` + 4 PLA) | `..\elecdet\`, копия в `D:\claude\GAMES\mame\roms\elecdet\` |
 | Сбор статистики в MAME через Lua | `ed2.lua` (драйвер с таймингом внутри кадра), `game3.lua`, `run.sh` |
 | Данные 300 партий из MAME (корректный тайминг) | `data\h_*.tsv` (`data\f_*`, `g_*` — ранние, смещённые, для распределений не годятся) |
 | Анализ и сводка | `analyze.py` → `report.txt`; `prints38.py`, `alibi_rows.py` |

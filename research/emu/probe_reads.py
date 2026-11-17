@@ -4,7 +4,7 @@ from collections import Counter
 from elecdet import ElecDet
 from tms0980 import M_MTP, M_MTN, M_DMTP, M_NDMTP
 
-ROM = 'D:/claude/GAMES/electronic_detective/mame/roms/elecdet'
+ROM = 'D:/claude/GAMES/electronic_detective/elecdet'
 
 
 def new_game(seed):

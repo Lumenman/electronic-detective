@@ -1,6 +1,6 @@
 import time
 from elecdet import ElecDet
-ed = ElecDet('D:/claude/GAMES/electronic_detective/mame/roms/elecdet')
+ed = ElecDet('D:/claude/GAMES/electronic_detective/elecdet')
 t = time.time()
 ed.power_on(); ed.run_seconds(6.3)
 print('after on', repr(ed.display()))

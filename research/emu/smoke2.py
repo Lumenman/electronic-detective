@@ -1,6 +1,6 @@
 import json
 from elecdet import ElecDet, KEYS
-ed = ElecDet('D:/claude/GAMES/electronic_detective/mame/roms/elecdet')
+ed = ElecDet('D:/claude/GAMES/electronic_detective/elecdet')
 ed.power_on(); cpu = ed.cpu
 ev = [[-(-(i - 1246) // 1250) * 1250 + 1246, k, d] for i, k, d in json.load(open('schedule.json'))]
 for i, k, d in ev[:5]:

@@ -1,12 +1,6 @@
 # third-party material and tools: not our work, large, or not ours to redistribute
-mame/
 elecdet/
-electronic-detective-master/
-rules1/
-rules2/
-/*.pdf
-/*.jpg
-/*.webp
+materials/
 # generated
 __pycache__/
 *.pkl

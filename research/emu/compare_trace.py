@@ -3,7 +3,7 @@ MAME collapses loops as '(loops for N instructions)': N executed instructions we
 import re, sys
 from elecdet import ElecDet
 
-ROM = 'D:/claude/GAMES/electronic_detective/mame/roms/elecdet'
+ROM = 'D:/claude/GAMES/electronic_detective/elecdet'
 
 
 def mame_entries(path):

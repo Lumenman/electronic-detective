@@ -9,7 +9,7 @@ from PIL import Image, ImageOps
 from scipy import ndimage
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-SCAN = os.path.join(HERE, '..', 'electronic_detective_cards.pdf')
+SCAN = os.path.join(HERE, '..', 'materials', 'electronic_detective_cards.pdf')
 MM = 72 / 25.4
 PX = 25.4 / 300                       # mm per scan pixel
 
@@ -305,7 +305,7 @@ def make_cards(path):
     return doc.page_count
 
 # ---------------------------------------------------------------- Case Fact Sheet (A4, blank)
-# Layout follows the original sheet (elecdetectfs.jpg, Ideal 5A-3343); place pictograms and gun/fingerprint
+# Layout follows the original sheet (materials/elecdetectfs.jpg, Ideal 5A-3343); place pictograms and gun/fingerprint
 # icons are left out.
 PLACES = [('A', 'Art Show'), ('B', 'Box at Theatre'), ('C', 'Card Party'), ('D', 'Docks'),
           ('E', 'Embassy'), ('F', 'Factory')]
