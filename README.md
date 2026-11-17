@@ -91,7 +91,7 @@ python test_touch.py            # touch layout of the phone, on a PC
 | `android/` | Build script for the apk |
 | `print/` | Generator for printable cards and a blank Case Fact Sheet (the cards need a scan of the originals, not included) |
 | `research/` | Emulator, disassembler, solver, notes |
-| `PLAYER_RULES.md` | The rules for players, without hints (in Russian) |
+| `PLAYER_RULES.md` | The rules for players, without hints |
 
 ## Licenses
 

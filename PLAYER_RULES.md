@@ -1,20 +1,21 @@
-# Electronic Detective — правила для игрока
+# Electronic Detective — rules for players
 
-Пересказ оригинальной инструкции Ideal (1979) и карточек подозреваемых. Только то, что знает игрок, без подсказок.
+A retelling of Ideal's original instructions (1979) and the suspect cards. Only what a player knows, no hints.
 
-## Суть
+## The idea
 
-В большом городе совершено убийство. Известны жертва и место, где нашли тело. Остальные 19 человек разбежались
-по городу. Вы допрашиваете их и ищете убийцу. **Цель — первым правильно назвать убийцу.**
+A murder has been committed in a big city. The victim and the place where the body was found are known. The other
+19 people have scattered around the city. You question them and look for the murderer. **The goal is to be the
+first to name the murderer correctly.**
 
-1–4 игрока. У каждого — лист записей (Case Fact Sheet) и карандаш. Карточки подозреваемых лежат открыто, ими
-пользуются все. Ход передаётся налево.
+1-4 players. Each has a Case Fact Sheet and a pencil. The suspect cards lie face up and everybody uses them. The turn
+passes to the left.
 
-## Подозреваемые
+## The suspects
 
-Мужчины — 1–10, женщины — 11–20. На карточке — номер, имя и вопросы, которые этому подозреваемому можно задать.
+Men are 1-10, women 11-20. A card shows the number, the name and the questions this suspect may be asked.
 
-| № | Имя | Вопросы | | № | Имя | Вопросы |
+| No. | Name | Questions | | No. | Name | Questions |
 |---|---|---|---|---|---|---|
 | 1 | Lenny Little | 1, 2, 9 | | 11 | Ivy Little | 6, 7, 11 |
 | 2 | Al Farook | 2, 3, 9 | | 12 | Lucy Tumble | 2, 6, 11 |
@@ -27,144 +28,150 @@
 | 9 | Rocky Roll | 1, 5, 12 | | 19 | Candy Roll | 3, 8, 10 |
 | 10 | Ling Tong | 7, 8, 12 | | 20 | Sing Wong | 4, 8, 10 |
 
-Вопросы 13 и 14 есть у всех.
+Everybody has questions 13 and 14.
 
-## Город
+## The city
 
-Шесть мест: **A** Art Show, **b** Theatre, **C** Card Party, **d** Docks, **E** Embassy, **F** Factory.
-Каждое место находится на стороне (**1** West Side / **2** East Side) и в районе (**3** Uptown / **4** Midtown / **5** Downtown).
-В городе два пистолета: **.38** и **.45**. Один из них — орудие убийства.
+Six places: **A** Art Show, **b** Theatre, **C** Card Party, **d** Docks, **E** Embassy, **F** Factory.
+Each place is on a side (**1** West Side / **2** East Side) and in an area (**3** Uptown / **4** Midtown / **5** Downtown).
+There are two guns in the city: a **.38** and a **.45**. One of them is the murder weapon.
 
-## Начало игры
+## Starting a game
 
-1. `ON` — прозвучат три «бонга».
-2. Уровень сложности (сколько частных вопросов можно задать за ход):
+1. `ON` — three "bongs" sound.
+2. The level (how many private questions may be asked per turn):
    `1` Master Detective — 1, `2` Sleuth — 2, `3` Gumshoe — 3.
-3. Число игроков: `1`–`4`.
-4. `ENTER`. Выстрелы с глушителем, траурный марш; на дисплее — **номер жертвы** (слева) и **место тела** (буква справа).
-   Например, `16 A` — жертва №16, тело в Art Show.
-5. Все записывают это в раздел 1 листа. Карточку жертвы убрать. Место тела перечеркнуть в разделе 2:
-   **там нет ни подозреваемых, ни оружия**.
+3. The number of players: `1`-`4`.
+4. `ENTER`. Silenced shots, a funeral march; the display shows the **number of the victim** (left) and the
+   **place of the body** (the letter on the right). For example, `16 A` — victim No. 16, the body at the Art Show.
+5. Everybody writes this down in section 1 of the sheet. Put the victim's card away. Cross out the place of the body
+   in section 2: **there are neither suspects nor weapons there**.
 
-## Ход
+## A turn
 
-За ход допрашивается **один** подозреваемый.
+**One** suspect is questioned per turn.
 
-1. **Алиби** (слышат все): `SUSPECT`, номер, `ENTER`. Алиби читается вслух по схеме под дисплеем:
+1. **The alibi** (everybody hears it): `SUSPECT`, the number, `ENTER`. The alibi is read aloud along the line
+   under the display:
 
    ```
-   [сторона] [район] [место] [спутник] [спутник]
-      1/2      3/4/5    A–F      номер     номер
+   [side] [area] [place] [companion] [companion]
+    1/2   3/4/5   A-F      number      number
    ```
-   «Я был на стороне…», «Я был в районе…», «Я был в…», «Я был с этими подозреваемыми…».
-   Алиби может содержать 1, 2 или 3 факта; пустые позиции — подозреваемый об этом не сказал.
-   Пример: `1 b 11` — «Я был на West Side, в Theatre, с №11».
+   "I was on the … side", "I was in the … area", "I was at the …", "I was with these suspects …".
+   An alibi holds 1, 2 or 3 facts; an empty position means the suspect did not say.
+   Example: `1 b 11` — "I was on the West Side, at the Theatre, with No. 11".
 
-2. **Частные вопросы** (видит только спрашивающий): `PRIVATE QUESTION`, номер вопроса, `ENTER`.
-   Можно задавать только вопросы с карточки этого подозреваемого, не больше разрешённого уровнем.
-   Ответ сверяйте с карточкой: `YES` / `NO`, `3`/`4`/`5` (район), `A`–`F` (место),
-   `00 000 00` — «не знаю».
+2. **Private questions** (only the asking player sees the answer): `PRIVATE QUESTION`, the question number, `ENTER`.
+   Only questions from this suspect's card may be asked, and no more than the level allows.
+   Read the answer against the card: `YES` / `NO`, `3`/`4`/`5` (area), `A`-`F` (place),
+   `00 000 00` — "I don't know".
 
-3. `END TURN`. Ход переходит к игроку слева.
+3. `END TURN`. The turn passes to the player on the left.
 
-Одного и того же подозреваемого можно допрашивать снова, в том числе после других игроков.
-Жертву допросить нельзя — дисплей покажет `00 000 00`.
+The same suspect may be questioned again, also after other players.
+The victim cannot be questioned — the display shows `00 000 00`.
 
-## Частные вопросы
+## Private questions
 
-| № | Вопрос | Ответ |
+| No. | Question | Answer |
 |---|---|---|
-| 1 | Убийца скрылся на East Side? | YES / NO |
-| 2 | Убийца — мужчина? | YES / NO |
-| 3 | В какой район скрылся убийца? | 3 / 4 / 5 |
-| 4 | Орудие убийства — .38? | YES / NO |
-| 5 | Где спрятан .38? | A–F |
-| 6 | Где спрятан .45? | A–F |
-| 7 | В каком месте было только 3 подозреваемых? | A–F |
-| 8 | Убийца скрылся в A, B или C? | YES / NO |
-| 9 | Ты был на East Side? | YES / NO |
-| 10 | В каком районе ты был? | 3 / 4 / 5 |
-| 11 | Ты был в A, B или C? | YES / NO |
-| 12 | Ты был там, где спрятано оружие? | YES / NO |
-| 13 | Отпечатки на .38 — нечётного подозреваемого? | YES / NO / `00 000 00` |
-| 14 | Отпечатки на .45 — нечётного подозреваемого? | YES / NO / `00 000 00` |
+| 1 | Did the murderer go to the EAST SIDE? | YES / NO |
+| 2 | Did a MALE do it? | YES / NO |
+| 3 | What AREA did the murderer go to? | 3 / 4 / 5 |
+| 4 | Was the MURDER WEAPON a .38? | YES / NO |
+| 5 | Where was the .38 hidden? | A-F |
+| 6 | Where was the .45 hidden? | A-F |
+| 7 | Which PLACE contained only 3 suspects? | A-F |
+| 8 | Did the murderer go to PLACE A, B or C? | YES / NO |
+| 9 | Were you on the EAST SIDE? | YES / NO |
+| 10 | Which AREA were you in? | 3 / 4 / 5 |
+| 11 | Were you at PLACE A, B or C? | YES / NO |
+| 12 | Were you where a WEAPON was hidden? | YES / NO |
+| 13 | Are an odd-numbered suspect's PRINTS on the .38? | YES / NO / `00 000 00` |
+| 14 | Are an odd-numbered suspect's PRINTS on the .45? | YES / NO / `00 000 00` |
 
-## Что машина гарантирует
+## What the machine guarantees
 
-1. Подозреваемые говорят правду — **с одним исключением** (п. 4).
-2. В четырёх местах — по четыре подозреваемых: всегда один чётный и один нечётный мужчина,
-   одна чётная и одна нечётная женщина. Значит, в одном месте не бывает двух чётных или двух нечётных одного пола.
-3. В пятом месте — три подозреваемых: двое мужчин и женщина или две женщины и мужчина. Шестое место — место тела, пустое.
-4. **Отпечатки на орудии убийства.** Чётность того, чьи отпечатки на орудии, надёжно сообщает только подозреваемый,
-   который (а) **того же пола, что убийца**, и (б) **скрылся туда, где лежит орудие убийства**.
-   Остальные подозреваемые у оружия **могут солгать (а могут и нет)** про отпечатки — это единственная ложь в игре.
-   Там, где оружия нет, на вопросы 13 и 14 отвечают «не знаю» (`00 000 00`).
-5. Убийца никогда не бывает на месте тела и в месте, где лежит любой из пистолетов.
+1. The suspects tell the truth — **with one exception** (item 4).
+2. Four places hold four suspects each: always one even and one odd man, one even and one odd woman.
+   So one place never has two even or two odd suspects of the same sex.
+3. The fifth place holds three suspects: two men and a woman, or two women and a man. The sixth place is the place
+   of the body, empty.
+4. **Prints on the murder weapon.** The parity of the suspect whose prints are on the weapon is told reliably only
+   by a suspect who (a) **is of the same sex as the murderer** and (b) **went where the murder weapon is**.
+   Other suspects at a weapon **may lie (or may not)** about the prints — the only lie in the game.
+   Where there is no weapon, questions 13 and 14 are answered "I don't know" (`00 000 00`).
+5. The murderer is never at the place of the body or at a place where either gun is.
 
-## Как раскрыть дело
+## How to solve the case
 
-Нужно знать все «факты убийства» (раздел 1 листа) — им соответствует только один подозреваемый.
+You need all the "facts of the murder" (section 1 of the sheet) — only one suspect fits them.
 
-| Что узнать | Как |
+| What to find out | How |
 |---|---|
-| Пол убийцы | вопрос 2 |
-| Орудие (.38 или .45) | вопрос 4 |
-| Где лежит орудие | вопрос 5 или 6 |
-| Чётность отпечатков на орудии | вопрос 13/14 подозреваемому того же пола, что убийца, из места, где лежит орудие |
-| Куда убийца **не мог** скрыться | место тела; места обоих пистолетов; A–C, если кто-то ответил NO на вопрос 8; D–F, если YES |
-| Где убийца | алиби; вопросы 1, 3 (про убийцу), 9, 10 (про допрашиваемого) |
+| The murderer's sex | question 2 |
+| The weapon (.38 or .45) | question 4 |
+| Where the weapon is | question 5 or 6 |
+| The parity of the prints on the weapon | question 13/14 to a suspect of the murderer's sex from the place where the weapon is |
+| Where the murderer **could not** go | the place of the body; the places of both guns; A-C if somebody answered NO to question 8; D-F if YES |
+| Where the murderer is | alibis; questions 1, 3 (about the murderer), 9, 10 (about the suspect questioned) |
 
-Можно идти и от противного: если убийца — нечётный мужчина, а все нечётные мужчины, кроме одного, по алиби
-находятся там, где убийцы быть не может, — оставшийся и есть убийца.
+You can also work by elimination: if the murderer is an odd man, and by their alibis all the odd men but one are
+where the murderer cannot be, the one left is the murderer.
 
-**Лист записей:** раздел 1 — факты убийства; 2 — «кто где» (места, адреса, оружие); 3 — черновик (кто что сказал);
-4 — ваш ответ. Сложите лист между разделами 2 и 3, чтобы соперники не видели записей.
+**The sheet:** section 1 — the facts of the murder; 2 — who was where (places, addresses, weapons); 3 — notes
+(who said what); 4 — your answer. Fold the sheet between sections 2 and 3 so that the others cannot see your notes.
 
-## Обвинение
+## The accusation
 
-- Только **в начале хода**, до выбора подозреваемого. **Одно на игру.** Не показывайте его соперникам.
-- `I ACCUSE`, номер, `ENTER`. Обвинение само заканчивает ход.
-- **Верно** — сирена, дисплей мигает номером убийцы и `YES`. Вы победили.
-- **Неверно** — выстрелы, марш, дисплей показывает настоящего убийцу; вы выбываете.
-- С несколькими игроками игра идёт дальше. Если остался один, он **обязан** обвинять в начале следующего хода.
-  Если ошиблись все — машина сама покажет ответ.
+- Only **at the start of a turn**, before choosing a suspect. **One per game.** Do not show it to the others.
+- `I ACCUSE`, the number, `ENTER`. The accusation ends the turn by itself.
+- **Right** — a siren, the display blinks the murderer's number and `YES`. You win.
+- **Wrong** — shots, a march, the display shows the real murderer; you are out.
+- With several players the game goes on. If one player is left, they **must** accuse at the start of their next turn.
+  If everybody has failed, the machine shows the answer itself.
 
-## Дело по номеру (`9` + `ON`)
+## A case by its number (`9` + `ON`)
 
-У каждого дела есть номер: он показан в поле сообщений в начале игры и в итоге. Чтобы сыграть определённое дело,
-нажмите `ON`, удерживая `9`, введите номер (от 1 до 9999999) и нажмите `ENTER`. Машина запомнит номер и погаснет.
-Теперь начните игру как обычно (`ON` или `2` + `ON`) — это будет выбранное дело; следующая игра снова случайная.
-Передумали — нажмите `OFF` до начала игры: номер забудется.
-В двух играх один и тот же номер — разные дела. Один номер — одно и то же дело на любом
-устройстве, так что результаты можно сравнивать: продиктуйте номер другу или договоритесь играть сегодняшнюю дату.
-Дело, сыгранное по номеру, в рекорды и накопленный счёт не идёт.
+Every case has a number: it is shown in the message field at the start of the game and in the summary. To play a
+particular case, press `ON` while holding `9`, type the number (1 to 9999999) and press `ENTER`. The machine
+remembers the number and goes dark. Now start a game as usual (`ON` or `2` + `ON`) — it will be the chosen case;
+the game after it is random again. Changed your mind — press `OFF` before the game starts: the number is forgotten.
+In the two games the same number is a different case. One number is the same case on any device, so results can be
+compared: tell the number to a friend, or agree to play today's date.
+A case played by its number does not go to the records or the running score.
 
-## Игра «Два ложных алиби» (`2` + `ON`)
+## The game of Two False Alibis (`2` + `ON`)
 
-Третья игра оболочки, оригинал так не умеет. Удерживая `2`, нажмите `ON`. Всё как в обычной игре, кроме одного:
+The shell's third game; the original cannot do this. Hold `2` and press `ON`. Everything is as in the usual game,
+except one thing:
 
-1. **Двое лгут в алиби**: убийца и ещё один подозреваемый, которому есть что скрывать (но не убийство).
-   Каждый из них просто повторяет чужое алиби: алиби другого подозреваемого того же пола и той же чётности,
-   который был в другом месте.
-2. **На частные вопросы все отвечают как всегда** — в том числе эти двое. Поэтому алиби можно проверить вопросом
-   о месте (9–11) тому же подозреваемому, если такой вопрос есть на его карточке, или показаниями тех, кто был рядом.
-3. Никто не говорит, что был там, где лежит оружие.
-4. Остальные 17 подозреваемых говорят правду; правило об отпечатках (п. 4 выше) действует как обычно.
+1. **Two suspects lie in their alibis**: the murderer and one more suspect who has something to hide (but not the
+   murder). Each of them simply repeats somebody else's alibi: the alibi of another suspect of the same sex and the
+   same parity who was at another place.
+2. **Everybody answers private questions as always** — these two as well. So an alibi can be checked with a question
+   about the place (9-11) to the same suspect, if their card has such a question, or by the statements of those who
+   were nearby.
+3. Nobody says they were where a weapon is.
+4. The other 17 suspects tell the truth; the rule about prints (item 4 above) works as usual.
 
-Поймать лжеца — ещё не значит найти убийцу: лжецов двое. Каждое дело проверено: его можно раскрыть рассуждением.
-Рекорды и счёт относительно пара у этой игры свои.
+Catching a liar does not yet mean finding the murderer: there are two liars. Every case is checked: it can be
+solved by reasoning. This game has its own records and score against par.
 
-## Сообщения и ошибки
+## Messages and errors
 
-- `EE` — неверная последовательность клавиш, вопрос не с карточки или попытка допросить другого подозреваемого
-  без `END TURN`. После `ENTER` исправить ничего нельзя, и **такая ошибка съедает один частный вопрос хода**
-  (проверено на ROM, так же сказано в патенте US 4,394,018). На уровне Master Detective это весь ход.
-- **Исправить номер до `ENTER`**: наберите его заново — машина помнит только две последние цифры, — либо ещё раз
-  нажмите `SUSPECT` или `PRIVATE QUESTION` и введите номер с начала. В оригинале (`1` + `ON`) повторный `SUSPECT`
-  показывает `EE`, но ввод при этом не сломан: набранное стёрто, вводите номер и жмите `ENTER`.
-- Номер подозреваемого больше 20 и номер вопроса 0 или больше 14 дают `EE` без потери вопроса.
-- `END` (с «бонгом») — превышен лимит вопросов за ход, или предыдущий игрок не нажал `END TURN`. Нажмите `END TURN`.
-- Не нажмите `OFF` случайно — партия пропадёт.
-- После верного ответа машина выключится примерно через 4 минуты. Чтобы ещё посмотреть дело, нажимайте `END TURN`
-  (каждый раз +4 минуты) и допрашивайте подозреваемых как обычно.
-- Постоянное `EE` и низкое жужжание — сели батарейки.
+- `EE` — a wrong key sequence, a question not on the card, or an attempt to question another suspect without
+  `END TURN`. Nothing can be fixed after `ENTER`, and **such an error uses up one private question of the turn**
+  (checked on the ROM; the patent US 4,394,018 says the same). On the Master Detective level this is the whole turn.
+- **To fix a number before `ENTER`**: type it again — the machine keeps only the last two digits — or press
+  `SUSPECT` or `PRIVATE QUESTION` once more and type the number from the start. In the original (`1` + `ON`) a
+  repeated `SUSPECT` shows `EE`, but the entry is not broken: what was typed is cleared, type the number and press
+  `ENTER`.
+- A suspect number above 20, and a question number 0 or above 14, give `EE` without losing a question.
+- `END` (with a "bong") — the question limit of the turn is exceeded, or the previous player did not press
+  `END TURN`. Press `END TURN`.
+- Do not press `OFF` by accident — the game would be lost.
+- After the right answer, the machine switches off in about 4 minutes. To look at the case some more, press
+  `END TURN` (each time +4 minutes) and question the suspects as usual.
+- A constant `EE` and a low buzz — the batteries are flat.

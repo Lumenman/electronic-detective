@@ -3,7 +3,7 @@
 Ideal's game (1979) in a window. By default it is run by our own program (`machine.py`): the same rules, display
 and sounds as the original, but the case is dealt truly at random and no ROM is needed. Switched on while `1` is
 held, it runs the original: the TMS0980 emulator executes the real ROM.
-Rules for players: `../PLAYER_RULES.md` (in Russian). Suspect cards: paper or PDF (they are not on the screen).
+Rules for players: `../PLAYER_RULES.md`. Suspect cards: paper or PDF (they are not on the screen).
 
 ## Running
 
