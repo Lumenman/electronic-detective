@@ -1,11 +1,12 @@
 """Ideal Electronic Detective board around the TMS0980 core (port of MAME hh_tms1k.cpp elecdet_state).
 Same as research/emu/elecdet.py, plus: ROM comes as a {name: bytes} dict, speaker level changes are logged for audio.
 The ROM files are NOT part of this code."""
-import hashlib, os, zipfile
+import hashlib, math, os, zipfile
 from tms0980 import TMS0980, PLA
 
 CLOCK = 450000
 IPS = CLOCK / 6          # instructions per second
+FULL = 0.04              # share of time a lit segment is on: 0.04..0.15 by screen (measured), the dimmest is full
 
 # key -> (input row, bit). Rows 0-3 are muxed by O0,O1,O4,O6; row 4 (Vss) is always active.
 KEYS = {
@@ -68,6 +69,8 @@ class ElecDet:
         self.inp_mux = 0
         self.o = self.r = 0
         self.segtime = [[-10**12] * 7 for _ in range(7)]   # [digit][segment] -> cycle when last lit
+        self.acc, self.mark, self.since = {}, 0, 0         # (R digits, segments) -> cycles lit, since the last brightness()
+        self.glow = [[0.0] * 7 for _ in range(7)]          # [digit][segment] smoothed share of time lit
         self.level = 0
         self.sound_events = []                             # (cycle, speaker level)
         self.powered = False
@@ -92,12 +95,25 @@ class ElecDet:
             self.level = lv
             self.sound_events.append((self.cpu.cycles, lv))
 
+    def _lit(self):
+        """Credit the time since the last R/O change to what was lit during it."""
+        if not hasattr(self, 'cpu'):           # the CPU writes R/O while it is being built
+            return
+        now = self.cpu.cycles
+        segs = bitswap8(self.o, 7, 5, 2, 1, 4, 0, 6, 3) & 0x7f
+        if segs and self.r & 0x7f and now > self.mark:
+            key = (self.r & 0x7f, segs)
+            self.acc[key] = self.acc.get(key, 0) + now - self.mark
+        self.mark = now
+
     def _write_o(self, data):
+        self._lit()
         self.inp_mux = (data & 3) | (data >> 2 & 4) | (data >> 3 & 8)
         self.o = data
         self._speaker()
 
     def _write_r(self, data):
+        self._lit()
         self.r = data
         self._speaker()
         segs = bitswap8(self.o, 7, 5, 2, 1, 4, 0, 6, 3) & 0x7f
@@ -141,6 +157,26 @@ class ElecDet:
         if not self.powered:
             return [0] * 7
         return [sum(1 << b for b in range(7) if now - self.segtime[i][b] <= w) for i in range(6, -1, -1)]
+
+    def brightness(self, tau=0.02):
+        """Per digit, left to right: 7 segment levels 0..1 from the share of time each was lit,
+        smoothed over tau seconds like the eye. A segment touched for a few instructions stays dark."""
+        self._lit()
+        now = self.cpu.cycles
+        dt, self.since = now - self.since, now
+        duty = [[0.0] * 7 for _ in range(7)]
+        if self.powered and dt > 0:
+            for (r, s), t in self.acc.items():
+                for i in range(7):
+                    if r >> i & 1:
+                        for b in range(7):
+                            if s >> b & 1:
+                                duty[i][b] += t / dt
+        self.acc.clear()
+        k = math.exp(-dt / (tau * IPS)) if self.powered else 0
+        self.glow = [[g * k + d * (1 - k) for g, d in zip(gr, dr)] for gr, dr in zip(self.glow, duty)]
+        # sqrt: perceived brightness grows slower than the time lit
+        return [[min(1.0, g / FULL) ** 0.5 for g in self.glow[i]] for i in range(6, -1, -1)]
 
     def display(self, window=0.05):
         return ''.join(SEG.get(s, '?') for s in self.segments(window))

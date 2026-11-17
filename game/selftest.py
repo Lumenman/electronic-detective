@@ -38,6 +38,9 @@ d.key('ON'); b.power_on(); run(6.3)
 keys('3', '1'); press('ENTER', 0.3); run(5)
 crime = d.status(b.display()); print(repr(b.display()), crime)
 assert crime.startswith('The victim is #'), crime
+for _ in range(20): run(1 / 60); lv = b.brightness()           # steady message: lit segments full, the rest dark
+assert [sum(1 << k for k in range(7) if x[k] > 0.9) for x in lv] == b.segments(), (lv, b.segments())
+assert all(x < 0.1 or x > 0.9 for r in lv for x in r), lv
 run(52)                                           # funeral march
 victim = d.victim
 s = 1 if victim != 1 else 2

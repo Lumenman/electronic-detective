@@ -265,14 +265,15 @@ def font(size, bold=False):
     return pygame.font.Font(path, round(size * 0.9)) if os.path.exists(path) else pygame.font.SysFont('arial', size, bold=bold)
 
 
-def draw_digit(surf, x, y, w, h, segs, on, off):
-    """Seven-segment digit; bit 0..6 = a..g."""
+def draw_digit(surf, x, y, w, h, levels, on, off):
+    """Seven-segment digit; levels[0..6] = brightness 0..1 of segments a..g."""
     t = max(3, w // 6)
     hs = [(x + t, y, w - 2 * t, t), (x + w - t, y + t, t, h // 2 - t), (x + w - t, y + h // 2, t, h // 2 - t),
           (x + t, y + h - t, w - 2 * t, t), (x, y + h // 2, t, h // 2 - t), (x, y + t, t, h // 2 - t),
           (x + t, y + h // 2 - t // 2, w - 2 * t, t)]
     for b, r in enumerate(hs):
-        pygame.draw.rect(surf, on if segs >> b & 1 else off, r, border_radius=t // 2)
+        c = [round(f + (n - f) * levels[b]) for n, f in zip(on, off)]
+        pygame.draw.rect(surf, c, r, border_radius=t // 2)
 
 
 def ask_rom(error=None):
@@ -855,8 +856,11 @@ class Game:
             return self.draw_help()
         sc = self.screen
         sc.blit(self.static, (0, 0))
-        segs = self.board.segments() if self.board else [0] * 7
-        for i, s in enumerate(segs):
+        if hasattr(self.board, 'brightness'):    # the original ROM: how long each segment was lit
+            levels = self.board.brightness()
+        else:                                    # our own machine draws steady digits
+            levels = [[s >> b & 1 for b in range(7)] for s in (self.board.segments() if self.board else [0] * 7)]
+        for i, s in enumerate(levels):
             draw_digit(sc, self.DISP.centerx - self.px(232) + i * self.px(70), self.DISP.centery - self.px(self.DIGIT[1] / 2),
                        self.px(self.DIGIT[0]), self.px(self.DIGIT[1]), s, (255, 40, 40), (55, 18, 18))
         self.update_status()
