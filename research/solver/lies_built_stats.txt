@@ -1,0 +1,12 @@
+10000 built deals: unsolvable 4 (0.04%) [1874, 2117, 3356, 9329]
+game  level 3: 150 of 150 reached, turns median 9 mean 9.4 min 4 max 19
+game  level 2: 150 of 150 reached, turns median 9 mean 10.0 min 5 max 20
+game  level 1: 150 of 150 reached, turns median 12 mean 12.5 min 8 max 21
+built level 3: 150 of 150 reached, turns median 9 mean 9.5 min 4 max 19
+built level 2: 150 of 150 reached, turns median 9 mean 10.2 min 6 max 21
+built level 1: 150 of 150 reached, turns median 12 mean 12.6 min 7 max 21
+# the 4 left: an honest witness names the murderer or his double, but the witness's own group has no fixed place,
+#   so the murderer's group and the double's group can swap places as a whole (seeds above)
+# murderer of each number: built 4.5-5.4% each, as random deal_lies; #3,6-10 (no question 9-11): built 29.5%, random 29.9%
+# strict variant (a question 9-11 only): #3,6-10 would never be the murderer - rejected
+# deals used per case: built 1.01, strict 1.62
