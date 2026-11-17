@@ -25,3 +25,5 @@ print/cards.pdf
 research/dbgtest.txt
 research/ramprobe.txt
 research/emu/permute_prints.log
+# the Russian version of game/README.md: kept locally
+game/README.ru.md

@@ -87,7 +87,7 @@ python test_touch.py            # touch layout of the phone, on a PC
 
 | Folder | What |
 |---|---|
-| `game/` | The game (Python + pygame-ce). Details in [`game/README.md`](game/README.md) (in Russian) |
+| `game/` | The game (Python + pygame-ce). Details in [`game/README.md`](game/README.md) |
 | `android/` | Build script for the apk |
 | `print/` | Generator for printable cards and a blank Case Fact Sheet (the cards need a scan of the originals, not included) |
 | `research/` | Emulator, disassembler, solver, notes |
