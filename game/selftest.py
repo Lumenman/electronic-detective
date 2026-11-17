@@ -191,12 +191,27 @@ assert _obs(dict(g.board.case, lies=[]))[0]['ans'] == g.board.obs['ans']        
 g.press('OFF', True)
 g.press('ON', True); assert g.board.powered and not g.original                         # ON alone: our machine
 eg.save_settings(records_fair={'3': [4, 9]}, par_fair={'3': [1]})
-g.press('OFF', True); g.press('0', True); g.press('ON', True); g.press('0', False)     # 0 + ON: a clean sheet, still off
+g.press('OFF', True); g.press('0', True); g.press('ON', True); g.press('0', False)     # 0 + ON: asks first
+assert g.wipe_ask and not g.wiped and eg.load_settings()['records_fair'] == {'3': [4, 9]}
+click('ENDTURN'); assert not g.wipe_ask and eg.load_settings()['records_fair'] == {'3': [4, 9]}   # any other key: kept
+g.press('0', True); g.press('ON', True); g.press('0', False); click('ENTER')            # ENTER: a clean sheet, still off
 st = eg.load_settings()
 assert not g.board.powered and g.wiped and st['records_fair'] == st['par_fair'] == st['records'] == {} and 'rom' in st
 assert st['records_lies'] == st['par_lies'] == {}
 g.press('ON', True); assert g.board.powered and not g.wiped
 print('own machine OK')
+
+# EE and END are not answers: they cost no question
+import types
+dq = Decoder()
+for k in ['ON', '3', '1', 'ENTER', 'SUSPECT', '5', 'ENTER', 'PQ', '1', 'ENTER']: dq.key(k)
+tq = types.SimpleNamespace(decoder=dq, score=Score(3, 1), counted=-1, final_seq=-1, rec='', numbered=True, note=None)
+eg.Game.track(tq, '     EE')
+for k in ['PQ', '2', 'ENTER']: dq.key(k)
+eg.Game.track(tq, '    ENd')
+for k in ['PQ', '3', 'ENTER']: dq.key(k)
+eg.Game.track(tq, '      3'); eg.Game.track(tq, '      3')
+assert tq.score.questions == [1], tq.score.questions
 
 # running score against par: the last differences are kept per level and summed in the final line
 import types

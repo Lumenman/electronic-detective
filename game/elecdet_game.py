@@ -2,7 +2,8 @@
 
     python elecdet_game.py [path to ROM folder or elecdet.zip]      (the ROM is needed only for 1 + ON)
 
-Keys: 0-9, S = Suspect, Q = Private Question, A = I Accuse, Enter, T = End Turn, O = On, X = Off.
+Keys: 0-9, S = Suspect, Q = Private Question, A = I Accuse, Enter, T = End Turn, O = On, X = Off,
+M = sound off/on, Space = peek at a private answer, F1 = rules.
 ON starts our own machine (machine.py: same rules and behaviour, cases dealt at random, no ROM needed).
 ON pressed while 1 is held runs the original ROM in the emulator, with the regularities of its deals;
 2 + ON is the game of two false alibis. 9 + ON asks for the number of a case and switches off again: the next game
@@ -58,7 +59,7 @@ TALL = {'ON': (0, 0, 1), 'OFF': (1, 0, 1), 'ACCUSE': (2, 0, 1),
         'ENTER': (0, 5, 2), 'ENDTURN': (2, 5, 1)}
 NUMPAD = {getattr(pygame, 'K_KP%d' % i): str(i) for i in range(10)}
 NUMPAD[pygame.K_KP_ENTER] = 'ENTER'
-OFF_HINT = ('Press ON to start a game without patterns (the shell deals the case), hold 1 and press ON for an original game, '
+OFF_HINT = ('Press ON for a new case, hold 1 and press ON for the original game (its own deals), '
             'or hold 2 and press ON for the game of two false alibis. Hold 9 and press ON to choose a case by its number.')
 if 'ANDROID_ARGUMENT' in os.environ:      # no ROM on the phone
     OFF_HINT = ('Press ON to start a game, or hold 2 and press ON for the game of two false alibis. '
@@ -306,7 +307,9 @@ LOCK = threading.RLock()                 # the settings are written by the windo
 def save_settings(**changes):
     with LOCK:
         data = load_settings(); data.update(changes)
-        json.dump(data, open(SETTINGS, 'w'), indent=1)
+        with open(SETTINGS + '.tmp', 'w') as f:
+            json.dump(data, f, indent=1)
+        os.replace(SETTINGS + '.tmp', SETTINGS)    # a crash while writing must not leave a broken file
 
 
 def find_rom(arg):
@@ -410,7 +413,8 @@ class Game:
         self.KEY_H = (wh - self.PAD_TOP - self.M - 5 * self.GAP) // 6
 
     par = par_msg = None                 # the solver's process for this case; its line in the final summary
-    wiped = False                        # 0 + ON was pressed: say so until the machine is switched on
+    wiped = False                        # the records were cleared: say so until the machine is switched on
+    wipe_ask = False                     # 0 + ON was pressed: ENTER clears the records, any other key keeps them
     lies = False                         # the game of two false alibis (2 + ON)
     numbered = False                     # the case was chosen by its number: no records, no running score
     pending = None                       # the number typed after 9 + ON, kept for the next game
@@ -544,12 +548,17 @@ class Game:
 
     # --- input ---
     def press(self, key, down):
+        if self.wipe_ask and down:               # after 0 + ON: ENTER clears, any other key keeps the records
+            self.wipe_ask = False
+            if key == 'ENTER':
+                save_settings(records={}, records_fair={}, records_lies={}, par={}, par_fair={}, par_lies={})
+                self.wiped = True
+                return
         if key in ('ON', 'OFF'):
             ask = bool(self.held.get('9'))           # 9 + ON: only to type the number of the next case
             original = bool(self.held.get('1')) and not ask    # a held digit picks the game: 1 + ON, 2 + ON
             if key == 'ON' and down and self.held.get('0') and not (self.board and self.board.powered):
-                save_settings(records={}, records_fair={}, records_lies={}, par={}, par_fair={}, par_lies={})   # 0 + ON
-                self.wiped = True
+                self.wipe_ask, self.wiped = True, False                    # 0 + ON: asks first
                 return
             lies = bool(self.held.get('2')) and not original and not ask          # 2 + ON: two false alibis
             if key == 'ON' and down and original and ANDROID and self.files is None:
@@ -588,7 +597,6 @@ class Game:
             dec.key(key)
             if key != 'ENDTURN':
                 self.note = None             # the turn summary goes with the next player's first key
-            self.final = None
             if was_setup and dec.context[0] == 'crime':
                 self.score = Score(dec.level, dec.players)
             elif self.score and key == 'ENTER' and entry[:1] == ['SUSPECT']:
@@ -680,7 +688,7 @@ class Game:
         if self.decoder.entry:
             self.status = 'Entering: ' + self.decoder.typing()
         elif self.decoder.context[0] == 'turn' and not d.strip():
-            self.status = 'Next player: SUSPECT, number, ENTER.'
+            self.status = '%s: SUSPECT, number, ENTER.' % ('Next turn' if self.score and self.score.n == 1 else 'Next player')
         elif d.strip() or self.decoder.context[0] in ('off', 'number', 'setup'):
             self.status = self.decoder.status(d) or self.status
             if self.status.startswith('The victim'):
@@ -700,7 +708,10 @@ class Game:
                            % self.pending)
         if self.wiped and not (self.board and self.board.powered):
             self.status = 'Records and the running score are cleared. ' + OFF_HINT
-        if self.final and not self.decoder.entry:
+        if self.wipe_ask:
+            self.status = ('Clear the records and the running score of all games? '
+                           'ENTER clears them; any other key keeps them.')
+        if self.final and not self.decoder.entry and self.decoder.seq == self.final_seq:   # back after a stray key
             self.status = self.final + (' ' + self.case_no()).rstrip() + self.par_text()
         if self.score and not self.score.over and self.decoder.context[0] == 'turn' and self.score.n > 1 \
                 and not d.strip() and not self.decoder.entry:
@@ -724,7 +735,7 @@ class Game:
         if not sc or dec.entry:
             return
         t, c = d.replace(' ', ''), dec.context[0]
-        if c == 'question' and not sc.over and dec.seq != self.counted and dec.status(d):
+        if c == 'question' and not sc.over and dec.seq != self.counted and dec.status(d) and t not in ('EE', 'ENd'):
             sc.question(); self.counted = dec.seq
         elif c == 'accuse':
             m = re.match(r'^([0-9b]+)(4E5|d1d)$', t)

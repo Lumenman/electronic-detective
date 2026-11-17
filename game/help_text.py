@@ -46,7 +46,8 @@ HELP = {
         'The same number is the same case on any device: give it to a friend, or agree to play the date as the case '
         'of the day. Every case shows its number at the start and in the final summary. A case chosen by its number '
         'does not go to the records or the running score.',
-        'Hold 0 and press ON - clear the records and the running score.',
+        'Hold 0 and press ON - clear the records and the running score: ENTER confirms, any other key keeps them.',
+        'The speaker at the top right of the message field turns the sound off and on (on a PC also the M key).',
         '',
         'Then enter the level (1 Master Detective, 2 Sleuth, 3 Gumshoe: that many private questions per turn), '
         'the number of players (1-4) and ENTER. The display shows the number of the victim and the place of the body.',
@@ -124,7 +125,9 @@ HELP = {
         'одно и то же дело на любом устройстве: продиктуйте его другу или договоритесь играть дату как дело дня. '
         'Номер каждого дела показан в начале и в итоге. Дело, выбранное по номеру, в рекорды и накопленный счёт '
         'не идёт.',
-        'Удерживая 0, нажмите ON - стереть рекорды и накопленный счёт.',
+        'Удерживая 0, нажмите ON - стереть рекорды и накопленный счёт: ENTER подтверждает, любая другая клавиша '
+        'оставляет их.',
+        'Динамик в правом верхнем углу поля сообщений выключает и включает звук (на ПК ещё клавиша M).',
         '',
         'Затем введите уровень (1 Master Detective, 2 Sleuth, 3 Gumshoe: столько частных вопросов за ход), '
         'число игроков (1-4) и ENTER. На табло - номер жертвы и место тела.',

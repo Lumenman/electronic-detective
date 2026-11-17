@@ -50,7 +50,7 @@ def turn_plan():
     t = tap(t + 1.0, 'PQ', *str(CARDS[s][1]), 'ENTER')
     t = tap(t + 1.0, 'ENDTURN')
     check(t + 0.6, 'after END TURN: status shows "After turn 1: 2 questions so far" and the prompt',
-          lambda: game.status == 'After turn 1: 2 questions so far. Next player: SUSPECT, number, ENTER.')
+          lambda: game.status == 'After turn 1: 2 questions so far. Next turn: SUSPECT, number, ENTER.')
     t = tap(t + 1.0, 'SUSPECT')
     check(t + 0.3, 'first key of the next turn: the summary is gone', lambda: game.note is None and 'turn' not in game.status)
     t = tap(t + 0.2, *str(s2), 'ENTER')
