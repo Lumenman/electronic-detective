@@ -59,11 +59,10 @@ TALL = {'ON': (0, 0, 1), 'OFF': (1, 0, 1), 'ACCUSE': (2, 0, 1),
         'ENTER': (0, 5, 2), 'ENDTURN': (2, 5, 1)}
 NUMPAD = {getattr(pygame, 'K_KP%d' % i): str(i) for i in range(10)}
 NUMPAD[pygame.K_KP_ENTER] = 'ENTER'
-OFF_HINT = ('Press ON for a new case, hold 1 and press ON for the original game (its own deals), '
-            'or hold 2 and press ON for the game of two false alibis. Hold 9 and press ON to choose a case by its number.')
+OFF_HINT = ('ON: a new case. Hold a key and press ON: 1 the original game, 2 two false alibis, '      # two lines:
+            '9 a case by its number.')                                                              # longer is cut
 if 'ANDROID_ARGUMENT' in os.environ:      # no ROM on the phone
-    OFF_HINT = ('Press ON to start a game, or hold 2 and press ON for the game of two false alibis. '
-                'Hold 9 and press ON to choose a case by its number.')
+    OFF_HINT = 'ON: a new case. Hold a key and press ON: 2 two false alibis, 9 a case by its number.'
 
 
 def num(s):
@@ -702,7 +701,7 @@ class Game:
             self.final = None
             self.status = 'Switched off. ' + OFF_HINT
         if self.lies and self.decoder.context[0] in ('number', 'setup') and self.board and self.board.powered:
-            self.status = 'Two false alibis: the murderer and one more suspect lie about where they were. ' + self.status
+            self.status = 'Two false alibis. ' + self.status      # the rule is in the help: a longer line is cut
         b = self.board
         if isinstance(b, Machine) and b.ask and not b.powered and b.number:
             self.pending, b.number = b.number, None
