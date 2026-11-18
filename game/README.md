@@ -108,15 +108,19 @@ game the way the original does: entry, `EE` and `END`, the question limit, the a
   seed is taken (for a typed number it is checked on the spot — the machine waits). A case chosen by its number does
   not go to the records or the running score; par is shown. For a "case of the day", agree to type the date.
   `selftest.py` keeps samples: number 1 must give the same case under any Python version.
-- **Cases on paper** (PC only): hold `8`, press `ON`, type how many cases to write (1-10), `ENTER`: the machine goes
+- **Cases on paper** (PC only): hold `8`, press `ON`, type how many cases to write (1-50), `ENTER`: the machine goes
   dark; then `ON` (the usual game) or `2` + `ON` (Two False Alibis) writes that many random cases to
   `..\print\books\cases_<date>_<time>.html` and stays off; `OFF` cancels. Nothing of the cases is shown on the screen.
-  Open the file in a browser and print it (untick "Headers and footers"): two landscape A4 sheets per case. The first
-  is an index — suspect × alibi, the questions of the card, I accuse → the number of a paragraph; the second holds
-  the 133 paragraphs in shuffled order, each as the machine shows it (a dot is a dark digit; a 6 is printed as 6,
-  not as the display's `b`). A paragraph does not say whose it is, and the answer to an accusation looks like any
-  other YES or NO. The questions-per-turn limit is on the player's honour. The case number is in the heading, so the
-  same case can be played on the machine (`9` + `ON`). Without the window: `python paper.py 3 [lies]`.
+  Open the file in a browser and print it on portrait A4 (untick "Headers and footers"); it is black and white, in
+  the look of the window: the display in a frame, the keys as boxes. First come two sheets for any number of cases —
+  how to read the display, and the rules in brief — then two sheets per case. The first is an index — suspect ×
+  `SUSPECT`, the private questions of the card, `I ACCUSE` → the number of a paragraph; the second holds the 133
+  paragraphs in shuffled order, each drawn in the seven segments exactly as the machine shows it (a dot is a dark
+  digit). A paragraph does not say whose it is, and the answer to an accusation looks like any other YES or NO. The
+  questions-per-turn limit is on the player's honour. The case number is on both sheets, so the same case can be
+  played on the machine (`9` + `ON`). The sheets are written in the language of the help (`F1`, the `RU`/`EN`
+  button): names of people, places and keys stay English; a Russian file ends in `_ru`. Without the window:
+  `python paper.py 3 [lies] [en|ru]`.
 - **Reset**: hold `0` and press `ON` on a switched-off machine — the program asks whether to clear the records and
   the running score of all games; `ENTER` clears them, any other key cancels (the machine does not switch on).
 - **Sound** off and on: the speaker icon above the `?` (also `M`); kept in `settings.json`.

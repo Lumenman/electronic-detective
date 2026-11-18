@@ -272,20 +272,28 @@ print('case number OK')
 
 # --- cases on paper: 8 + ON takes how many, then ON or 2 + ON picks the game and writes the file; the machine stays off ---
 import glob, paper, re, time
-shown, mp = paper.codes(1, False)
-assert mp.case == c1 and len(shown) == 19 * 7
+shown, mp, para = paper.paragraphs(1, False)
+assert mp.case == c1 and len(shown) == 19 * 7 and sorted(para.values()) == list(range(1, 134))    # every paragraph once
 assert [s for (s, c), v in shown.items() if c == 'accuse' and v == '  4E5  '] == [m1]
-page = paper.book(1, False, eg.NAMES)
-paras = dict(re.findall(r'<div><b>(\d+)</b> <code>(.*?)</code></div>', page))
-assert sorted(map(int, paras)) == list(range(1, 134))               # every paragraph once
-for s in (m1, m1 % 20 + 1):                                         # the last number of a row is the accusation
-    row = re.search(r'<th class="n">%d .*?</tr>' % s, page).group()
-    assert paras[re.findall(r'<td>(\d+)</td>', row)[-1]] == ('·· 4E5 ··' if s == m1 else '·· ··· N0'), s
+m = Machine(number=1); m.power_on(); m.run(4 * SEC)                 # the book against the keys: suspect 1 and his question 9
+for k in ['3', '1', 'ENTER']: m.key(k)
+m.run(8 * SEC)
+for k in ['SUSPECT', '1', 'ENTER']: m.key(k)
+assert m.shown == shown[1, 'alibi'], (m.shown, shown[1, 'alibi'])
+for k in ['PQ', '9', 'ENTER']: m.key(k)
+assert m.shown == shown[1, 9], (m.shown, shown[1, 9])
+for lang in paper.TEXT:                                             # every text and glyph of the sheets is there
+    assert paper.front(lang).count('<section') == 2
+    page = paper.book(1, False, eg.NAMES, lang)
+    assert page.count('<div><b>') == 133 and '%s 1<' % paper.TEXT[lang]['case'] in page
+row = re.search(r'<th class="n"><b>%d</b>.*?</tr>' % m1, page).group()    # the last number of a row is the accusation
+assert int(re.findall(r'<td>(\d+)</td>', row)[-1]) == para[m1, 'accuse']
 paper.BOOKS = os.path.join(tmpdir, 'books')
+eg.save_settings(help_lang='ru')                                    # the book speaks the language of the help
 g.press('OFF', True)
 g.press('8', True); g.press('ON', True); g.press('8', False); wait(3.5)
-assert g.decoder.context == ('number', 10) and g.booking
-click('1'); click('1'); click('ENTER'); wait(1); g.update_status()  # more than ten: still asking
+assert g.decoder.context == ('number', paper.MOST) and g.booking and paper.MOST == 50
+click('5'); click('1'); click('ENTER'); wait(1); g.update_status()  # more than fifty: still asking
 assert g.board.powered and g.count is None and g.status.startswith('Cases on paper'), g.status
 click('2'); click('ENTER'); wait(1); g.update_status(); print(g.status)
 assert not g.board.powered and g.count == 2 and g.pending is None and g.status.startswith('2 cases to write'), g.status
@@ -294,9 +302,12 @@ for _ in range(300):
     if 'written' in (g.printed or ''): break
     time.sleep(0.1)
 g.update_status(); print(g.status)
-book, = glob.glob(os.path.join(tmpdir, 'books', 'cases_*_lies.html'))
-assert open(book, encoding='utf-8').read().count('<section>') == 2
+book, = glob.glob(os.path.join(tmpdir, 'books', 'cases_*_lies_ru.html'))
+text = open(book, encoding='utf-8').read()
+assert text.count('<section class="case">') == 2 and 'КРАТКИЕ ПРАВИЛА' in text and 'ДВА ЛОЖНЫХ АЛИБИ</span>' in text
 assert not g.board.powered and g.count is None and g.status.startswith('2 cases of two false alibis written to print'), g.status
+assert g.status.endswith('in Russian. ON: a new case.'), g.status
+eg.save_settings(help_lang='en')
 g.press('8', True); g.press('ON', True); g.press('8', False); wait(3.5)
 click('1'); click('ENTER'); wait(1); g.update_status(); assert g.count == 1
 g.press('OFF', True); g.update_status()                             # OFF cancels

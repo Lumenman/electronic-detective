@@ -614,9 +614,11 @@ class Game:
 
         def work():
             try:
-                path = os.path.join('print', 'books', os.path.basename(paper.write(n, lies, NAMES)))
-                self.printed = '%d case%s of %s written to %s. ' % (
-                    n, 's' * (n > 1), 'two false alibis' if lies else 'the usual game', path)
+                lang = load_settings().get('help_lang', 'en')        # the book speaks the language of the help
+                path = os.path.join('print', 'books', os.path.basename(paper.write(n, lies, NAMES, lang)))
+                self.printed = '%d case%s of %s written to %s, in %s. ' % (
+                    n, 's' * (n > 1), 'two false alibis' if lies else 'the usual game', path,
+                    {'ru': 'Russian'}.get(lang, 'English'))
             except OSError as e:
                 self.printed = 'The cases are not written: %s. ' % e
         threading.Thread(target=work, daemon=True).start()

@@ -46,9 +46,7 @@ HELP = {
         'The same number is the same case on any device: give it to a friend, or agree to play the date as the case '
         'of the day. Every case shows its number at the start and in the final summary. A case chosen by its number '
         'does not go to the records or the running score.',
-        'Hold 8 and press ON (PC only) - cases on paper: type how many (1-10) and press ENTER; then ON, or 2 + ON, '
-        'writes that many random cases to a file in print\\books (OFF cancels). Print it from a browser: an index '
-        'and a sheet of numbered answers per case, to play without the machine.',
+        'Hold 8 and press ON (PC only) - write cases to print and play on paper (see "Cases on paper").',
         'Hold 0 and press ON - clear the records and the running score: ENTER confirms, any other key keeps them.',
         'The speaker at the top right of the message field turns the sound off and on (on a PC also the M key).',
         '',
@@ -107,6 +105,17 @@ HELP = {
         'The fact sheet: section 1 - the facts of the murder; 2 - who was where (places, addresses, guns); '
         '3 - scratch notes (who said what); 4 - your answer.',
         '',
+        '# Cases on paper (8 + ON, PC only)',
+        'To play without the machine. Hold 8 and press ON, type how many cases to write (1-50) and press ENTER: the '
+        'machine goes dark. Then ON writes that many random cases of the usual game, and 2 + ON of Two False Alibis; '
+        'OFF cancels. Nothing of the cases is shown on the screen.',
+        'The file appears in the folder print\\books. Open it in a browser and print it on A4, without headers and '
+        'footers. First come two sheets for all cases: how to read the display, and the rules in brief. Then two '
+        'sheets per case: an index (suspect and question - the number of a paragraph) and the answers (the numbered '
+        'paragraphs, each as the display shows it). Read only the paragraph you asked for.',
+        'The sheets are written in the language of this help: switch it with the button below before writing.',
+        'The number of the case is on its sheets: the same case can be played on the machine (9 + ON).',
+        '',
         '# Two False Alibis (2 + ON)',
         'Everything as above, except:',
         '1. Two suspects lie in their alibi: the murderer, and one more who has something else to hide. Each of them '
@@ -128,9 +137,7 @@ HELP = {
         'одно и то же дело на любом устройстве: продиктуйте его другу или договоритесь играть дату как дело дня. '
         'Номер каждого дела показан в начале и в итоге. Дело, выбранное по номеру, в рекорды и накопленный счёт '
         'не идёт.',
-        'Удерживая 8, нажмите ON (только ПК) - дела на бумаге: введите, сколько (1-10), и нажмите ENTER; затем ON '
-        'или 2 + ON запишет столько случайных дел в файл в print\\books (OFF отменяет). Напечатайте его из браузера: '
-        'на каждое дело указатель и лист пронумерованных ответов, чтобы играть без машины.',
+        'Удерживая 8, нажмите ON (только ПК) - записать дела для печати и игры на бумаге (см. «Дела на бумаге»).',
         'Удерживая 0, нажмите ON - стереть рекорды и накопленный счёт: ENTER подтверждает, любая другая клавиша '
         'оставляет их.',
         'Динамик в правом верхнем углу поля сообщений выключает и включает звук (на ПК ещё клавиша M).',
@@ -189,6 +196,17 @@ HELP = {
         'находятся там, где убийцы быть не может, - оставшийся и есть убийца.',
         'Лист записей: раздел 1 - факты убийства; 2 - кто где (места, адреса, оружие); 3 - черновик (кто что сказал); '
         '4 - ваш ответ.',
+        '',
+        '# Дела на бумаге (8 + ON, только ПК)',
+        'Чтобы играть без машины. Удерживая 8, нажмите ON, введите, сколько дел записать (1-50), и нажмите ENTER: '
+        'машина погаснет. Затем ON запишет столько случайных дел обычной игры, а 2 + ON - игры «Два ложных алиби»; '
+        'OFF отменяет. На экран о делах ничего не выводится.',
+        'Файл появится в папке print\\books. Откройте его в браузере и напечатайте на A4, без колонтитулов. Сначала '
+        'идут два листа на все дела: как читать табло и краткие правила. Затем по два листа на дело: указатель '
+        '(подозреваемый и вопрос - номер параграфа) и ответы (пронумерованные параграфы, каждый - как на табло). '
+        'Читайте только тот параграф, о котором спросили.',
+        'Листы пишутся на языке этой справки: переключите его кнопкой внизу до записи.',
+        'Номер дела стоит на его листах: то же дело можно сыграть на машине (9 + ON).',
         '',
         '# Два ложных алиби (2 + ON)',
         'Всё как выше, кроме следующего:',
