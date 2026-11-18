@@ -106,6 +106,23 @@ def png(im):
     b = io.BytesIO(); im.save(b, 'PNG'); return b.getvalue()
 
 # ---------------------------------------------------------------- drawing helpers (mm, page-relative)
+FONTS = os.path.join(os.environ.get('WINDIR', r'C:\Windows'), 'Fonts')
+HELVETICA = {False: ('helv', None), True: ('hebo', None)}
+# the built-in Helvetica has no Cyrillic: the Russian sheet takes Arial (the same metrics), subset into the PDF
+ARIAL = {False: ('arial', os.path.join(FONTS, 'arial.ttf')), True: ('arialbd', os.path.join(FONTS, 'arialbd.ttf'))}
+FONT = HELVETICA
+_fonts = {}
+
+
+def text_width(s, size, bold=False):
+    """Width in mm of s in the current font."""
+    f, file = FONT[bold]
+    if file is None:
+        return pymupdf.get_text_length(s, fontname=f, fontsize=size) / MM
+    if file not in _fonts: _fonts[file] = pymupdf.Font(fontfile=file)
+    return _fonts[file].text_length(s, fontsize=size) / MM
+
+
 class Pen:
     def __init__(self, page, ox=0, oy=0):
         self.p, self.ox, self.oy = page, ox, oy
@@ -126,11 +143,11 @@ class Pen:
 
     def text(self, x, y, s, size, bold=False, color=BLACK, align='l', sx=1.0):
         """y is the baseline; size in pt; sx < 1 squeezes the text horizontally."""
-        f = 'hebo' if bold else 'helv'
-        w = pymupdf.get_text_length(s, fontname=f, fontsize=size) / MM * sx
+        f, file = FONT[bold]
+        w = text_width(s, size, bold) * sx
         x -= {'l': 0, 'c': w / 2, 'r': w}[align]
         morph = (self.pt(x, y), pymupdf.Matrix(sx, 1)) if sx != 1 else None
-        self.p.insert_text(self.pt(x, y), s, fontname=f, fontsize=size, color=color, morph=morph)
+        self.p.insert_text(self.pt(x, y), s, fontname=f, fontfile=file, fontsize=size, color=color, morph=morph)
         return x + w
 
     def rich(self, x, y, s, size, color=BLACK):
@@ -353,75 +370,113 @@ def num_keys(pen, x, y, n, s=4.2, size=7.5, count=2):
             pen.text(x + k * (s + 0.5) + s / 2, y + s - 0.8, d[k], size, bold=True, align='c')
 
 
-def make_sheet(path):
+# the words of the sheet; names of people, places, sides, areas and levels stay as on the cards and the machine
+SHEET = {'en': {
+    'sub': 'CASE FACT SHEET', 'no': 'No.', 'detective': 'DETECTIVE', 'your_name': '(your name)',
+    'game': 'GAME', 'usual': 'Usual', 'lies': 'Two False Alibis', 'level': 'LEVEL',
+    's1': 'THE MURDER FACTS', 'who': 'WHO?', 'victim': 'The victim was', 'name': '(name)',
+    'body': 'The body was found at:', 'place': 'PLACE', 'sex': 'SEX OF THE MURDERER?', 'male': 'Male', 'female': 'Female',
+    'went': 'WHERE DID THE MURDERER GO?', 'weapon': 'WEAPON USED?', 'prints': 'FINGERPRINTS?',
+    'odd': 'Odd #', 'even': 'Even #', 'told': 'told by #',
+    's2': 'WHO WAS WHERE?', 'address': ('ADDRESS', 'OF PLACE'), 'location': ('WEAPON', 'LOCATION'), 'men': 'Men', 'women': 'Women',
+    'fold': 'FOLD HERE  -  sections 1-2 behind, 3-4 in front',
+    's3': 'WHO SAID WHAT?', 'suspects': 'SUSPECTS', 'men_said': 'Men and their Statements',
+    'women_said': 'Women and their Statements',
+    's4': 'WHO DID IT?', 'accuse': 'I Accuse Suspect', 'turns': 'TURNS', 'par': 'PAR',
+    'credit': 'Ideal 1979, 5A-3343 - redrawn blank for personal use'}, 'ru': {
+    'sub': 'ЛИСТ ФАКТОВ ДЕЛА', 'no': '№', 'detective': 'ДЕТЕКТИВ', 'your_name': '(ваше имя)',
+    'game': 'ИГРА', 'usual': 'Обычная', 'lies': 'Два ложных алиби', 'level': 'УРОВЕНЬ',
+    's1': 'ФАКТЫ УБИЙСТВА', 'who': 'КТО?', 'victim': 'Жертва —', 'name': '(имя)',
+    'body': 'Тело найдено в:', 'place': 'МЕСТО', 'sex': 'ПОЛ УБИЙЦЫ?', 'male': 'Мужчина', 'female': 'Женщина',
+    'went': 'КУДА СКРЫЛСЯ УБИЙЦА?', 'weapon': 'ОРУДИЕ УБИЙСТВА?', 'prints': 'ОТПЕЧАТКИ?',
+    'odd': 'Нечётный №', 'even': 'Чётный №', 'told': 'сказал №',
+    's2': 'КТО ГДЕ БЫЛ?', 'address': ('АДРЕС', 'МЕСТА'), 'location': ('ГДЕ', 'ОРУЖИЕ'), 'men': 'Муж.', 'women': 'Жен.',
+    'fold': 'СОГНУТЬ ЗДЕСЬ  -  разделы 1-2 назад, 3-4 вперёд',
+    's3': 'КТО ЧТО СКАЗАЛ?', 'suspects': 'ПОДОЗРЕВАЕМЫЕ', 'men_said': 'Мужчины и их показания',
+    'women_said': 'Женщины и их показания',
+    's4': 'КТО УБИЙЦА?', 'accuse': 'Я обвиняю', 'turns': 'ХОДЫ', 'par': 'ПАР',
+    'credit': 'Ideal 1979, 5A-3343 - бланк перерисован для личного пользования'}}
+
+
+def make_sheet(path, lang='en'):
+    global FONT
+    FONT, t = (ARIAL if lang == 'ru' else HELVETICA), SHEET[lang]
+    try:
+        draw_sheet(path, t)
+    finally:
+        FONT = HELVETICA
+
+
+def draw_sheet(path, t):
     doc = pymupdf.open()
     page = doc.new_page(width=210 * MM, height=297 * MM)
     p = Pen(page)
     L, R = 12, 198
     # header
     title_end = p.text(L, 19, 'ELECTRONIC DETECTIVE', 23, bold=True, color=BLUE)
-    p.text(L, 25.5, 'CASE FACT SHEET', 12, bold=True, color=BLUE)
+    p.text(L, 25.5, t['sub'], 12, bold=True, color=BLUE)
     cx = title_end - 7 * 4.7 + 0.5                                    # the number of the case: seven boxes ending with the title
     num_keys(p, cx, 21.4, 0, count=7)
-    p.text(cx - 1.5, 25.2, 'CASE No.', 8, bold=True, align='r')
-    p.box(124, 10.5, R - 124, 9, width=0.45)
+    p.text(cx - 1.5, 25.2, t['no'], 8, bold=True, align='r')
+    mid = 19 - 23 * 0.718 / 2 / MM                                    # the middle of the title's capitals
+    p.box(124, mid - 4.5, R - 124, 9, width=0.45)
     gap = 2.5                                                         # 'DETECTIVE (your name)' centred under the box
-    w = (pymupdf.get_text_length('DETECTIVE', 'hebo', 9.5) + pymupdf.get_text_length('(your name)', 'helv', 6.5)) / MM + gap
-    x = p.text((124 + R) / 2 - w / 2, 25.5, 'DETECTIVE', 9.5, bold=True)
-    p.text(x + gap, 25.5, '(your name)', 6.5)
+    w = text_width(t['detective'], 9.5, True) + text_width(t['your_name'], 6.5) + gap
+    x = p.text((124 + R) / 2 - w / 2, 25.5, t['detective'], 9.5, bold=True)
+    p.text(x + gap, 25.5, t['your_name'], 6.5)
     p.line(L, 28, R, 28, width=0.6)
     # the game and the level (ours: the original sheet has neither)
-    p.text(L, 33.4, 'GAME', 8.5, bold=True)
-    for cx, s in ((25, 'Usual'), (45, 'Two False Alibis')):
-        chk(p, cx, 33.4); p.text(cx + 5.5, 33.4, s, 8.5)
-    p.text(86, 33.4, 'LEVEL', 8.5, bold=True)
-    for cx, s in ((101, '1 Master Detective'), (141, '2 Sleuth'), (164, '3 Gumshoe')):
+    x = p.text(L, 33.4, t['game'], 8.5, bold=True) + 3
+    for s in (t['usual'], t['lies']):
+        chk(p, x, 33.4); x = p.text(x + 5.5, 33.4, s, 8.5) + 6
+    p.text(86, 33.4, t['level'], 8.5, bold=True)
+    for cx, s in ((104, '1 Master Detective'), (141, '2 Sleuth'), (164, '3 Gumshoe')):
         chk(p, cx, 33.4); p.text(cx + 5.5, 33.4, s, 8.5)
     p.line(L, 36, R, 36, width=0.3)
     p = Pen(page, 0, 8)                    # everything below moves down by the new row
 
     # ---- 1. murder facts
-    section(p, 46, '1', 'THE MURDER FACTS')
+    section(p, 46, '1', t['s1'])
     x = 27
-    p.text(x, 37, 'WHO?', 9, bold=True, color=BLUE)
-    p.text(x, 41.5, 'The victim was', 8.5)
-    num_keys(p, 49, 37.6, 0)
-    p.text(60, 41.5, '(name)', 6.5)
+    p.text(x, 37, t['who'], 9, bold=True, color=BLUE)
+    kx = p.text(x, 41.5, t['victim'], 8.5) + 1.5                   # the boxes follow the words (49 mm in English)
+    num_keys(p, kx, 37.6, 0)
+    p.text(kx + 11, 41.5, t['name'], 6.5)
     p.box(69, 36, 62, 6.5, width=0.4)
-    p.text(141, 41.5, 'The body was found at:', 8.5)
+    p.text(174, 41.5, t['body'], 8.5, align='r')
     p.box(175.5, 35.5, 7, 7, width=0.45)
-    p.text(184, 41.5, 'PLACE', 8.5, bold=True)
+    p.text(184, 41.5, t['place'], 8.5, bold=True)
     cols = (90, 128, 162)
     rows = [
-        (49, 'SEX OF THE MURDERER?', [(0, 'Male'), (1, 'Female')]),
-        (56, 'WHERE DID THE MURDERER GO?', [(0, '1. West Side'), (1, '2. East Side')]),
+        (49, t['sex'], [(0, t['male']), (1, t['female'])]),
+        (56, t['went'], [(0, '1. West Side'), (1, '2. East Side')]),
         (62.5, '', [(0, '3. Uptown'), (1, '4. Midtown'), (2, '5. Downtown')]),
-        (69.5, 'WEAPON USED?', [(0, '.38'), (1, '.45')]),
+        (69.5, t['weapon'], [(0, '.38'), (1, '.45')]),
     ]
     for y, label, opts in rows:
         p.text(x + 10, y, label, 8.5, bold=True)
         for c, s in opts:
             chk(p, cols[c], y); p.text(cols[c] + 5.5, y, s, 8.5)
     y = 76
-    p.text(x + 10, y + 2.5, 'FINGERPRINTS?', 8.5, bold=True)
+    p.text(x + 10, y + 2.5, t['prints'], 8.5, bold=True)
     for c in (0, 1):
-        p.text(cols[c] - 1.5, y, 'Odd #', 8.5, align='r'); chk(p, cols[c], y)
-        p.text(cols[c] - 1.5, y + 4.6, 'Even #', 8.5, align='r'); chk(p, cols[c], y + 4.6)
+        p.text(cols[c] - 1.5, y, t['odd'], 8.5, align='r'); chk(p, cols[c], y)
+        p.text(cols[c] - 1.5, y + 4.6, t['even'], 8.5, align='r'); chk(p, cols[c], y + 4.6)
         # who answered Q13/14, per gun: only a same-sex suspect at the murder weapon is reliable, known only later
-        p.text(cols[c] - 1.5, y + 10.4, 'told by #', 8.5, align='r')
+        p.text(cols[c] - 1.5, y + 10.4, t['told'], 8.5, align='r')
         num_keys(p, cols[c], y + 10.4 - 3.9, 0)             # same two boxes as 'The victim was'
     p.line(L, 90, R, 90, width=0.6)
     p = Pen(page, 0, p.oy + 6)             # and by the row of 'told by'
 
     # ---- 2. who was where
-    section(p, 102, '2', 'WHO WAS WHERE?')
-    p.text(27, 104.5, 'PLACE', 9.5, bold=True)
+    section(p, 102, '2', t['s2'])
+    p.text(27, 104.5, t['place'], 9.5, bold=True)
     # address: oval (side) 112.5-116.5 over box (area) 116.5-122; cartridge 125-132.2
     p.line(45.5, 112.5, 45.5, 122, width=0.3)              # bar spanning oval + box, instead of the brace
-    p.text(27, 116.6, 'ADDRESS', 9.5, bold=True); p.text(27, 120.3, 'OF PLACE', 9.5, bold=True)
+    p.text(27, 116.6, t['address'][0], 9.5, bold=True); p.text(27, 120.3, t['address'][1], 9.5, bold=True)
     p.text(46.5, 114.4, 'West Side', 5.5); p.text(46.5, 116.4, 'East Side', 5.5)
     p.text(46.5, 118.4, 'Uptown', 5.5); p.text(46.5, 120.2, 'Midtown', 5.5); p.text(46.5, 122.0, 'Downtown', 5.5)
-    p.text(27, 127.7, 'WEAPON', 9.5, bold=True); p.text(27, 131.5, 'LOCATION', 9.5, bold=True)
+    p.text(27, 127.7, t['location'][0], 9.5, bold=True); p.text(27, 131.5, t['location'][1], 9.5, bold=True)
     p.text(46.5, 129.5, '.38 - .45', 5.5)
     lx = 56
     cw = (R - lx) / 6
@@ -430,7 +485,7 @@ def make_sheet(path):
         mid = cx + cw / 2
         p.text(mid, 90.5, letter, 13, bold=True, align='c')
         p.text(mid, 94.3, nm, 6.5, bold=True, align='c')
-        p.text(mid - 3.4, 97.4, 'Men', 5.8, align='c'); p.text(mid + 3.8, 97.4, 'Women', 5.8, align='c')
+        p.text(mid - 3.4, 97.4, t['men'], 5.8, align='c'); p.text(mid + 3.8, 97.4, t['women'], 5.8, align='c')
         gx0, gx1, gy0, gy1 = cx + 4.0, cx + cw - 4.0, 99, 109   # 2 x 2 grid: men | women
         for gy in (gy0, (gy0 + gy1) / 2, gy1):
             p.line(gx0, gy, gx1, gy, width=0.3)
@@ -445,17 +500,18 @@ def make_sheet(path):
                + [(bx0, 132.2)], color=BLACK, width=0.35)
         p.line(bx0 + 1.2, 125, bx0 + 1.2, 132.2, width=0.25)
         p.line(bx1 - 3.6, 125, bx1 - 3.6, 132.2, width=0.25)
+    p = Pen(page, 0, p.oy - 2.5)           # sections 3-4 a little higher: the gap under the cartridges was wide
     # fold line = boundary of sections 2 and 3 (sheet folds so 1-2 go behind, 3-4 stay in front)
-    p.text(R, 138.4, 'FOLD HERE  -  sections 1-2 behind, 3-4 in front', 6.5, color=CUT, align='r')
+    p.text(R, 138.4, t['fold'], 6.5, color=CUT, align='r')
     p.line(L, 140, R, 140, width=0.5, dashes='[2.5 1.5] 0')
 
     # ---- 3. who said what
-    section(p, 157, '3', 'WHO SAID WHAT?')
-    p.text(27, 150, 'SUSPECTS', 9, bold=True)
+    section(p, 157, '3', t['s3'])
+    end = p.text(27, 150, t['suspects'], 9, bold=True)
     top, rh = 150.5, 9.7
     half = (R - L) / 2
-    p.text(52, 150, 'Men and their Statements', 6.5)
-    p.text(L + half + 28, 150, 'Women and their Statements', 6.5)
+    p.text(max(52, end + 3), 150, t['men_said'], 6.5)
+    p.text(L + half + 28, 150, t['women_said'], 6.5)
     for n in range(1, 21):
         col, r = (n - 1) // 10, (n - 1) % 10
         bx = L + (13 if col == 0 else half + 1)
@@ -470,23 +526,25 @@ def make_sheet(path):
     p.line(L, sec4, R, sec4, width=0.6)
 
     # ---- 4. who did it
-    section(p, sec4 + 18, '4', 'WHO DID IT?')
-    p.text(62, sec4 + 14, 'I Accuse Suspect', 10.5, bold=True)
+    section(p, sec4 + 18, '4', t['s4'])
     cx, cy, rr = 106, sec4 + 11, 8.5                                           # magnifying glass
+    p.text(cx - rr - 3, sec4 + 14, t['accuse'], 10.5, bold=True, align='r')
     p.p.draw_circle(p.pt(cx, cy), rr * MM, color=BLACK, width=0.6 * MM)
     num_keys(p, cx - 6.3, cy - 3.2, 0, s=6, size=10)
     p.poly([(cx + rr - 0.2, cy - 1.2), (cx + rr + 18, cy - 2.4), (cx + rr + 18, cy + 1.8),
             (cx + rr - 0.2, cy + 1.2)], fill=BLACK)
     # ours too: the turns the case took, and its par (from the program or the book), to compare
-    for tx, label in ((150, 'TURNS'), (176, 'PAR')):
+    for tx, label in ((150, t['turns']), (176, t['par'])):
         p.text(tx, sec4 + 13.4, label, 8.5, bold=True, align='r')
         num_keys(p, tx + 1.5, sec4 + 9.5, 0)
-    p.text(R, sec4 + 19.5, 'Ideal 1979, 5A-3343 - redrawn blank for personal use', 5.5, color=CUT, align='r')
+    p.text(R, sec4 + 19.5, t['credit'], 5.5, color=CUT, align='r')
     assert sec4 + p.oy + 21 < 292, 'sheet overflows A4'
+    doc.subset_fonts()
     doc.save(path, deflate=True, garbage=3)
 
 
 if __name__ == '__main__':
     pages = make_cards(os.path.join(HERE, 'cards.pdf'))
     make_sheet(os.path.join(HERE, 'case_fact_sheet.pdf'))
-    print(f'cards.pdf: {pages} pages, case_fact_sheet.pdf: 1 page')
+    make_sheet(os.path.join(HERE, 'case_fact_sheet_ru.pdf'), 'ru')
+    print(f'cards.pdf: {pages} pages, case_fact_sheet.pdf and case_fact_sheet_ru.pdf: 1 page each')
