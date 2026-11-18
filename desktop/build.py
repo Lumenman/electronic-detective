@@ -9,6 +9,8 @@ root = os.path.join(here, '..')
 fonts = '/usr/share/fonts/truetype/dejavu'           # Linux may have no Arial; Windows uses its own
 data = [a for f in ('DejaVuSans.ttf', 'DejaVuSans-Bold.ttf') if os.path.exists(os.path.join(fonts, f))
         for a in ('--add-data', os.path.join(fonts, f) + os.pathsep + '.')]
+icon = os.path.join(root, 'game', 'icon.png')         # the window's icon; Windows also puts it on the .exe (needs Pillow)
+data += ['--add-data', icon + os.pathsep + '.'] + (['--icon', icon] if os.name == 'nt' else [])
 PyInstaller.__main__.run([
     os.path.join(here, 'entry.py'), '--onefile', '--windowed', '--name', 'ElectronicDetective', '--noconfirm',
     '--paths', os.path.join(root, 'game'), '--paths', os.path.join(root, 'research', 'solver'),

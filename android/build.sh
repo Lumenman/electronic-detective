@@ -15,7 +15,7 @@ for f in main elecdet_game board tms0980 machine rules sounds help_text paper; d
 cp /usr/share/fonts/truetype/dejavu/DejaVuSans.ttf /usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf "$work/app/"   # the phone has no Arial
 cp "$here/../research/solver/par.py" "$here/../research/solver/solver.py" "$work/app/"      # par is counted on the phone too
 cp "$here/buildozer.spec" "$work/"
-cp "$here/icons/icon2.png" "$work/icon.png"
+cp "$here/../game/icon.png" "$work/icon.png"
 rm -rf "$work/recipes"; cp -r "$here/recipes" "$work/"
 cd "$work"
 export MAKEFLAGS=-j2 CMAKE_BUILD_PARALLEL_LEVEL=2        # leave half of the cores free

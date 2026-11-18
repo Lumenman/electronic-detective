@@ -475,6 +475,9 @@ class Game:
             self.fit(ww, wh)
         self.fingers = {}                # finger id -> the key it holds (None: it lifts the cover)
         pygame.display.set_caption('Electronic Detective')
+        icon = os.path.join(getattr(sys, '_MEIPASS', HERE), 'icon.png')    # the phone takes its icon from the apk
+        if not ANDROID and os.path.exists(icon):
+            pygame.display.set_icon(pygame.image.load(icon))
         self.font = font(int(15 * self.Z * self.K))
         self.fine = font(int(15 * self.Z * self.K * 4 / 5))   # five lines where four do not do
         self.small = font(int(self.LABEL * self.Z * self.K), bold=True)
