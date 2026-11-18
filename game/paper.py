@@ -1,47 +1,246 @@
-"""Cases on paper (SPOILERS inside the written files): a book of paragraphs for playing without the machine.
+"""Case materials on paper (SPOILERS inside the written files): a book of paragraphs for playing without the machine.
 
-Every case takes two landscape A4 sheets. The first is an index: suspect x (alibi, the questions of the card,
-I accuse) -> the number of a paragraph. The second holds the paragraphs in shuffled order; each is what the
-machine would show, taken from Machine itself, so the book cannot disagree with the game. Nothing in a paragraph
-says whose it is, and the answer to an accusation looks like any other YES or NO.
+The file opens with two sheets for any number of cases - how to read the display, and the rules in brief - and then
+has two portrait A4 sheets per case. The first is an index: suspect x (SUSPECT, the private questions of the card,
+I ACCUSE) -> the number of a paragraph. The second holds the paragraphs in shuffled order; each is the seven digits
+the machine would show, taken from Machine itself and drawn in its segments, so the book cannot disagree with the
+game. Nothing in a paragraph says whose it is, and the answer to an accusation looks like any other YES or NO.
+The look follows the program's window in black and white: the display in a frame, the keys as boxes.
 
-    python paper.py 3          three random cases of the usual game -> ../print/books/cases_....html
-    python paper.py 3 lies     the same for the game of two false alibis
+    python paper.py 3 [lies] [en|ru]     three random cases -> ../print/books/cases_....html
+                                         (lies: two false alibis; the language: by default that of the help)
 """
 import html, os, random, sys, time
-from machine import Machine, NUMBER
+from help_text import QUESTIONS_EN, QUESTIONS_RU
+from machine import GLYPH, MASK, NUMBER, Machine, digits
 from rules import CARDS
 
-MOST = 10                                # cases in one file
+MOST = 50                                # cases in one file: 102 sheets, and a browser needs half a minute to print them
 BOOKS = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'print', 'books')
 COLS = ['alibi'] + list(range(1, 15)) + ['accuse']
+PLACES = dict(zip('AbCdEF', ['Art Show', 'Theatre', 'Card Party', 'Docks', 'Embassy', 'Factory']))
 
-PAGE = '''<!doctype html><meta charset="utf-8"><title>Electronic Detective: cases on paper</title>
+STYLE = '''<!doctype html><meta charset="utf-8"><title>Electronic Detective: case materials</title>
 <style>
-@page { size: A4 landscape; margin: 12mm }
-body { font: 11pt/1.3 Georgia, serif; margin: 12mm; color: #000; background: #fff }
+@page { size: A4 portrait; margin: 12mm }
+body { font: 10.5pt/1.3 Arial, Helvetica, sans-serif; margin: 12mm; color: #000; background: #fff }
 @media print { body { margin: 0 } }
-section + section, .grid { page-break-before: always }
-h1 { font-size: 16pt; margin: 0 0 1mm } p { margin: 0 0 2mm }
-code { font-family: Consolas, 'Courier New', monospace }
-table { border-collapse: collapse; width: 100%% }
-th, td { border: 1px solid #000; padding: .85mm 1.5mm; text-align: center }
-th.n { text-align: left; white-space: nowrap } td.v { font-style: italic }
-.grid { columns: 6; column-gap: 5mm; font-size: 13pt }
-.grid div { break-inside: avoid; border-bottom: 1px dotted #888; padding: .7mm 0; white-space: nowrap }
+section + section, .answers { page-break-before: always }
+.top { display: flex; align-items: center; justify-content: space-between; border-bottom: 1.5pt solid #000;
+       padding: 0 0 3mm; margin: 0 0 4mm }
+.top h1 { font-size: 15pt; margin: 0; letter-spacing: .5pt } .top small { display: block; font-size: 9pt; font-weight: normal }
+.game { font-size: 13pt; font-weight: bold; border: 1.5pt solid #000; border-radius: 1.5mm; padding: 1.2mm 3mm; white-space: nowrap }
+h2 { font-size: 12pt; margin: 6mm 0 2.5mm } p { margin: 0 0 3mm }
+.s { width: 2.5mm; height: 4.5mm; margin-right: .75mm; vertical-align: middle }
+.disp, .panel { white-space: nowrap }
+.panel { display: inline-block; border: 1.5pt solid #000; border-radius: 2mm; padding: 2mm 2.5mm 2mm 3.2mm; line-height: 0 }
+.panel .s { width: 4.2mm; height: 7.6mm; margin-right: 1.3mm }
+.status { border: 1px solid #000; border-radius: 2mm; padding: 2mm 3mm; margin: 0 0 4mm; display: flex; align-items: center; gap: 4mm }
+.key { display: inline-block; border: 1pt solid #000; font-weight: bold; border-radius: 1.2mm; padding: .4mm 1.4mm;
+       font-size: 9pt; white-space: nowrap }
+.key.d { min-width: 3.2mm; text-align: center }
+table { border-collapse: collapse; width: 100% }
+th, td { border: 1px solid #000; padding: 1.75mm 1mm; text-align: center }
+thead th { border: 0; padding: 0 .4mm 1.2mm } thead .key { display: block }
+th.n { text-align: left; white-space: nowrap; font-weight: normal } th.n b { display: inline-block; min-width: 5.5mm }
+td.v { font-style: italic }
+.grid { columns: 4; column-gap: 6mm; font-size: 12.5pt }
+.grid div { break-inside: avoid; border-bottom: 1px solid #aaa; padding: .55mm 0; white-space: nowrap }
 .grid b { display: inline-block; min-width: 11mm }
+.k th { white-space: nowrap; width: 1%; text-align: left } .k td { text-align: left } .k .s { width: 3.2mm; height: 5.8mm; margin-right: 1mm }
+.big.panel { padding: 3mm 3mm 3mm 5mm } .big .s { width: 7mm; height: 12.6mm; margin-right: 2mm }
+.pos { margin: 1mm 0 3mm 5mm } .pos span { display: inline-block; width: 7mm; margin-right: 2mm; text-align: center; font-size: 9pt }
+.rules .cols, .rules .box { font-size: 9.5pt } .rules .cols { display: flex; gap: 8mm } .rules .cols > div { flex: 1 }
+.rules .cols > div > div { margin: 0 0 3.5mm } .rules h2 { margin: 0 0 1.5mm; font-size: 11.5pt } .rules p { margin: 0 0 1.5mm }
+.rules ol { margin: 0; padding-left: 5mm } .rules li { margin: 0 0 1mm } .rules table { font-size: 9pt }
+.rules td, .rules th { padding: .7mm 1.2mm; text-align: left } .rules td.a { white-space: nowrap; text-align: center; width: 1% }
+.rules .s { width: 1.9mm; height: 3.4mm; margin-right: .5mm } .rules .box { border: 1.5pt solid #000; border-radius: 2mm; padding: 3mm }
 </style>
-%s'''
-CASE = '''<section><h1>Case %(number)d%(game)s</h1>
-<p>The victim is #%(victim)d %(name)s; the body is at %(scene)s. Find the number in the table and read only that
-paragraph on the other sheet. It is what the machine shows: <code>4E5</code> yes, <code>N0</code> no,
-<code>00 000 00</code> don't know, a digit is an area, a letter is a place; an alibi reads side, area, place,
-companion, companion. A dot is a dark digit. An empty cell: the question is not on this card.</p>
-<table><tr><th></th>%(head)s</tr>
-%(rows)s</table>
-<div class="grid">
-%(grid)s</div></section>
 '''
+
+# the texts of the sheets; names of people, places and keys stay as the cards and the machine have them
+TEXT = {'en': {
+    'sub': 'Case Materials', 'case': 'CASE', 'index': 'Index', 'answers': 'Answers', 'victim_row': 'the victim',
+    'game': ('THE USUAL GAME', 'TWO FALSE ALIBIS'), 'victim': 'The victim is #%d %s. The body was found at the %s.',
+    'questions': QUESTIONS_EN, 'yes_no': 'YES / NO', 'key_title': 'READING THE DISPLAY', 'rules_title': 'RULES IN BRIEF',
+    'key': '''<p>Every paragraph of the book is the seven digits of the machine's display. A dot is a dark digit: nothing is shown there.</p>
+<h2>%(suspect)s &nbsp;An alibi</h2>
+<div>%(example)s</div>
+<div class="pos">%(positions)s</div>
+<p>This one reads: &ldquo;I was on the West Side, at the Theatre, with No. 16.&rdquo; A dark digit: the suspect did not say.</p>
+<table class="k">
+<tr><th>1st digit</th><td><b>Side</b> &mdash; %(d1)s &ldquo;I was on the West Side&rdquo;, %(d2)s &ldquo;I was on the East Side&rdquo;</td></tr>
+<tr><th>2nd digit</th><td><b>Area</b> &mdash; %(d3)s &ldquo;I was Uptown&rdquo;, %(d4)s &ldquo;I was Midtown&rdquo;, %(d5)s &ldquo;I was Downtown&rdquo;</td></tr>
+<tr><th>3rd digit</th><td><b>Place</b>, &ldquo;I was at the &hellip;&rdquo; &mdash; %(places)s</td></tr>
+<tr><th>4th&ndash;7th digits</th><td><b>Companions</b>, &ldquo;I was with these suspects&rdquo; &mdash; one or two numbers of suspects.
+A six is shown as %(six)s, the same sign as the Theatre.</td></tr>
+</table>
+<h2>%(pq)s %(accuse)s &nbsp;An answer</h2>
+<table class="k">
+<tr><th>%(yes)s</th><td>YES</td></tr>
+<tr><th>%(no)s</th><td>NO</td></tr>
+<tr><th>%(unknown)s</th><td>&ldquo;I don't know&rdquo; (questions 13 and 14)</td></tr>
+</table>
+<p style="margin-top: 3mm">An area or a place is shown in the same digit as in an alibi: an area in the 2nd, a place in the 3rd.</p>
+<h2>Playing from the book</h2>
+<p>On the index sheet of the case find the row of the suspect and the column: %(suspect)s for the alibi, the number of a
+%(pq)s, or %(accuse)s. The cell gives the number of a paragraph. Read that paragraph on the answers sheet &mdash;
+and no other. An empty cell: the question is not on this suspect's card.</p>''',
+    'rules': '''<div class="cols"><div>
+<div><h2>The case</h2>
+<p>A murder has been committed in a big city. The victim and the place where the body was found are known. The other
+19 people have scattered around the city. Question them and name the murderer. Men are 1&ndash;10, women 11&ndash;20.</p></div>
+<div><h2>The city</h2>
+<p>Six places: %(places)s. Each place is on a side (1 West Side, 2 East Side) and in an area (3 Uptown, 4 Midtown,
+5 Downtown). Two guns are hidden in the city, a .38 and a .45, at two different places. One of them is the murder weapon.</p></div>
+<div><h2>Before you start</h2>
+<p>Agree on the level &mdash; how many private questions a turn has: <b>1</b> Master Detective &mdash; one,
+<b>2</b> Sleuth &mdash; two, <b>3</b> Gumshoe &mdash; three.</p>
+<p>Take the index sheet of a case. The display at its top shows the number of the victim and the place of the body.
+Put the victim's card away. At the place of the body there are neither suspects nor guns.</p></div>
+<div><h2>A turn: one suspect</h2>
+<p>%(suspect)s The alibi. Find its paragraph and read it aloud: everybody hears an alibi.</p>
+<p>%(pq)s As many as the level allows, and only those on this suspect's card (the filled cells of the row).
+The answer is for your eyes only.</p>
+<p>%(end)s The turn passes to the left. The same suspect may be questioned again in a later turn.</p></div>
+<div><h2>%(accuse)s</h2>
+<p>Only at the start of a turn, instead of questioning, and once per game. Read the paragraph of the accused:
+YES &mdash; you have solved the case; NO &mdash; you are out. Playing alone, a wrong accusation loses the case.</p></div>
+</div><div>
+<div><h2>What is always true</h2>
+<ol><li>The suspects tell the truth, with one exception (item 4).</li>
+<li>Four places hold four suspects each: an even and an odd man, an even and an odd woman.</li>
+<li>The fifth place holds three: two men and a woman, or two women and a man. The sixth, the place of the body, is empty.</li>
+<li>The prints on the murder weapon: whether they are an odd-numbered suspect's is told reliably only by a suspect
+of the murderer's sex who went where that weapon is. The others at a gun may lie about the prints, or may not.
+Where there is no gun, questions 13 and 14 are answered &ldquo;I don't know&rdquo;.</li>
+<li>The murderer is never at the place of the body, nor at a place where a gun is.</li></ol></div>
+<div><h2>The private questions</h2>
+<table>%(questions)s</table>
+<p style="margin-top: 1.5mm">Everybody has questions 13 and 14; they may also be answered &ldquo;I don't know&rdquo;.</p></div>
+</div></div>
+<div class="box"><h2>The game of Two False Alibis</h2>
+<p>For the cases marked <b>TWO FALSE ALIBIS</b>. Everything is as above, except:</p>
+<ol><li>Two suspects lie in their alibis: the murderer and one more. Each repeats the alibi of another suspect of the
+same sex and the same parity who was at another place.</li>
+<li>Private questions are answered truly by everybody, these two as well.</li>
+<li>Nobody says they were where a gun is.</li>
+<li>The other 17 tell the truth; the rule about the prints works as usual.</li></ol></div>'''}, 'ru': {
+    'sub': 'Материалы дела', 'case': 'ДЕЛО', 'index': 'Указатель', 'answers': 'Ответы', 'victim_row': 'жертва',
+    'game': ('ОБЫЧНАЯ ИГРА', 'ДВА ЛОЖНЫХ АЛИБИ'), 'victim': 'Жертва &mdash; №&nbsp;%d %s. Тело найдено в %s.',
+    'questions': QUESTIONS_RU, 'yes_no': 'YES / NO', 'key_title': 'КАК ЧИТАТЬ ТАБЛО', 'rules_title': 'КРАТКИЕ ПРАВИЛА',
+    'key': '''<p>Каждый параграф книги &mdash; семь разрядов табло машины. Точка &mdash; погасший разряд: там ничего не показано.</p>
+<h2>%(suspect)s &nbsp;Алиби</h2>
+<div>%(example)s</div>
+<div class="pos">%(positions)s</div>
+<p>Здесь сказано: &laquo;Я был на West Side, в Theatre, с №&nbsp;16&raquo;. Погасший разряд &mdash; подозреваемый об этом не сказал.</p>
+<table class="k">
+<tr><th>1-й разряд</th><td><b>Сторона</b> &mdash; %(d1)s &laquo;Я был на West Side&raquo;, %(d2)s &laquo;Я был на East Side&raquo;</td></tr>
+<tr><th>2-й разряд</th><td><b>Район</b> &mdash; %(d3)s &laquo;Я был в Uptown&raquo;, %(d4)s &laquo;Я был в Midtown&raquo;, %(d5)s &laquo;Я был в Downtown&raquo;</td></tr>
+<tr><th>3-й разряд</th><td><b>Место</b>, &laquo;Я был в &hellip;&raquo; &mdash; %(places)s</td></tr>
+<tr><th>4&ndash;7-й разряды</th><td><b>Спутники</b>, &laquo;Я был с этими подозреваемыми&raquo; &mdash; один или два номера.
+Шестёрка показывается как %(six)s &mdash; тем же знаком, что Theatre.</td></tr>
+</table>
+<h2>%(pq)s %(accuse)s &nbsp;Ответ</h2>
+<table class="k">
+<tr><th>%(yes)s</th><td>YES &mdash; да</td></tr>
+<tr><th>%(no)s</th><td>NO &mdash; нет</td></tr>
+<tr><th>%(unknown)s</th><td>&laquo;не знаю&raquo; (вопросы 13 и 14)</td></tr>
+</table>
+<p style="margin-top: 3mm">Район или место показаны в том же разряде, что и в алиби: район во 2-м, место в 3-м.</p>
+<h2>Как играть по книге</h2>
+<p>На листе-указателе дела найдите строку подозреваемого и столбец: %(suspect)s &mdash; алиби, номер под
+%(pq)s &mdash; вопрос, или %(accuse)s &mdash; обвинение. В клетке номер параграфа. Прочтите этот параграф на листе
+ответов &mdash; и только его. Пустая клетка: такого вопроса нет на карточке подозреваемого.</p>''',
+    'rules': '''<div class="cols"><div>
+<div><h2>Дело</h2>
+<p>В большом городе совершено убийство. Жертва и место, где найдено тело, известны. Остальные 19 человек разъехались
+по городу. Допрашивайте их и назовите убийцу. Мужчины &mdash; №&nbsp;1&ndash;10, женщины &mdash; №&nbsp;11&ndash;20.</p></div>
+<div><h2>Город</h2>
+<p>Шесть мест: %(places)s. Каждое место &mdash; на стороне (1 West Side, 2 East Side) и в районе (3 Uptown, 4 Midtown,
+5 Downtown). В городе спрятаны два пистолета, .38 и .45, в двух разных местах. Один из них &mdash; орудие убийства.</p></div>
+<div><h2>Перед игрой</h2>
+<p>Договоритесь об уровне &mdash; сколько частных вопросов в одном ходе: <b>1</b> Master Detective &mdash; один,
+<b>2</b> Sleuth &mdash; два, <b>3</b> Gumshoe &mdash; три.</p>
+<p>Возьмите лист-указатель дела. Табло вверху показывает номер жертвы и место тела. Карточку жертвы уберите.
+На месте тела нет ни подозреваемых, ни оружия.</p></div>
+<div><h2>Ход: один подозреваемый</h2>
+<p>%(suspect)s Алиби. Найдите его параграф и прочтите вслух: алиби слышат все.</p>
+<p>%(pq)s Столько, сколько разрешает уровень, и только с карточки этого подозреваемого (заполненные клетки строки).
+Ответ &mdash; только для ваших глаз.</p>
+<p>%(end)s Ход переходит к игроку слева. Того же подозреваемого можно допросить снова в другой ход.</p></div>
+<div><h2>%(accuse)s</h2>
+<p>Только в начале хода, вместо допроса, и один раз за игру. Прочтите параграф обвиняемого: YES &mdash; дело раскрыто;
+NO &mdash; вы выбыли. В одиночной игре неверное обвинение &mdash; дело проиграно.</p></div>
+</div><div>
+<div><h2>Что верно всегда</h2>
+<ol><li>Подозреваемые говорят правду &mdash; с одним исключением (п.&nbsp;4).</li>
+<li>В четырёх местах &mdash; по четыре подозреваемых: чётный и нечётный мужчина, чётная и нечётная женщина.</li>
+<li>В пятом месте &mdash; трое: двое мужчин и женщина или две женщины и мужчина. Шестое, место тела, пустое.</li>
+<li>Отпечатки на орудии убийства: нечётного ли они подозреваемого, надёжно скажет только подозреваемый того же пола,
+что убийца, скрывшийся туда, где лежит это оружие. Остальные у оружия могут солгать про отпечатки, а могут и нет.
+Там, где оружия нет, на вопросы 13 и 14 отвечают &laquo;не знаю&raquo;.</li>
+<li>Убийцы никогда нет на месте тела и там, где лежит любой из пистолетов.</li></ol></div>
+<div><h2>Частные вопросы</h2>
+<table>%(questions)s</table>
+<p style="margin-top: 1.5mm">Вопросы 13 и 14 есть у всех; на них могут ответить и &laquo;не знаю&raquo;.</p></div>
+</div></div>
+<div class="box"><h2>Игра &laquo;Два ложных алиби&raquo;</h2>
+<p>Для дел с меткой <b>ДВА ЛОЖНЫХ АЛИБИ</b>. Всё как выше, кроме:</p>
+<ol><li>Двое лгут в алиби: убийца и ещё один подозреваемый. Каждый повторяет алиби другого подозреваемого того же пола
+и той же чётности, который был в другом месте.</li>
+<li>На частные вопросы все отвечают правду &mdash; и эти двое тоже.</li>
+<li>Никто не говорит, что был там, где лежит оружие.</li>
+<li>Остальные 17 говорят правду; правило об отпечатках действует как обычно.</li></ol></div>'''}}
+
+# --- the display: seven segments a..g of a digit, as lines in a 10 x 18 box ---
+LINES = [(2, 1, 8, 1), (9, 2, 9, 8), (9, 10, 9, 16), (2, 17, 8, 17), (1, 10, 1, 16), (1, 2, 1, 8), (2, 9, 8, 9)]
+
+
+def symbol(mask, panel):
+    """A glyph of the display. In a paragraph: black segments, a dot for a dark digit. In a framed display: the dark
+    segments stay as a pale ghost, as on the real thing."""
+    line = lambda i, colour: '<line x1="%d" y1="%d" x2="%d" y2="%d" stroke="%s"/>' % (LINES[i] + (colour,))
+    if panel:
+        body = ''.join(line(i, '#000' if mask >> i & 1 else '#dadada') for i in range(7))
+    else:
+        body = ''.join(line(i, '#000') for i in range(7) if mask >> i & 1) or '<circle cx="5" cy="9" r="1"/>'
+    return '<symbol id="%s%d" viewBox="0 0 10 18" stroke-width="1.7" stroke-linecap="round">%s</symbol>' % ('pf'[panel], mask, body)
+
+
+DEFS = '<svg width="0" height="0" style="position:absolute"><defs>%s</defs></svg>\n' % ''.join(
+    symbol(m, p) for m in sorted(set(MASK.values())) for p in (False, True))
+
+
+def seg(text, panel=False, cls=''):
+    """The display showing `text`: bare (a paragraph) or framed."""
+    return '<span class="%s">%s</span>' % (('panel ' + cls).strip() if panel else 'disp', ''.join(
+        '<svg class="s"><use href="#%s%d"/></svg>' % ('pf'[panel], MASK[c]) for c in text))
+
+
+def key(label, cls=''):
+    return '<span class="%s">%s</span>' % (('key ' + cls).strip(), label)
+
+
+def top(title, note, right=''):
+    return '<div class="top"><h1>%s<small>%s</small></h1>%s</div>\n' % (title, note, right)
+
+
+# --- the sheets ---
+def front(lang):
+    """The two sheets that go with any number of cases: how to read the display, and the rules in brief."""
+    t = TEXT[lang]
+    keys = {'suspect': key('SUSPECT'), 'pq': key('PRIVATE QUESTION'), 'accuse': key('I ACCUSE'), 'end': key('END TURN'),
+            'places': ', '.join('%s&nbsp;%s' % (seg(g), name) for g, name in PLACES.items())}
+    questions = ''
+    for q in t['questions']:             # '3  What area did the murderer go to?  3 / 4 / 5'
+        n, text, answer = (q.split('  ') + [t['yes_no']])[:3]
+        questions += '<tr><th>%s</th><td>%s</td><td class="a">%s</td></tr>' % (n, html.escape(text), answer.replace('-', '&ndash;'))
+    reading = t['key'] % dict(keys, example=seg('1 b1b  ', True, 'big'), positions=''.join('<span>%d</span>' % n for n in range(1, 8)),
+                              six=seg('b'), yes=seg('  4E5  '), no=seg('     N0'), unknown=seg('0000000'),
+                              **{'d%d' % n: seg(str(n)) for n in range(1, 6)})
+    return ('<section>%s%s</section>\n<section class="rules">%s%s</section>\n' % (
+        top(t['key_title'], t['sub']), reading, top(t['rules_title'], t['sub']), t['rules'] % dict(keys, questions=questions)))
 
 
 def codes(number, lies):
@@ -53,49 +252,58 @@ def codes(number, lies):
     for s in range(1, 21):
         if s == m.victim: continue
         m.active = False
-        a = m.enter_suspect(s)
-        shown[s, 'alibi'] = a[:3] + a[3:].replace('b', '6')     # the display has one glyph for 6 and b; paper has two
+        shown[s, 'alibi'] = m.enter_suspect(s)
         for q in CARDS[s] + (13, 14):
             m.enter_question(q); shown[s, q] = m.shown
         shown[s, 'accuse'] = '  4E5  ' if s == m.murderer else '     N0'    # not the machine's show: like any answer
     return shown, m
 
 
-def face(key, text):
-    """The seven digits in the groups the player rules print them in; a dot for a dark digit."""
-    t, (a, b) = text.replace(' ', '·'), (3, 5) if key[1] == 'alibi' else (2, 5)
-    return ' '.join((t[:a], t[a:b], t[b:]))
-
-
-def book(number, lies, names):
+def paragraphs(number, lies):
+    """The displays of a case, its machine, and {(suspect, column): the number of the paragraph}."""
     shown, m = codes(number, lies)
     keys = sorted(shown, key=str)
     random.Random(number * 2 + lies).shuffle(keys)              # a paragraph number says nothing about what is asked
-    para = {k: i + 1 for i, k in enumerate(keys)}
+    return shown, m, {k: i + 1 for i, k in enumerate(keys)}
+
+
+def book(number, lies, names, lang='en'):
+    """The two sheets of a case: the index and the answers."""
+    t = TEXT[lang]
+    shown, m, para = paragraphs(number, lies)
+    right = '<span class="game">%s</span>%s' % (t['game'][lies], seg(digits(number, NUMBER), True))
+    scene = GLYPH[m.obs['scene']]
     rows = ''
     for s in range(1, 21):
-        cells = ('<td colspan="%d" class="v">the victim</td>' % len(COLS) if s == m.victim else
+        cells = ('<td colspan="%d" class="v">%s</td>' % (len(COLS), t['victim_row']) if s == m.victim else
                  ''.join('<td>%s</td>' % para.get((s, c), '') for c in COLS))
-        rows += '<tr><th class="n">%d %s</th>%s</tr>\n' % (s, html.escape(names[s - 1]), cells)
-    return CASE % {
-        'number': number, 'game': ' &middot; Two False Alibis' if lies else '', 'victim': m.victim,
-        'name': html.escape(names[m.victim - 1]), 'scene': m.obs['scene'], 'rows': rows,
-        'head': ''.join('<th>%s</th>' % {'alibi': 'Alibi', 'accuse': 'I accuse'}.get(c, 'Q%s' % c) for c in COLS),
-        'grid': ''.join('<div><b>%d</b> <code>%s</code></div>\n' % (para[k], face(k, shown[k])) for k in keys)}
+        rows += '<tr><th class="n"><b>%d</b> %s</th>%s</tr>\n' % (s, html.escape(names[s - 1]), cells)
+    return ''.join((
+        '<section class="case">', top('%s %d' % (t['case'], number), t['index'], right),
+        '<div class="status">%s<span>%s</span></div>\n' % (
+            seg(digits(m.victim) + scene + '    ', True), t['victim'] % (m.victim, html.escape(names[m.victim - 1]), PLACES[scene])),
+        '<table><thead><tr><th></th><th>%s</th><th colspan="14">%s</th><th>%s</th></tr>\n' % (
+            key('SUSPECT'), key('PRIVATE QUESTION'), key('I ACCUSE')),
+        '<tr><th></th><th></th>%s<th></th></tr></thead>\n' % ''.join('<th>%s</th>' % key(q, 'd') for q in range(1, 15)),
+        rows, '</table>\n<div class="answers">', top('%s %d' % (t['case'], number), t['answers'], right), '<div class="grid">\n',
+        ''.join('<div><b>%d</b> %s</div>\n' % (n, seg(shown[k])) for k, n in sorted(para.items(), key=lambda kn: kn[1])),
+        '</div></div></section>\n'))
 
 
-def write(count, lies, names, folder=None, rng=None):
+def write(count, lies, names, lang='en', folder=None, rng=None):
     """Writes a file of `count` random cases and returns its path. Two false alibis are checked by the solver
     as in the game, so they take seconds."""
+    lang = lang if lang in TEXT else 'en'
     numbers = (rng or random.SystemRandom()).sample(range(1, 10 ** NUMBER), min(count, MOST))
     folder = folder or BOOKS
     os.makedirs(folder, exist_ok=True)
-    path = os.path.join(folder, time.strftime('cases_%Y%m%d_%H%M%S') + ('_lies' if lies else '') + '.html')
-    with open(path, 'w', encoding='utf-8') as f:
-        f.write(PAGE % ''.join(book(n, lies, names) for n in numbers))
-    return path
+    name = time.strftime('cases_%Y%m%d_%H%M%S') + '_lies' * lies + ('_' + lang) * (lang != 'en') + '.html'
+    with open(os.path.join(folder, name), 'w', encoding='utf-8') as f:
+        f.write(STYLE + DEFS + front(lang) + ''.join(book(n, lies, names, lang) for n in numbers))
+    return os.path.join(folder, name)
 
 
 if __name__ == '__main__':
-    from elecdet_game import NAMES
-    print(write(int(sys.argv[1]), sys.argv[2:] == ['lies'], NAMES))
+    from elecdet_game import NAMES, load_settings
+    given = [a for a in sys.argv[2:] if a in TEXT]
+    print(write(int(sys.argv[1]), 'lies' in sys.argv[2:], NAMES, given[0] if given else load_settings().get('help_lang', 'en')))
