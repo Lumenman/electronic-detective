@@ -34,7 +34,9 @@ def digits(n, width=2):
 
 
 class Machine:
-    def __init__(self, rng=None, case=None, rom_like=False, lies=False, take=None, ask=False, number=None):
+    def __init__(self, rng=None, case=None, rom_like=False, lies=False, take=None, ask=False, number=None,
+                 most=10 ** NUMBER - 1):
+        self.most = most                         # the largest number taken when asked (ask=True)
         self.rng, self.fixed_case, self.rom_like = rng or random.SystemRandom(), case, rom_like
         self.lies, self.take = lies, take        # two false alibis; take() gives (number, case) dealt ahead, or None
         self.ask, self.given = ask, number       # switched on only to take the number of a case; the case to play
@@ -113,7 +115,7 @@ class Machine:
             self.typed = (self.typed + k)[-NUMBER:]; self.echo()
         else:
             t, self.typed = self.typed, ''
-            if k == 'ENTER' and t and int(t):
+            if k == 'ENTER' and t and 0 < int(t) <= self.most:
                 self.number = int(t); self.power_off()       # the window keeps it for the next game; the screen goes dark
             else: self.show(ON)
 

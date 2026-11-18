@@ -27,6 +27,7 @@ Rules for players: `../PLAYER_RULES.md`. Suspect cards: paper or PDF (they are n
 | `O` / `X` | ON / OFF |
 | hold `1` and press `O` (or click ON) | the original game (the ROM deals the case) |
 | hold `2` and press `O` | the game of Two False Alibis |
+| hold `8` and press `O` | write cases for playing on paper (PC only) |
 | hold `9` and press `O` | choose a case by its number |
 | hold `0` and press `O` (machine off) | clear the records and the running score: `ENTER` confirms, any other key cancels |
 | `Space` | peek at a covered private answer |
@@ -107,6 +108,15 @@ game the way the original does: entry, `EE` and `END`, the question limit, the a
   seed is taken (for a typed number it is checked on the spot — the machine waits). A case chosen by its number does
   not go to the records or the running score; par is shown. For a "case of the day", agree to type the date.
   `selftest.py` keeps samples: number 1 must give the same case under any Python version.
+- **Cases on paper** (PC only): hold `8`, press `ON`, type how many cases to write (1-10), `ENTER`: the machine goes
+  dark; then `ON` (the usual game) or `2` + `ON` (Two False Alibis) writes that many random cases to
+  `..\print\books\cases_<date>_<time>.html` and stays off; `OFF` cancels. Nothing of the cases is shown on the screen.
+  Open the file in a browser and print it (untick "Headers and footers"): two landscape A4 sheets per case. The first
+  is an index — suspect × alibi, the questions of the card, I accuse → the number of a paragraph; the second holds
+  the 133 paragraphs in shuffled order, each as the machine shows it (a dot is a dark digit; a 6 is printed as 6,
+  not as the display's `b`). A paragraph does not say whose it is, and the answer to an accusation looks like any
+  other YES or NO. The questions-per-turn limit is on the player's honour. The case number is in the heading, so the
+  same case can be played on the machine (`9` + `ON`). Without the window: `python paper.py 3 [lies]`.
 - **Reset**: hold `0` and press `ON` on a switched-off machine — the program asks whether to clear the records and
   the running score of all games; `ENTER` clears them, any other key cancels (the machine does not switch on).
 - **Sound** off and on: the speaker icon above the `?` (also `M`); kept in `settings.json`.
@@ -127,6 +137,7 @@ game the way the original does: entry, `EE` and `END`, the question limit, the a
 | `board.py` | the board of the device and loading the ROM (for the original) |
 | `machine.py` | our own machine: entry, turns, display, sound (no ROM) |
 | `rules.py` | the rules: dealing a case, alibis and answers (spoilers) |
+| `paper.py` | cases on paper: the book of paragraphs written after `8` + `ON` |
 | `sounds.py` | the sounds as notes of square-wave tones (obtained with `research/emu/sounds.py`) |
 | `tms0980.py` | the CPU core (a copy of `research/emu/tms0980.py` with lookup tables for speed) |
 | `selftest.py` | headless check: ROM, status line, score, choosing the ROM — `python selftest.py <ROM>` |
