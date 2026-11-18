@@ -34,3 +34,6 @@ PLAYER_RULES.ru.md
 research/*.ru.md
 # cases written for playing on paper (8 + ON): their answers
 game/cases_*.html
+# one-file builds (desktop/build.py)
+desktop/dist/
+desktop/work/

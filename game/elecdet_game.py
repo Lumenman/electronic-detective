@@ -22,7 +22,7 @@ STOCK = 3                                # cases of the game of two false alibis
 TALLY = 10                               # solved cases kept for the running score against par
 PAR = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'research', 'solver', 'par.py')
 
-HERE = os.path.dirname(os.path.abspath(__file__))
+HERE = paper.BOOKS                      # beside the program (the built one: beside the exe, not in its unpacked copy)
 ANDROID = 'ANDROID_ARGUMENT' in os.environ      # packed by android/build.sh: touch screen, no ROM (see there)
 SETTINGS = os.path.join(os.environ.get('ANDROID_PRIVATE', HERE), 'settings.json')   # the app folder is replaced on update
 RATE = 24000                        # 400 samples per 1/60 s; SDL resamples for the device
@@ -265,7 +265,7 @@ class Score:
 
 def font(size, bold=False):
     """Arial; where the apk brought DejaVu Sans beside this file (the phone has no Arial), that one."""
-    path = os.path.join(HERE, 'DejaVuSans-Bold.ttf' if bold else 'DejaVuSans.ttf')
+    path = os.path.join(getattr(sys, '_MEIPASS', HERE), 'DejaVuSans-Bold.ttf' if bold else 'DejaVuSans.ttf')
     return pygame.font.Font(path, round(size * 0.9)) if os.path.exists(path) else pygame.font.SysFont('arial', size, bold=bold)
 
 
@@ -660,7 +660,7 @@ class Game:
             self.par = ParThread(json.loads(json.dumps(case)), self.score.level)   # the same form the process gets
             return
         try:
-            self.par = subprocess.Popen([sys.executable, PAR, 'case', json.dumps(case), str(self.score.level)],
+            self.par = subprocess.Popen(paper.SOLVE + ['case', json.dumps(case), str(self.score.level)],
                                         stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, text=True,
                                         creationflags=getattr(subprocess, 'CREATE_NO_WINDOW', 0))
         except OSError:

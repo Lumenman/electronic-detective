@@ -14,6 +14,10 @@ Rules for players: `../PLAYER_RULES.md`. Suspect cards: paper or PDF (they are n
    `tms0980_common1_segment.pla`, `tms0980_elecdet_output.pla`. The files are checked against MAME's SHA1.
    The ROM is not included. The path is kept in `settings.json`; to choose another one, delete the `rom` line there.
 
+One file without Python: `python desktop/build.py` (needs `pyinstaller`) gives `desktop/dist/ElectronicDetective.exe`
+on Windows; run it in Linux (WSL will do) for a Linux binary, with `python3-tk` for the ROM dialog. The program
+keeps `settings.json` and the written cases beside itself, so put it in a folder you can write to.
+
 ## Controls
 
 | Key | Button |

@@ -17,8 +17,10 @@ from machine import GLYPH, MASK, NUMBER, Machine, digits
 from rules import CARDS
 
 MOST = 50                                # cases in one file: 102 sheets, and a browser needs half a minute to print them
-BOOKS = os.path.dirname(os.path.abspath(__file__))          # beside the program: the place a player looks first
+FROZEN = getattr(sys, 'frozen', False)       # built into one file by desktop/build.py
+BOOKS = os.path.dirname(sys.executable if FROZEN else os.path.abspath(__file__))   # beside the program: the place a player looks first
 PAR = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'research', 'solver', 'par.py')
+SOLVE = [sys.executable] if FROZEN else [sys.executable, PAR]   # + 'case', case, level: the built program is its own solver
 COLS = ['alibi'] + list(range(1, 15)) + ['accuse']
 PLACES = dict(zip('AbCdEF', ['Art Show', 'Theatre', 'Card Party', 'Docks', 'Embassy', 'Factory']))
 
@@ -277,12 +279,12 @@ def paragraphs(number, lies):
 def pars(cases):
     """Par of each case on levels 1, 2, 3, as the game counts it (research/solver/par.py, the methodical detective):
     seconds per case, so in processes on half of the cores. None where the solver is not here or gives up."""
-    if not os.path.exists(PAR):
+    if not FROZEN and not os.path.exists(PAR):
         return [[None] * 3 for _ in cases]
 
     def one(job):
         try:
-            out = subprocess.run([sys.executable, PAR, 'case', json.dumps(job[0]), str(job[1])], capture_output=True,
+            out = subprocess.run(SOLVE + ['case', json.dumps(job[0]), str(job[1])], capture_output=True,
                                  text=True, creationflags=getattr(subprocess, 'CREATE_NO_WINDOW', 0)).stdout.strip()
         except OSError:
             return None
