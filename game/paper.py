@@ -7,16 +7,18 @@ the machine would show, taken from Machine itself and drawn in its segments, so 
 game. Nothing in a paragraph says whose it is, and the answer to an accusation looks like any other YES or NO.
 The look follows the program's window in black and white: the display in a frame, the keys as boxes.
 
-    python paper.py 3 [lies] [en|ru]     three random cases -> ../print/books/cases_....html
+    python paper.py 3 [lies] [en|ru]     three random cases -> cases_....html beside this file
                                          (lies: two false alibis; the language: by default that of the help)
 """
-import html, os, random, sys, time
+import html, json, os, random, subprocess, sys, time
+from concurrent.futures import ThreadPoolExecutor
 from help_text import QUESTIONS_EN, QUESTIONS_RU
 from machine import GLYPH, MASK, NUMBER, Machine, digits
 from rules import CARDS
 
 MOST = 50                                # cases in one file: 102 sheets, and a browser needs half a minute to print them
-BOOKS = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'print', 'books')
+BOOKS = os.path.dirname(os.path.abspath(__file__))          # beside the program: the place a player looks first
+PAR = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'research', 'solver', 'par.py')
 COLS = ['alibi'] + list(range(1, 15)) + ['accuse']
 PLACES = dict(zip('AbCdEF', ['Art Show', 'Theatre', 'Card Party', 'Docks', 'Embassy', 'Factory']))
 
@@ -54,6 +56,7 @@ td.v { font-style: italic }
 .rules .cols > div > div { margin: 0 0 3.5mm } .rules h2 { margin: 0 0 1.5mm; font-size: 11.5pt } .rules p { margin: 0 0 1.5mm }
 .rules ol { margin: 0; padding-left: 5mm } .rules li { margin: 0 0 1mm } .rules table { font-size: 9pt }
 .rules td, .rules th { padding: .7mm 1.2mm; text-align: left } .rules td.a { white-space: nowrap; text-align: center; width: 1% }
+.par { margin: 4mm 0 0; font-weight: bold }
 .rules .s { width: 1.9mm; height: 3.4mm; margin-right: .5mm } .rules .box { border: 1.5pt solid #000; border-radius: 2mm; padding: 3mm }
 </style>
 '''
@@ -62,6 +65,7 @@ td.v { font-style: italic }
 TEXT = {'en': {
     'sub': 'Case Materials', 'case': 'CASE', 'index': 'Index', 'answers': 'Answers', 'victim_row': 'the victim',
     'game': ('THE USUAL GAME', 'TWO FALSE ALIBIS'), 'victim': 'The victim is #%d %s. The body was found at the %s.',
+    'par': 'PAR &mdash; the turns a methodical detective needs: level 1 &mdash; %s, level 2 &mdash; %s, level 3 &mdash; %s.',
     'questions': QUESTIONS_EN, 'yes_no': 'YES / NO', 'key_title': 'READING THE DISPLAY', 'rules_title': 'RULES IN BRIEF',
     'key': '''<p>Every paragraph of the book is the seven digits of the machine's display. A dot is a dark digit: nothing is shown there.</p>
 <h2>%(suspect)s &nbsp;An alibi</h2>
@@ -105,7 +109,8 @@ The answer is for your eyes only.</p>
 <p>%(end)s The turn passes to the left. The same suspect may be questioned again in a later turn.</p></div>
 <div><h2>%(accuse)s</h2>
 <p>Only at the start of a turn, instead of questioning, and once per game. Read the paragraph of the accused:
-YES &mdash; you have solved the case; NO &mdash; you are out. Playing alone, a wrong accusation loses the case.</p></div>
+YES &mdash; you have solved the case; NO &mdash; you are out. Playing alone, a wrong accusation loses the case.</p>
+<p>Count your turns: the par of every level is at the bottom of the answers sheet.</p></div>
 </div><div>
 <div><h2>What is always true</h2>
 <ol><li>The suspects tell the truth, with one exception (item 4).</li>
@@ -128,6 +133,7 @@ same sex and the same parity who was at another place.</li>
 <li>The other 17 tell the truth; the rule about the prints works as usual.</li></ol></div>'''}, 'ru': {
     'sub': 'Материалы дела', 'case': 'ДЕЛО', 'index': 'Указатель', 'answers': 'Ответы', 'victim_row': 'жертва',
     'game': ('ОБЫЧНАЯ ИГРА', 'ДВА ЛОЖНЫХ АЛИБИ'), 'victim': 'Жертва &mdash; №&nbsp;%d %s. Тело найдено в %s.',
+    'par': 'ПАР &mdash; столько ходов нужно методичному сыщику: уровень 1 &mdash; %s, уровень 2 &mdash; %s, уровень 3 &mdash; %s.',
     'questions': QUESTIONS_RU, 'yes_no': 'YES / NO', 'key_title': 'КАК ЧИТАТЬ ТАБЛО', 'rules_title': 'КРАТКИЕ ПРАВИЛА',
     'key': '''<p>Каждый параграф книги &mdash; семь разрядов табло машины. Точка &mdash; погасший разряд: там ничего не показано.</p>
 <h2>%(suspect)s &nbsp;Алиби</h2>
@@ -171,7 +177,8 @@ same sex and the same parity who was at another place.</li>
 <p>%(end)s Ход переходит к игроку слева. Того же подозреваемого можно допросить снова в другой ход.</p></div>
 <div><h2>%(accuse)s</h2>
 <p>Только в начале хода, вместо допроса, и один раз за игру. Прочтите параграф обвиняемого: YES &mdash; дело раскрыто;
-NO &mdash; вы выбыли. В одиночной игре неверное обвинение &mdash; дело проиграно.</p></div>
+NO &mdash; вы выбыли. В одиночной игре неверное обвинение &mdash; дело проиграно.</p>
+<p>Считайте свои ходы: пар для каждого уровня &mdash; внизу листа ответов.</p></div>
 </div><div>
 <div><h2>Что верно всегда</h2>
 <ol><li>Подозреваемые говорят правду &mdash; с одним исключением (п.&nbsp;4).</li>
@@ -267,8 +274,26 @@ def paragraphs(number, lies):
     return shown, m, {k: i + 1 for i, k in enumerate(keys)}
 
 
-def book(number, lies, names, lang='en'):
-    """The two sheets of a case: the index and the answers."""
+def pars(cases):
+    """Par of each case on levels 1, 2, 3, as the game counts it (research/solver/par.py, the methodical detective):
+    seconds per case, so in processes on half of the cores. None where the solver is not here or gives up."""
+    if not os.path.exists(PAR):
+        return [[None] * 3 for _ in cases]
+
+    def one(job):
+        try:
+            out = subprocess.run([sys.executable, PAR, 'case', json.dumps(job[0]), str(job[1])], capture_output=True,
+                                 text=True, creationflags=getattr(subprocess, 'CREATE_NO_WINDOW', 0)).stdout.strip()
+        except OSError:
+            return None
+        return int(out) if out.isdigit() else None
+    with ThreadPoolExecutor(max(1, (os.cpu_count() or 2) // 2)) as pool:
+        got = list(pool.map(one, [(case, level) for case in cases for level in (1, 2, 3)]))
+    return [got[i:i + 3] for i in range(0, len(got), 3)]
+
+
+def book(number, lies, names, lang='en', par=None):
+    """The two sheets of a case: the index and the answers (with the par of each level at the bottom, if given)."""
     t = TEXT[lang]
     shown, m, para = paragraphs(number, lies)
     right = '<span class="game">%s</span>%s' % (t['game'][lies], seg(digits(number, NUMBER), True))
@@ -287,19 +312,21 @@ def book(number, lies, names, lang='en'):
         '<tr><th></th><th></th>%s<th></th></tr></thead>\n' % ''.join('<th>%s</th>' % key(q, 'd') for q in range(1, 15)),
         rows, '</table>\n<div class="answers">', top('%s %d' % (t['case'], number), t['answers'], right), '<div class="grid">\n',
         ''.join('<div><b>%d</b> %s</div>\n' % (n, seg(shown[k])) for k, n in sorted(para.items(), key=lambda kn: kn[1])),
-        '</div></div></section>\n'))
+        '</div>', '<p class="par">%s</p>' % (t['par'] % tuple(p or '&ndash;' for p in par)) if par and any(par) else '',
+        '</div></section>\n'))
 
 
-def write(count, lies, names, lang='en', folder=None, rng=None):
-    """Writes a file of `count` random cases and returns its path. Two false alibis are checked by the solver
-    as in the game, so they take seconds."""
+def write(count, lies, names, lang='en', folder=None, rng=None, numbers=None):
+    """Writes a file of `count` random cases (or of the given numbers) and returns its path. The par takes seconds
+    per case, and so does checking two false alibis by the solver as in the game."""
     lang = lang if lang in TEXT else 'en'
-    numbers = (rng or random.SystemRandom()).sample(range(1, 10 ** NUMBER), min(count, MOST))
+    numbers = numbers or (rng or random.SystemRandom()).sample(range(1, 10 ** NUMBER), min(count, MOST))
+    par = pars([codes(n, lies)[1].case for n in numbers])
     folder = folder or BOOKS
     os.makedirs(folder, exist_ok=True)
     name = time.strftime('cases_%Y%m%d_%H%M%S') + '_lies' * lies + ('_' + lang) * (lang != 'en') + '.html'
     with open(os.path.join(folder, name), 'w', encoding='utf-8') as f:
-        f.write(STYLE + DEFS + front(lang) + ''.join(book(n, lies, names, lang) for n in numbers))
+        f.write(STYLE + DEFS + front(lang) + ''.join(book(n, lies, names, lang, p) for n, p in zip(numbers, par)))
     return os.path.join(folder, name)
 
 

@@ -610,13 +610,13 @@ class Game:
         """After 8 + ON: the cases go to a file, nothing of them to the screen. Two false alibis are checked by the
         solver (seconds each), so a thread writes and the window stays alive."""
         n, self.count = self.count, None
-        self.printed = 'Writing %d case%s on paper...' % (n, 's' * (n > 1))
+        self.printed = 'Writing %d case%s on paper and counting the par (seconds per case)...' % (n, 's' * (n > 1))
 
         def work():
             try:
                 lang = load_settings().get('help_lang', 'en')        # the book speaks the language of the help
-                path = os.path.join('print', 'books', os.path.basename(paper.write(n, lies, NAMES, lang)))
-                self.printed = '%d case%s of %s written to %s, in %s. ' % (
+                path = os.path.basename(paper.write(n, lies, NAMES, lang))
+                self.printed = '%d case%s of %s written to %s beside the program, in %s. ' % (
                     n, 's' * (n > 1), 'two false alibis' if lies else 'the usual game', path,
                     {'ru': 'Russian'}.get(lang, 'English'))
             except OSError as e:

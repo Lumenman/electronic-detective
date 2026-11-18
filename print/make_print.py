@@ -343,10 +343,10 @@ def woman(pen, x, y, h=8.0):
               (x - 1.1 * u, y + 4.3 * u), (x - 1.5 * u, y + 4.2 * u)], fill=BLACK)
 
 
-def num_keys(pen, x, y, n, s=4.2, size=7.5):
-    """Two small key boxes with the suspect number (n=0: empty), like the keypad."""
-    d = f'{n:2d}' if n else '  '
-    for k in range(2):
+def num_keys(pen, x, y, n, s=4.2, size=7.5, count=2):
+    """Small key boxes with a number (n=0: empty), like the keypad: two for a suspect, seven for a case."""
+    d = f'{n:{count}d}' if n else ' ' * count
+    for k in range(count):
         pen.box(x + k * (s + 0.5), y, s, s + 0.4, width=0.3)
         pen.box(x + k * (s + 0.5) + 0.6, y + 0.6, s - 1.2, s - 0.8, width=0.15)
         if d[k] != ' ':
@@ -359,13 +359,26 @@ def make_sheet(path):
     p = Pen(page)
     L, R = 12, 198
     # header
-    p.text(L, 19, 'ELECTRONIC DETECTIVE', 23, bold=True, color=BLUE)
+    title_end = p.text(L, 19, 'ELECTRONIC DETECTIVE', 23, bold=True, color=BLUE)
     p.text(L, 25.5, 'CASE FACT SHEET', 12, bold=True, color=BLUE)
-    p.text(105, 23.5, 'GAME', 8, bold=True)
+    cx = title_end - 7 * 4.7 + 0.5                                    # the number of the case: seven boxes ending with the title
+    num_keys(p, cx, 21.4, 0, count=7)
+    p.text(cx - 1.5, 25.2, 'CASE No.', 8, bold=True, align='r')
     p.box(124, 10.5, R - 124, 9, width=0.45)
-    p.text(140, 25.5, 'DETECTIVE', 9.5, bold=True)
-    p.text(161, 25.5, '(your name)', 6.5)
+    gap = 2.5                                                         # 'DETECTIVE (your name)' centred under the box
+    w = (pymupdf.get_text_length('DETECTIVE', 'hebo', 9.5) + pymupdf.get_text_length('(your name)', 'helv', 6.5)) / MM + gap
+    x = p.text((124 + R) / 2 - w / 2, 25.5, 'DETECTIVE', 9.5, bold=True)
+    p.text(x + gap, 25.5, '(your name)', 6.5)
     p.line(L, 28, R, 28, width=0.6)
+    # the game and the level (ours: the original sheet has neither)
+    p.text(L, 33.4, 'GAME', 8.5, bold=True)
+    for cx, s in ((25, 'Usual'), (45, 'Two False Alibis')):
+        chk(p, cx, 33.4); p.text(cx + 5.5, 33.4, s, 8.5)
+    p.text(86, 33.4, 'LEVEL', 8.5, bold=True)
+    for cx, s in ((101, '1 Master Detective'), (141, '2 Sleuth'), (164, '3 Gumshoe')):
+        chk(p, cx, 33.4); p.text(cx + 5.5, 33.4, s, 8.5)
+    p.line(L, 36, R, 36, width=0.3)
+    p = Pen(page, 0, 8)                    # everything below moves down by the new row
 
     # ---- 1. murder facts
     section(p, 46, '1', 'THE MURDER FACTS')
@@ -394,11 +407,11 @@ def make_sheet(path):
     for c in (0, 1):
         p.text(cols[c] - 1.5, y, 'Odd #', 8.5, align='r'); chk(p, cols[c], y)
         p.text(cols[c] - 1.5, y + 4.6, 'Even #', 8.5, align='r'); chk(p, cols[c], y + 4.6)
-    # who answered Q13/14: only a same-sex suspect at the murder weapon is reliable, known only later
-    p.text(cols[2], y + 1.2, 'told by #', 8.5)
-    right = cols[2] + 5.5 + pymupdf.get_text_length('5. Downtown', 'helv', 8.5) / MM   # keep within 'Downtown'
-    num_keys(p, right - 8.9, y + 1.2 - 3.9, 0)              # same two boxes as 'The victim was'
-    p.line(L, 84, R, 84, width=0.6)
+        # who answered Q13/14, per gun: only a same-sex suspect at the murder weapon is reliable, known only later
+        p.text(cols[c] - 1.5, y + 10.4, 'told by #', 8.5, align='r')
+        num_keys(p, cols[c], y + 10.4 - 3.9, 0)             # same two boxes as 'The victim was'
+    p.line(L, 90, R, 90, width=0.6)
+    p = Pen(page, 0, p.oy + 6)             # and by the row of 'told by'
 
     # ---- 2. who was where
     section(p, 102, '2', 'WHO WAS WHERE?')
@@ -439,7 +452,7 @@ def make_sheet(path):
     # ---- 3. who said what
     section(p, 157, '3', 'WHO SAID WHAT?')
     p.text(27, 150, 'SUSPECTS', 9, bold=True)
-    top, rh = 150.5, 10.3
+    top, rh = 150.5, 9.7
     half = (R - L) / 2
     p.text(52, 150, 'Men and their Statements', 6.5)
     p.text(L + half + 28, 150, 'Women and their Statements', 6.5)
@@ -464,8 +477,12 @@ def make_sheet(path):
     num_keys(p, cx - 6.3, cy - 3.2, 0, s=6, size=10)
     p.poly([(cx + rr - 0.2, cy - 1.2), (cx + rr + 18, cy - 2.4), (cx + rr + 18, cy + 1.8),
             (cx + rr - 0.2, cy + 1.2)], fill=BLACK)
+    # ours too: the turns the case took, and its par (from the program or the book), to compare
+    for tx, label in ((150, 'TURNS'), (176, 'PAR')):
+        p.text(tx, sec4 + 13.4, label, 8.5, bold=True, align='r')
+        num_keys(p, tx + 1.5, sec4 + 9.5, 0)
     p.text(R, sec4 + 19.5, 'Ideal 1979, 5A-3343 - redrawn blank for personal use', 5.5, color=CUT, align='r')
-    assert sec4 + 21 < 292, 'sheet overflows A4'
+    assert sec4 + p.oy + 21 < 292, 'sheet overflows A4'
     doc.save(path, deflate=True, garbage=3)
 
 

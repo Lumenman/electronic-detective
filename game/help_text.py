@@ -109,10 +109,11 @@ HELP = {
         'To play without the machine. Hold 8 and press ON, type how many cases to write (1-50) and press ENTER: the '
         'machine goes dark. Then ON writes that many random cases of the usual game, and 2 + ON of Two False Alibis; '
         'OFF cancels. Nothing of the cases is shown on the screen.',
-        'The file appears in the folder print\\books. Open it in a browser and print it on A4, without headers and '
+        'The file cases_<date>_<time>.html appears beside the program. Open it in a browser and print it on A4, without headers and '
         'footers. First come two sheets for all cases: how to read the display, and the rules in brief. Then two '
         'sheets per case: an index (suspect and question - the number of a paragraph) and the answers (the numbered '
-        'paragraphs, each as the display shows it). Read only the paragraph you asked for.',
+        'paragraphs, each as the display shows it, and at the bottom the par of each level). Read only the paragraph '
+        'you asked for. The par takes a few seconds per case to count.',
         'The sheets are written in the language of this help: switch it with the button below before writing.',
         'The number of the case is on its sheets: the same case can be played on the machine (9 + ON).',
         '',
@@ -201,10 +202,11 @@ HELP = {
         'Чтобы играть без машины. Удерживая 8, нажмите ON, введите, сколько дел записать (1-50), и нажмите ENTER: '
         'машина погаснет. Затем ON запишет столько случайных дел обычной игры, а 2 + ON - игры «Два ложных алиби»; '
         'OFF отменяет. На экран о делах ничего не выводится.',
-        'Файл появится в папке print\\books. Откройте его в браузере и напечатайте на A4, без колонтитулов. Сначала '
+        'Файл cases_<дата>_<время>.html появится рядом с программой. Откройте его в браузере и напечатайте на A4, без колонтитулов. Сначала '
         'идут два листа на все дела: как читать табло и краткие правила. Затем по два листа на дело: указатель '
         '(подозреваемый и вопрос - номер параграфа) и ответы (пронумерованные параграфы, каждый - как на табло). '
-        'Читайте только тот параграф, о котором спросили.',
+        'Внизу листа ответов - пар для каждого уровня. Читайте только тот параграф, о котором спросили. Пар считается '
+        'несколько секунд на дело.',
         'Листы пишутся на языке этой справки: переключите его кнопкой внизу до записи.',
         'Номер дела стоит на его листах: то же дело можно сыграть на машине (9 + ON).',
         '',

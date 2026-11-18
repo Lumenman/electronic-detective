@@ -33,4 +33,4 @@ PLAYER_RULES.ru.md
 # Russian versions of the research notes: kept locally
 research/*.ru.md
 # cases written for playing on paper (8 + ON): their answers
-print/books/
+game/cases_*.html

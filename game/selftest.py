@@ -298,14 +298,15 @@ assert g.board.powered and g.count is None and g.status.startswith('Cases on pap
 click('2'); click('ENTER'); wait(1); g.update_status(); print(g.status)
 assert not g.board.powered and g.count == 2 and g.pending is None and g.status.startswith('2 cases to write'), g.status
 g.press('2', True); g.press('ON', True); g.press('2', False)        # 2 + ON: two false alibis
-for _ in range(300):
+for _ in range(1200):                                               # the par: seconds per case
     if 'written' in (g.printed or ''): break
     time.sleep(0.1)
 g.update_status(); print(g.status)
 book, = glob.glob(os.path.join(tmpdir, 'books', 'cases_*_lies_ru.html'))
 text = open(book, encoding='utf-8').read()
 assert text.count('<section class="case">') == 2 and 'КРАТКИЕ ПРАВИЛА' in text and 'ДВА ЛОЖНЫХ АЛИБИ</span>' in text
-assert not g.board.powered and g.count is None and g.status.startswith('2 cases of two false alibis written to print'), g.status
+assert len(re.findall(r'<p class="par">ПАР .*?уровень 1 &mdash; \d+, уровень 2 &mdash; \d+, уровень 3 &mdash; \d+', text)) == 2
+assert not g.board.powered and g.count is None and g.status.startswith('2 cases of two false alibis written to cases_'), g.status
 assert g.status.endswith('in Russian. ON: a new case.'), g.status
 eg.save_settings(help_lang='en')
 g.press('8', True); g.press('ON', True); g.press('8', False); wait(3.5)
