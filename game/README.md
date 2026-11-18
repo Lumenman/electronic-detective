@@ -57,6 +57,10 @@ game the way the original does: entry, `EE` and `END`, the question limit, the a
   on how long `ENTER` is held.
 - Kept (these are the rules of the game): the place with three suspects and neither the murderer nor a gun,
   the rules of the answers about fingerprints.
+
+In the original the case is fixed by the moment `ENTER` is pressed at the start and by how long it is held. The shell
+passes the real hold to the ROM (at least 0.1 s, in steps of 1/60 s), so every outcome of the device stays
+reachable. Held for longer than about 0.8 s, the machine goes on by itself, as the device does.
 - Differences from the original (on purpose; the original itself is on `1` + `ON`):
   - `SUSPECT` pressed again before `ENTER` clears the display (the original shows `EE`, though the entry still works);
   - a rejected mode key cancels the entry: the next `ENTER` gives `EE` and costs nothing. In the original the

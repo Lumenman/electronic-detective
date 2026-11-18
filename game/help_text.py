@@ -38,7 +38,9 @@ HELP = {
     'en': [
         '# Starting a game',
         'ON - a game dealt fairly, without the patterns of the original.',
-        'Hold 1 and press ON - the original (needs its ROM; not on the phone).',
+        'Hold 1 and press ON - the original (needs its ROM; not on the phone). In the original the case depends on '
+        'the moment you press ENTER at the start and on how long you hold it: up to about 0.8 s, after that the '
+        'machine goes on by itself.',
         'Hold 2 and press ON - the game of Two False Alibis (see the last section).',
         'Hold 9 and press ON - choose a case by its number: type a number from 1 to 9999999 and press ENTER. The '
         'machine remembers it and goes dark; the next game you start (ON, or 2 + ON) plays that case '
@@ -130,7 +132,9 @@ HELP = {
     'ru': [
         '# Начало игры',
         'ON - игра с честной раздачей, без закономерностей оригинала.',
-        'Удерживая 1, нажмите ON - оригинал (нужен его ROM; на телефоне нет).',
+        'Удерживая 1, нажмите ON - оригинал (нужен его ROM; на телефоне нет). В оригинале дело зависит от того, '
+        'в какой момент вы нажмёте ENTER в начале игры и сколько его продержите: до 0,8 с, дальше машина '
+        'продолжает сама.',
         'Удерживая 2, нажмите ON - игра «Два ложных алиби» (см. последний раздел).',
         'Удерживая 9, нажмите ON - выбор дела по номеру: введите номер от 1 до 9999999 и нажмите ENTER. Машина '
         'запомнит его и погаснет; следующая игра, которую вы начнёте (ON или 2 + ON), будет этим делом '

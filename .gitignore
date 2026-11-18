@@ -37,3 +37,6 @@ game/cases_*.html
 # one-file builds (desktop/build.py)
 desktop/dist/
 desktop/work/
+# full enumeration of the original games (research/emu/all_games.py): ROM-derived cases
+research/emu/all_games/
+research/emu/all_games.log
