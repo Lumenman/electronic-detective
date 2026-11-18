@@ -135,7 +135,7 @@ victim, 4 and 8 never the murderer. The reason (found 2026-11-14, `emu/col0_pari
 - Column 0 shifts on every step of `0:C` except the carry, so its shift = `0:C` − 10 (5 ≡ 0).
 - A key press is taken only on the pass where `7:7` goes 7→6 (`0:1E`…`0:69` → `1:39`), and on that pass the rolling
   is skipped: every key taken flips the parity.
-- The rolling stops while handling `ENTER`, always at the same phase of the scan. After the usual start (level,
+- The rolling stops while handling `ENTER` (not while the key is held: see 4.2a), always at the same phase of the scan. After the usual start (level,
   players, `ENTER` — two keys before `ENTER`) `0:C` ∈ {10, 12, 14}: a shift of 0, 2 or 4.
 - If one more key is taken before `ENTER` (for example `END TURN` before the level, or a third digit),
   `0:C` ∈ {11, 13, 15}: a shift of 1, 3 or 0. Then the ban is different: 2 and 4 are never the victim, 6 and 10
@@ -157,6 +157,17 @@ start (parity, see above). Every state combines with 16 pairs "murderer's catego
 The instructions say "more than 130,000" — the machine does not give that many. A caveat: that every table meets
 all 16 pairs was not enumerated in full; 400 games met all 48 combinations "pair × phase of `0:C`", and all 400
 games lie within the set above.
+
+**Reachable by key timing** (2026-11-18, `emu/all_games.py`, `emu/lanes.py`; unfinished) [c]. The numbers above
+are an upper bound from the model; which of them the keys really reach is not settled:
+
+- The full machine state repeats every 7776 passes. A press inside a pass acts as one at a pass boundary; a release
+  inside a pass can differ (the keys are read 8 times per pass).
+- The rolling does **not** stop while `ENTER` is held: the table keeps changing during the hold, and `4:D` runs
+  through its 16 values in about 0.26 s. Held for about 0.83 s (≈431 passes), the machine goes on by itself.
+- Pressing `ENTER` at each of the 7776 passes with the shortest hold for each value of `4:D` gives 124,416 games
+  but only 15,342 different cases; 95 of the 400 sweep games are outside them, so longer holds reach more.
+  An exact count needs the hold loop of the ROM decoded; this was dropped.
 
 ### 4.3 Summary of invariants [d]
 

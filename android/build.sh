@@ -16,9 +16,10 @@ cp /usr/share/fonts/truetype/dejavu/DejaVuSans.ttf /usr/share/fonts/truetype/dej
 cp "$here/../research/solver/par.py" "$here/../research/solver/solver.py" "$work/app/"      # par is counted on the phone too
 cp "$here/buildozer.spec" "$work/"
 cp "$here/../game/icon.png" "$work/icon.png"
+cp "$here/presplash.png" "$work/presplash.png"
 rm -rf "$work/recipes"; cp -r "$here/recipes" "$work/"
 cd "$work"
 export MAKEFLAGS=-j2 CMAKE_BUILD_PARALLEL_LEVEL=2        # leave half of the cores free
 buildozer android debug
-cp bin/*.apk "$here/bin/"
+cp "$(ls -t bin/*.apk | head -1)" "$here/bin/"        # only the apk just built (older versions stay in bin/ here)
 ls -l "$here/bin"

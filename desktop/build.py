@@ -17,3 +17,14 @@ PyInstaller.__main__.run([
     '--hidden-import', 'par', '--hidden-import', 'solver',
     '--distpath', os.path.join(here, 'dist'), '--workpath', os.path.join(here, 'work'), '--specpath', os.path.join(here, 'work'),
     *data])
+
+# self-check: the built program, started as its own solver, gives the par that par.py gives for the same case
+import json, random, subprocess
+sys.path[:0] = [os.path.join(root, 'game'), os.path.join(root, 'research', 'solver')]
+import par, rules
+case = rules.deal(random.Random(5))
+want = str(par.case_par(case, 2))
+exe = os.path.join(here, 'dist', 'ElectronicDetective' + ('.exe' if os.name == 'nt' else ''))
+got = subprocess.run([exe, 'case', json.dumps(case), '2'], capture_output=True, text=True, timeout=300).stdout.strip()
+assert got == want, 'the built program gives par %r, par.py gives %r' % (got, want)
+print('self-check OK: the built program counts par like par.py (%s)' % got)

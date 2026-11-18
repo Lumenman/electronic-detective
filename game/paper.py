@@ -16,7 +16,7 @@ from help_text import QUESTIONS_EN, QUESTIONS_RU
 from machine import GLYPH, MASK, NUMBER, Machine, digits
 from rules import CARDS
 
-MOST = 50                                # cases in one file: 102 sheets, and a browser needs half a minute to print them
+MOST = 10                                # cases in one file: 22 sheets; the par takes seconds per case
 FROZEN = getattr(sys, 'frozen', False)       # built into one file by desktop/build.py
 BOOKS = os.path.dirname(sys.executable if FROZEN else os.path.abspath(__file__))   # beside the program: the place a player looks first
 PAR = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'research', 'solver', 'par.py')

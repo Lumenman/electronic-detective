@@ -16,7 +16,9 @@ Rules for players: `../PLAYER_RULES.md`. Suspect cards: paper or PDF (they are n
 
 One file without Python: `python desktop/build.py` (needs `pyinstaller`) gives `desktop/dist/ElectronicDetective.exe`
 on Windows; run it in Linux (WSL will do) for a Linux binary, with `python3-tk` for the ROM dialog. The program
-keeps `settings.json` and the written cases beside itself, so put it in a folder you can write to.
+keeps `settings.json` and the written cases beside itself; if that folder is read-only, in `ElectronicDetective`
+of the user's AppData (Windows) or `~/.config` (Linux). The build ends with a self-check: the built program must
+count par like `par.py`.
 
 ## Controls
 
@@ -31,7 +33,7 @@ keeps `settings.json` and the written cases beside itself, so put it in a folder
 | `O` / `X` | ON / OFF |
 | hold `1` and press `O` (or click ON) | the original game (the ROM deals the case) |
 | hold `2` and press `O` | the game of Two False Alibis |
-| hold `8` and press `O` | write cases for playing on paper (PC only) |
+| hold `8` and press `O` | write cases for the board game (PC only) |
 | hold `9` and press `O` | choose a case by its number |
 | hold `0` and press `O` (machine off) | clear the records and the running score: `ENTER` confirms, any other key cancels |
 | `Space` | peek at a covered private answer |
@@ -116,7 +118,7 @@ reachable. Held for longer than about 0.8 s, the machine goes on by itself, as t
   seed is taken (for a typed number it is checked on the spot — the machine waits). A case chosen by its number does
   not go to the records or the running score; par is shown. For a "case of the day", agree to type the date.
   `selftest.py` keeps samples: number 1 must give the same case under any Python version.
-- **Cases on paper** (PC only): hold `8`, press `ON`, type how many cases to write (1-50), `ENTER`: the machine goes
+- **Board game** (PC only): hold `8`, press `ON`, type how many cases to write (1-10), `ENTER`: the machine goes
   dark; then `ON` (the usual game) or `2` + `ON` (Two False Alibis) writes that many random cases to
   `cases_<date>_<time>.html` beside the program and stays off; `OFF` cancels. Nothing of the cases is shown on the screen.
   Open the file in a browser and print it on portrait A4 (untick "Headers and footers"); it is black and white, in
@@ -126,7 +128,7 @@ reachable. Held for longer than about 0.8 s, the machine goes on by itself, as t
   paragraphs in shuffled order, each drawn in the seven segments exactly as the machine shows it (a dot is a dark
   digit). A paragraph does not say whose it is, and the answer to an accusation looks like any other YES or NO. The
   questions-per-turn limit is on the player's honour. The answers sheet ends with the par of the case on each level
-  (counted by `..\research\solver\par.py` on half of the cores: seconds per case, a few minutes for 50 cases). The case number is on both sheets, so the same case can be
+  (counted by `..\research\solver\par.py` on half of the cores: seconds per case, under a minute for 10 cases). The case number is on both sheets, so the same case can be
   played on the machine (`9` + `ON`). The sheets are written in the language of the help (`F1`, the `RU`/`EN`
   button): names of people, places and keys stay English; a Russian file ends in `_ru`. Without the window:
   `python paper.py 3 [lies] [en|ru]`.
@@ -150,7 +152,7 @@ reachable. Held for longer than about 0.8 s, the machine goes on by itself, as t
 | `board.py` | the board of the device and loading the ROM (for the original) |
 | `machine.py` | our own machine: entry, turns, display, sound (no ROM) |
 | `rules.py` | the rules: dealing a case, alibis and answers (spoilers) |
-| `paper.py` | cases on paper: the book of paragraphs written after `8` + `ON` |
+| `paper.py` | the board game: the book of paragraphs written after `8` + `ON` |
 | `sounds.py` | the sounds as notes of square-wave tones (obtained with `research/emu/sounds.py`) |
 | `tms0980.py` | the CPU core (a copy of `research/emu/tms0980.py` with lookup tables for speed) |
 | `selftest.py` | headless check: ROM, status line, score, choosing the ROM — `python selftest.py <ROM>` |

@@ -11,6 +11,7 @@ ON pressed while 1 is held runs the original ROM in the emulator, with the regul
 Suspect cards are not shown: use the paper cards or the PDF.
 """
 import array, json, os, random, re, subprocess, sys, threading, time
+os.environ.setdefault('PYGAME_HIDE_SUPPORT_PROMPT', '1')   # no pygame banner in the terminal
 import pygame
 from board import ElecDet, IPS, SEG, load_romset
 import paper
@@ -18,6 +19,7 @@ from machine import Machine, NUMBER, number_rng
 from rules import CARDS, deal_lies, from_ram, observe
 from help_text import HELP
 
+VERSION = '0.3'                          # of the builds (buildozer.spec reads it from here)
 STOCK = 3                                # cases of the game of two false alibis kept dealt ahead
 TALLY = 10                               # solved cases kept for the running score against par
 PAR = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'research', 'solver', 'par.py')
@@ -25,6 +27,10 @@ PAR = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'research',
 HERE = paper.BOOKS                      # beside the program (the built one: beside the exe, not in its unpacked copy)
 ANDROID = 'ANDROID_ARGUMENT' in os.environ      # packed by android/build.sh: touch screen, no ROM (see there)
 SETTINGS = os.path.join(os.environ.get('ANDROID_PRIVATE', HERE), 'settings.json')   # the app folder is replaced on update
+FALLBACK = os.path.join(os.environ.get('APPDATA') or os.path.join(os.path.expanduser('~'), '.config'),
+                        'ElectronicDetective', 'settings.json')    # when the folder of the program is read-only
+if not ANDROID and not os.path.exists(SETTINGS) and os.path.exists(FALLBACK):
+    SETTINGS = FALLBACK
 RATE = 24000                        # 400 samples per 1/60 s; SDL resamples for the device
 CHUNK = 1 / 60                      # seconds of emulation per step
 AHEAD = 0.1                         # seconds of audio kept buffered (also how far the display runs ahead)
@@ -61,7 +67,7 @@ TALL = {'ON': (0, 0, 1), 'OFF': (1, 0, 1), 'ACCUSE': (2, 0, 1),
 NUMPAD = {getattr(pygame, 'K_KP%d' % i): str(i) for i in range(10)}
 NUMPAD[pygame.K_KP_ENTER] = 'ENTER'
 OFF_HINT = ('ON: a new case. Hold a key, press ON: 1 the original, 2 two false alibis, '              # two lines:
-            '8 cases on paper, 9 by number.')                                                       # longer is cut
+            '8 board game, 9 by number.')                                                       # longer is cut
 if 'ANDROID_ARGUMENT' in os.environ:      # no ROM on the phone
     OFF_HINT = 'ON: a new case. Hold a key and press ON: 2 two false alibis, 9 a case by its number.'
 
@@ -142,7 +148,7 @@ class Decoder:
         if t == 'ENd':
             return 'END: no more questions this turn. Press END TURN.'
         if c[0] == 'number' and c[1:]:
-            return 'Cases on paper: enter how many to write (1-%d), then ENTER.' % c[1]
+            return 'Board game: enter how many cases to write (1-%d), then ENTER.' % c[1]
         if c[0] == 'number':
             return'Enter the number of the case (1-%d), then ENTER.' % (10 ** NUMBER - 1)
         if c[0] == 'setup':
@@ -307,12 +313,36 @@ def load_settings():
 LOCK = threading.RLock()                 # the settings are written by the window and by the thread that deals ahead
 
 
+SAVE_ERROR = ''                          # set when neither place can be written: shown while off
+
+
+def writable(folder):
+    """By trying: os.access says yes to Program Files on Windows."""
+    probe = os.path.join(folder, '.write_test')
+    try:
+        os.makedirs(folder, exist_ok=True); open(probe, 'w').close(); os.remove(probe)
+        return True
+    except OSError:
+        return False
+
+
 def save_settings(**changes):
+    global SAVE_ERROR, SETTINGS
     with LOCK:
         data = load_settings(); data.update(changes)
-        with open(SETTINGS + '.tmp', 'w') as f:
-            json.dump(data, f, indent=1)
-        os.replace(SETTINGS + '.tmp', SETTINGS)    # a crash while writing must not leave a broken file
+        for _ in range(2):
+            try:
+                os.makedirs(os.path.dirname(SETTINGS), exist_ok=True)
+                with open(SETTINGS + '.tmp', 'w') as f:
+                    json.dump(data, f, indent=1)
+                os.replace(SETTINGS + '.tmp', SETTINGS)    # a crash while writing must not leave a broken file
+                SAVE_ERROR = ''
+                return
+            except OSError as e:
+                if ANDROID or SETTINGS == FALLBACK:
+                    SAVE_ERROR = 'Records and settings are not saved (%s).' % (e.strerror or e)
+                    return
+                SETTINGS = FALLBACK                      # the folder of the program is read-only: the user's folder
 
 
 def find_rom(arg):
@@ -474,7 +504,7 @@ class Game:
         if ANDROID:
             self.fit(ww, wh)
         self.fingers = {}                # finger id -> the key it holds (None: it lifts the cover)
-        pygame.display.set_caption('Electronic Detective')
+        pygame.display.set_caption('Electronic Detective ' + VERSION)
         icon = os.path.join(getattr(sys, '_MEIPASS', HERE), 'icon.png')    # the phone takes its icon from the apk
         if not ANDROID and os.path.exists(icon):
             pygame.display.set_icon(pygame.image.load(icon))
@@ -617,14 +647,17 @@ class Game:
         """After 8 + ON: the cases go to a file, nothing of them to the screen. Two false alibis are checked by the
         solver (seconds each), so a thread writes and the window stays alive."""
         n, self.count = self.count, None
-        self.printed = 'Writing %d case%s on paper and counting the par (seconds per case)...' % (n, 's' * (n > 1))
+        self.printed = 'Writing %d case%s for the board game and counting the par (seconds per case)...' % (n, 's' * (n > 1))
 
         def work():
             try:
                 lang = load_settings().get('help_lang', 'en')        # the book speaks the language of the help
-                path = os.path.basename(paper.write(n, lies, NAMES, lang))
-                self.printed = '%d case%s of %s written to %s beside the program, in %s. ' % (
-                    n, 's' * (n > 1), 'two false alibis' if lies else 'the usual game', path,
+                if writable(paper.BOOKS):
+                    where = os.path.basename(paper.write(n, lies, NAMES, lang)) + ' beside the program'
+                else:                                                # read-only folder: the user's folder
+                    where = paper.write(n, lies, NAMES, lang, folder=os.path.dirname(FALLBACK))
+                self.printed = '%d case%s of %s written to %s, in %s. ' % (
+                    n, 's' * (n > 1), 'two false alibis' if lies else 'the usual game', where,
                     {'ru': 'Russian'}.get(lang, 'English'))
             except OSError as e:
                 self.printed = 'The cases are not written: %s. ' % e
@@ -736,14 +769,14 @@ class Game:
             self.track(d)
         if self.board is not None and not self.board.powered:
             self.final = None
-            self.status = 'Switched off. ' + OFF_HINT
+            self.status = SAVE_ERROR or 'Switched off. ' + OFF_HINT     # the messages below still go first
         if self.lies and self.decoder.context[0] in ('number', 'setup') and self.board and self.board.powered:
             self.status = 'Two false alibis. ' + self.status      # the rule is in the help: a longer line is cut
         b = self.board
         if isinstance(b, Machine) and b.ask and not b.powered and b.number:
             self.pending, self.count, b.number = (None, b.number, None) if self.booking else (b.number, None, None)
         if self.count and not (b and b.powered):
-            self.status = ('%d case%s to write on paper. Press ON for the usual game, or hold 2 and press ON for two '
+            self.status = ('%d case%s to write for the board game. Press ON for the usual game, or hold 2 and press ON for two '
                            'false alibis. OFF cancels.' % (self.count, 's' * (self.count > 1)))
         if self.printed and not (b and b.powered):
             self.status = self.printed + ('' if self.printed.endswith('...') else 'ON: a new case.')
@@ -877,18 +910,24 @@ class Game:
             pages, page, y = [], [], 0
             texts = [t for text in HELP[self.lang] for t in                         # '@cards': who can be asked what
                      (['%d %s:  %s' % (s, NAMES[s - 1], ', '.join(map(str, CARDS[s]))) for s in sorted(CARDS)]
-                      if text == '@cards' else [text])]
+                      if text == '@cards' else [text])] + ['', 'Electronic Detective ' + VERSION]
 
             def cut(text):
                 if text.startswith('# '): return [(head, t) for t in self.wrap(text[2:], self.CW, head)]
                 return [(body, t) for t in self.wrap(text, self.CW, body)] if text else [(None, '')]
             for k, text in enumerate(texts):
-                lines = cut(text)                                                   # a heading keeps two paragraphs
-                need = len(lines) + (sum(len(cut(t)) for t in texts[k + 1:k + 3]) if text.startswith('# ') else 0)
-                if y + step * need > room and page:
-                    pages.append(page); page, y = [], 0
-                if page or text:                                                    # no gap at the top of a page
+                lines = cut(text)
+                if text.startswith('# '):                                           # a heading keeps two lines of text
+                    after = [ln for t in texts[k + 1:k + 3] for ln in cut(t) if ln[1]]
+                    if y + step * (len(lines) + min(2, len(after))) > room and page:
+                        pages.append(page); page, y = [], 0
                     page += lines; y += step * len(lines)
+                    continue
+                for ln in lines:                                                    # a paragraph goes on line by line
+                    if y + step > room and page:
+                        pages.append(page); page, y = [], 0
+                    if page or ln[1]:                                               # no gap at the top of a page
+                        page.append(ln); y += step
             self._help_src, self._help_pages = (self.lang, self.size), pages + [page]
         return self._help_pages
 

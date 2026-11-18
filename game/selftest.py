@@ -106,6 +106,20 @@ except SystemExit as e:
     assert 'No ROM selected' in str(e)
 print('rom selection OK')
 
+# --- a read-only folder of the program: the settings go to the user's folder, and an error only if both fail ---
+saved = eg.SETTINGS, eg.FALLBACK
+blocked = os.path.join(tmpdir, 'file_not_folder')
+open(blocked, 'w').close()                               # a file where the folder should be: no write can succeed
+eg.SETTINGS, eg.FALLBACK = os.path.join(blocked, 'settings.json'), os.path.join(tmpdir, 'user', 'settings.json')
+eg.save_settings(x=1)
+assert eg.SETTINGS == eg.FALLBACK and eg.load_settings() == {'x': 1} and eg.SAVE_ERROR == '', eg.SAVE_ERROR
+eg.SETTINGS = eg.FALLBACK = os.path.join(blocked, 'settings.json')
+eg.save_settings(x=2)
+assert eg.SAVE_ERROR.startswith('Records and settings are not saved'), eg.SAVE_ERROR
+assert not eg.writable(blocked) and eg.writable(os.path.join(tmpdir, 'new_folder'))
+eg.SETTINGS, eg.FALLBACK = saved; eg.SAVE_ERROR = ''
+print('read-only folder OK')
+
 # --- key queue: instant clicks and overlapping keys must still reach the ROM ---
 g = eg.Game.__new__(eg.Game)
 g.files, g.board, g.decoder, g.held, g._level = files, None, Decoder(), {}, 0
@@ -292,9 +306,9 @@ paper.BOOKS = os.path.join(tmpdir, 'books')
 eg.save_settings(help_lang='ru')                                    # the book speaks the language of the help
 g.press('OFF', True)
 g.press('8', True); g.press('ON', True); g.press('8', False); wait(3.5)
-assert g.decoder.context == ('number', paper.MOST) and g.booking and paper.MOST == 50
+assert g.decoder.context == ('number', paper.MOST) and g.booking and paper.MOST == 10
 click('5'); click('1'); click('ENTER'); wait(1); g.update_status()  # more than fifty: still asking
-assert g.board.powered and g.count is None and g.status.startswith('Cases on paper'), g.status
+assert g.board.powered and g.count is None and g.status.startswith('Board game'), g.status
 click('2'); click('ENTER'); wait(1); g.update_status(); print(g.status)
 assert not g.board.powered and g.count == 2 and g.pending is None and g.status.startswith('2 cases to write'), g.status
 g.press('2', True); g.press('ON', True); g.press('2', False)        # 2 + ON: two false alibis

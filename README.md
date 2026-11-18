@@ -29,6 +29,13 @@ original cards or your own copy of them (the help screen lists who answers which
 - The rules in several pages, in English and Russian (`?` or `F1`).
 - The original ROM on `1` + `ON`, with the display drawn by how long each segment was really lit.
 
+## Download
+
+Ready builds are on the [Releases](https://github.com/Lumenman/electronic-detective/releases) page: one file for
+Windows (`.exe`) or Linux, and an `.apk` for Android. No Python needed. The program keeps its settings and records
+beside itself, or in `ElectronicDetective` of the user's AppData / `~/.config` if its folder is read-only.
+To build them yourself: `python desktop/build.py` (Windows or Linux) and `android/build.sh`.
+
 ## Quick start (PC)
 
 ```
