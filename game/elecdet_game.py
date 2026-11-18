@@ -483,6 +483,10 @@ class Game:
         self.small = font(int(self.LABEL * self.Z * self.K), bold=True)
         self.big = font(int(26 * self.Z * self.K), bold=True)
         self.hint_img = self.small.render(self.HINT, True, (110, 110, 100))
+        room = self.px(self.W - self.M)                      # half the margin on each side
+        if self.hint_img.get_width() > room:                 # DejaVu (Linux build) is wider than Arial
+            self.hint_img = font(int(self.LABEL * self.Z * self.K * room / self.hint_img.get_width()),
+                                 bold=True).render(self.HINT, True, (110, 110, 100))
         self.buttons = []
         for label, key, _, col, row, w in PAD:
             if ANDROID:
