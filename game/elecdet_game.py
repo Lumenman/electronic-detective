@@ -13,6 +13,7 @@ Suspect cards are not shown: use the paper cards or the PDF.
 import array, json, os, random, re, subprocess, sys, threading, time
 import pygame
 from board import ElecDet, IPS, SEG, load_romset
+import paper
 from machine import Machine, NUMBER, number_rng
 from rules import CARDS, deal_lies, from_ram, observe
 from help_text import HELP
@@ -59,8 +60,8 @@ TALL = {'ON': (0, 0, 1), 'OFF': (1, 0, 1), 'ACCUSE': (2, 0, 1),
         'ENTER': (0, 5, 2), 'ENDTURN': (2, 5, 1)}
 NUMPAD = {getattr(pygame, 'K_KP%d' % i): str(i) for i in range(10)}
 NUMPAD[pygame.K_KP_ENTER] = 'ENTER'
-OFF_HINT = ('ON: a new case. Hold a key and press ON: 1 the original game, 2 two false alibis, '      # two lines:
-            '9 a case by its number.')                                                              # longer is cut
+OFF_HINT = ('ON: a new case. Hold a key, press ON: 1 the original, 2 two false alibis, '              # two lines:
+            '8 cases on paper, 9 by number.')                                                       # longer is cut
 if 'ANDROID_ARGUMENT' in os.environ:      # no ROM on the phone
     OFF_HINT = 'ON: a new case. Hold a key and press ON: 2 two false alibis, 9 a case by its number.'
 
@@ -96,7 +97,8 @@ class Decoder:
             n = int(digits) if digits else None
             self.seq += 1
             if self.context[0] == 'number':
-                if n: self.context = ('off',)                # remembered for the next game: the machine goes dark
+                if n and n <= (self.context + (10 ** NUMBER,))[1]:      # ('number', most) after 8 + ON
+                    self.context = ('off',)                  # remembered for the next game: the machine goes dark
             elif self.context[0] == 'setup':
                 if len(digits) == 2 and digits[0] in '123' and digits[1] in '1234':   # anything else: ON again
                     self.context = ('crime',)
@@ -139,8 +141,10 @@ class Decoder:
             return 'EE: wrong key sequence or a question not on this card. Start the entry again.'
         if t == 'ENd':
             return 'END: no more questions this turn. Press END TURN.'
+        if c[0] == 'number' and c[1:]:
+            return 'Cases on paper: enter how many to write (1-%d), then ENTER.' % c[1]
         if c[0] == 'number':
-            return 'Enter the number of the case (1-%d), then ENTER.' % (10 ** NUMBER - 1)
+            return'Enter the number of the case (1-%d), then ENTER.' % (10 ** NUMBER - 1)
         if c[0] == 'setup':
             return 'Enter level (1 Master Detective, 2 Sleuth, 3 Gumshoe), number of players (1-4), then ENTER.'
         if c[0] == 'crime':
@@ -417,6 +421,9 @@ class Game:
     lies = False                         # the game of two false alibis (2 + ON)
     numbered = False                     # the case was chosen by its number: no records, no running score
     pending = None                       # the number typed after 9 + ON, kept for the next game
+    booking = False                      # the machine is on after 8 + ON: it takes how many cases to write on paper
+    count = None                         # that many, kept until ON or 2 + ON picks the game
+    printed = None                       # what became of them: shown while the machine is off
     help = None                          # the page of the '?' screen that is open
     timing = {}                          # seconds of the last deal check and par count in this process (shown in the help)
 
@@ -556,7 +563,8 @@ class Game:
                 self.wiped = True
                 return
         if key in ('ON', 'OFF'):
-            ask = bool(self.held.get('9'))           # 9 + ON: only to type the number of the next case
+            book = bool(self.held.get('8')) and not ANDROID    # 8 + ON: only to type how many cases to write on paper
+            ask = bool(self.held.get('9')) or book   # 9 + ON: only to type the number of the next case
             original = bool(self.held.get('1')) and not ask    # a held digit picks the game: 1 + ON, 2 + ON
             if key == 'ON' and down and self.held.get('0') and not (self.board and self.board.powered):
                 self.wipe_ask, self.wiped = True, False                    # 0 + ON: asks first
@@ -575,14 +583,19 @@ class Game:
                 self.decoder.key(key)
                 self.score = self.note = self.final = None
                 self.stop_par()
-                if key == 'OFF': self.pending = None                              # OFF forgets the number that was set
-                if key == 'ON' and (self.board is None or not self.board.powered):
+                if key == 'OFF': self.pending = self.count = None                 # OFF forgets the number that was set
+                self.printed = None
+                if key == 'ON' and self.count and not ask and not original:       # the game is picked: write, stay off
+                    self.write_cases(lies)
+                elif key == 'ON' and (self.board is None or not self.board.powered):
                     number = None if ask or original else self.pending            # the ROM's cases have no numbers
-                    self.board = ElecDet(self.files) if original else Machine(lies=lies, take=self.take, ask=ask, number=number)
+                    self.board = ElecDet(self.files) if original else Machine(
+                        lies=lies, take=self.take, ask=ask, number=number, **({'most': paper.MOST} if book else {}))
+                    self.booking = book
                     self.original, self.lies, self._level, self.wiped = original, lies, 0, False
                     self.numbered = number is not None
                     if number: self.pending = None                                # played once
-                    if ask: self.decoder.context = ('number',)
+                    if ask: self.decoder.context = ('number', paper.MOST) if book else ('number',)
                     self.keyq, self.cur_key, self.key_rest = [], None, 0
                     self.board.power_on()
                 elif key == 'OFF' and self.board:
@@ -592,6 +605,21 @@ class Game:
         self.held[key] = max(cnt, 0)
         if down and cnt == 1 and self.board:
             self.keyq.append(key)            # the status line follows it when it reaches the board (feed_keys)
+
+    def write_cases(self, lies):
+        """After 8 + ON: the cases go to a file, nothing of them to the screen. Two false alibis are checked by the
+        solver (seconds each), so a thread writes and the window stays alive."""
+        n, self.count = self.count, None
+        self.printed = 'Writing %d case%s on paper...' % (n, 's' * (n > 1))
+
+        def work():
+            try:
+                path = os.path.join('print', 'books', os.path.basename(paper.write(n, lies, NAMES)))
+                self.printed = '%d case%s of %s written to %s. ' % (
+                    n, 's' * (n > 1), 'two false alibis' if lies else 'the usual game', path)
+            except OSError as e:
+                self.printed = 'The cases are not written: %s. ' % e
+        threading.Thread(target=work, daemon=True).start()
 
     def heard(self, key):
         """A key the board takes now: the status line and the score follow it."""
@@ -704,7 +732,12 @@ class Game:
             self.status = 'Two false alibis. ' + self.status      # the rule is in the help: a longer line is cut
         b = self.board
         if isinstance(b, Machine) and b.ask and not b.powered and b.number:
-            self.pending, b.number = b.number, None
+            self.pending, self.count, b.number = (None, b.number, None) if self.booking else (b.number, None, None)
+        if self.count and not (b and b.powered):
+            self.status = ('%d case%s to write on paper. Press ON for the usual game, or hold 2 and press ON for two '
+                           'false alibis. OFF cancels.' % (self.count, 's' * (self.count > 1)))
+        if self.printed and not (b and b.powered):
+            self.status = self.printed + ('' if self.printed.endswith('...') else 'ON: a new case.')
         if self.pending and not (b and b.powered):
             self.status = ('Case %d is set. Press ON to play it, or hold 2 and press ON to play it as two false alibis. '
                            'OFF forgets it.'

@@ -46,6 +46,9 @@ HELP = {
         'The same number is the same case on any device: give it to a friend, or agree to play the date as the case '
         'of the day. Every case shows its number at the start and in the final summary. A case chosen by its number '
         'does not go to the records or the running score.',
+        'Hold 8 and press ON (PC only) - cases on paper: type how many (1-10) and press ENTER; then ON, or 2 + ON, '
+        'writes that many random cases to a file in print\\books (OFF cancels). Print it from a browser: an index '
+        'and a sheet of numbered answers per case, to play without the machine.',
         'Hold 0 and press ON - clear the records and the running score: ENTER confirms, any other key keeps them.',
         'The speaker at the top right of the message field turns the sound off and on (on a PC also the M key).',
         '',
@@ -125,6 +128,9 @@ HELP = {
         'одно и то же дело на любом устройстве: продиктуйте его другу или договоритесь играть дату как дело дня. '
         'Номер каждого дела показан в начале и в итоге. Дело, выбранное по номеру, в рекорды и накопленный счёт '
         'не идёт.',
+        'Удерживая 8, нажмите ON (только ПК) - дела на бумаге: введите, сколько (1-10), и нажмите ENTER; затем ON '
+        'или 2 + ON запишет столько случайных дел в файл в print\\books (OFF отменяет). Напечатайте его из браузера: '
+        'на каждое дело указатель и лист пронумерованных ответов, чтобы играть без машины.',
         'Удерживая 0, нажмите ON - стереть рекорды и накопленный счёт: ENTER подтверждает, любая другая клавиша '
         'оставляет их.',
         'Динамик в правом верхнем углу поля сообщений выключает и включает звук (на ПК ещё клавиша M).',

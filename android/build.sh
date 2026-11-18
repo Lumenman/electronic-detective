@@ -11,7 +11,7 @@ mkdir -p "$work/app" "$here/bin"
 . "$work/venv/bin/activate"
 pip -q install buildozer cython setuptools
 rm -f "$work"/app/*.py
-for f in main elecdet_game board tms0980 machine rules sounds help_text; do cp "$here/../game/$f.py" "$work/app/"; done
+for f in main elecdet_game board tms0980 machine rules sounds help_text paper; do cp "$here/../game/$f.py" "$work/app/"; done
 cp /usr/share/fonts/truetype/dejavu/DejaVuSans.ttf /usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf "$work/app/"   # the phone has no Arial
 cp "$here/../research/solver/par.py" "$here/../research/solver/solver.py" "$work/app/"      # par is counted on the phone too
 cp "$here/buildozer.spec" "$work/"
