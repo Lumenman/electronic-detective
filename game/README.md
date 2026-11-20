@@ -158,5 +158,3 @@ reachable. Held for longer than about 0.8 s, the machine goes on by itself, as t
 | `selftest.py` | headless check: ROM, status line, score, choosing the ROM — `python selftest.py <ROM>` |
 | `test_private.py`, `test_score.py`, `test_multi.py` | checks in a window on a real game (~1.5 min each) |
 | `main.py`, `test_touch.py` | the Android entry point (built by `../android/build.sh` in WSL) and a touch check on a PC |
-| `probe_multi.py`, `probe_poweroff.py` | probing the machine's behaviour (several players, automatic power-off) |
-| `probe_patent.py` | checking the patent's claims: `EE` (a question not on the card) uses up a question of the turn; without `END TURN` → `END`/`EE` |

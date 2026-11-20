@@ -1,3 +1,0 @@
-games analysed: 0; skipped: {}
-
-## prints Q13/Q14, 3 asks each (=M same parity as murderer, !M opposite)

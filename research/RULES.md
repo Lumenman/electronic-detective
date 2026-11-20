@@ -40,7 +40,7 @@ The display has 7 digits, read along the line under the screen.
 | `4E5` / `N0` | YES / NO |
 | `3`/`4`/`5`, `A`…`F` | an area / a place as the answer |
 | `0000000` | "I don't know" (and the victim's alibi) |
-| `EE` | an entry error, a question not on the card, another suspect without END TURN **[d]/[i]**; it uses up one question of the turn (emulator, `game/probe_patent.py`; the patent US 4,394,018 says the same) |
+| `EE` | an entry error, a question not on the card, another suspect without END TURN **[d]/[i]**; it uses up one question of the turn (emulator, `research/probe_patent.py`; the patent US 4,394,018 says the same) |
 | `END` | the question limit of the turn is exceeded **[i]** |
 | `NNd1d` | the accusation is wrong, NN is the real murderer **[d]** |
 | `NN4E5` | the accusation is right **[d]** |

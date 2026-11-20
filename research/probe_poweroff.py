@@ -2,6 +2,7 @@
 can suspects still be questioned ("review the case")? Prints no solution data.
     python probe_poweroff.py <ROM folder>"""
 import sys
+import os; sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "game"))  # board.py of the game
 from board import ElecDet, IPS, load_romset
 
 files = load_romset(sys.argv[1])

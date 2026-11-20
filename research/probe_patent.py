@@ -3,6 +3,7 @@
  2) questioning a new suspect without END TURN gives EE (patent) or END (manual).
     python probe_patent.py <ROM folder or zip>"""
 import re, sys
+import os; sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "game"))  # board.py of the game
 from board import ElecDet, IPS, load_romset
 
 b = ElecDet(load_romset(sys.argv[1]))
