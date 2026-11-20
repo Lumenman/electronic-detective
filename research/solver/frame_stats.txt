@@ -7,3 +7,61 @@ level 2, 200 cases: solved 200; turns min 6  median 10  mean 10.9  max 20   6:4 
   two or fewer names left: median turn 8, mean 8.4
 level 1, 200 cases: solved 200; turns min 9  median 17  mean 17.2  max 29   9:2 10:7 11:5 12:16 13:15 14:15 15:10 16:30 17:21 18:12 19:13 20:17 21:9 22:3 23:2 24:4 25:6 26:5 27:3 28:1 29:4
   two or fewer names left: median turn 12, mean 12.3
+
+# 2026-11-20: options far / loud (the draft rerun first: same figures as above)
+variant: the draft of 2026-11-16
+everything asked, 500 cases: names left 1:500
+  the framed one still possible in 0; the pair of liars known exactly in 256
+variant: the draft of 2026-11-16
+level 3, 200 cases, the detective who trusts every answer ends with: murderer 143  contradiction 43  other 12  framed 2
+variant: the draft of 2026-11-16
+level 3, 200 cases: solved 200; turns min 5  median 9  mean 8.7  max 18   5:6 6:19 7:39 8:36 9:44 10:21 11:15 12:8 13:6 14:3 15:2 18:1
+  two or fewer names left: median turn 7, mean 7.1
+variant: the draft of 2026-11-16
+level 2, 200 cases: solved 200; turns min 6  median 10  mean 10.9  max 20   6:4 7:14 8:22 9:32 10:36 11:24 12:21 13:11 14:14 15:5 16:3 17:3 18:5 19:4 20:2
+  two or fewer names left: median turn 8, mean 8.4
+variant: the draft of 2026-11-16
+level 1, 200 cases: solved 200; turns min 9  median 17  mean 17.2  max 29   9:2 10:7 11:5 12:16 13:15 14:15 15:10 16:30 17:21 18:12 19:13 20:17 21:9 22:3 23:2 24:4 25:6 26:5 27:3 28:1 29:4
+  two or fewer names left: median turn 12, mean 12.3
+variant: far
+everything asked, 500 cases: names left 1:500
+  the framed one still possible in 0; the pair of liars known exactly in 337
+variant: far
+level 3, 200 cases, the detective who trusts every answer ends with: murderer 110  contradiction 71  other 18  framed 1
+variant: far
+level 3, 200 cases: solved 200; turns min 4  median 8  mean 8.6  max 18   4:1 5:8 6:21 7:40 8:38 9:36 10:20 11:16 12:5 13:6 14:5 15:1 16:2 18:1
+  two or fewer names left: median turn 7, mean 7.0
+variant: far
+level 2, 200 cases: solved 200; turns min 5  median 10  mean 10.4  max 20   5:1 6:10 7:23 8:16 9:28 10:44 11:23 12:19 13:7 14:10 15:2 16:6 17:3 18:4 19:2 20:2
+  two or fewer names left: median turn 8, mean 8.1
+variant: far
+level 1, 200 cases: solved 200; turns min 9  median 16  mean 16.7  max 30   9:2 10:8 11:17 12:15 13:10 14:16 15:6 16:36 17:19 18:12 19:12 20:12 21:9 22:1 23:2 24:3 25:9 26:7 27:2 28:1 30:1
+  two or fewer names left: median turn 11, mean 11.7
+variant: loud
+everything asked, 500 cases: names left 1:500
+  the framed one still possible in 0; the pair of liars known exactly in 500
+variant: loud
+level 3, 200 cases, the detective who trusts every answer ends with: murderer 116  contradiction 58  other 16  framed 9  accomplice 1
+variant: loud
+level 3, 200 cases: solved 200; turns min 4  median 8  mean 8.2  max 17   4:1 5:6 6:27 7:45 8:49 9:29 10:21 11:11 13:8 14:1 15:1 17:1
+  two or fewer names left: median turn 7, mean 6.9
+variant: loud
+level 2, 200 cases: solved 200; turns min 6  median 9  mean 10.0  max 20   6:8 7:30 8:33 9:33 10:30 11:19 12:15 13:12 14:2 15:2 16:3 17:4 18:5 19:2 20:2
+  two or fewer names left: median turn 8, mean 8.1
+variant: loud
+level 1, 200 cases: solved 200; turns min 9  median 16  mean 16.6  max 28   9:4 10:5 11:13 12:9 13:18 14:24 15:23 16:15 17:17 18:19 19:8 20:8 21:10 22:2 23:3 24:4 25:10 26:3 27:4 28:1
+  two or fewer names left: median turn 12, mean 12.3
+variant: far loud
+everything asked, 500 cases: names left 1:500
+  the framed one still possible in 0; the pair of liars known exactly in 500
+variant: far loud
+level 3, 200 cases, the detective who trusts every answer ends with: contradiction 87  murderer 87  other 24  accomplice 1  framed 1
+variant: far loud
+level 3, 200 cases: solved 200; turns min 4  median 7  mean 8.0  max 17   4:1 5:11 6:34 7:55 8:35 9:30 10:13 11:7 12:3 13:4 14:1 15:3 16:2 17:1
+  two or fewer names left: median turn 7, mean 6.7
+variant: far loud
+level 2, 200 cases: solved 200; turns min 5  median 9  mean 9.4  max 20   5:1 6:15 7:39 8:41 9:32 10:24 11:12 12:13 13:4 14:3 15:2 16:3 17:3 18:3 19:3 20:2
+  two or fewer names left: median turn 8, mean 7.7
+variant: far loud
+level 1, 200 cases: solved 200; turns min 9  median 14  mean 15.2  max 29   9:6 10:12 11:27 12:18 13:18 14:20 15:17 16:20 17:14 18:10 19:4 20:13 21:4 22:2 23:1 24:2 25:5 26:2 27:3 28:1 29:1
+  two or fewer names left: median turn 11, mean 11.5

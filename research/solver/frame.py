@@ -13,6 +13,8 @@ c are set aside. (That the false version must fit a real person is not used: the
     python frame.py full [n]         is the case solvable when everything has been asked?
     python frame.py play [n] [level] turns of the methodical detective (par.py's routine taught the rule)
     python frame.py naive [n] [level]  where the usual routine ends when it trusts every answer
+    add 'far' for a framed one who differs from the murderer in as many of 1, 2, 3, 8 as possible
+    add 'loud' for an accomplice whose card has the most of those questions where the false version differs
 """
 import os, sys
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', 'game'))
@@ -21,6 +23,8 @@ from rules import CARDS, male, deal, observe
 from solver import suspects
 
 FRAMED = (1, 2, 3, 8)
+FAR = False          # the variant 'far': the false version differs from the truth as much as it can
+LOUD = False         # the variant 'loud': the accomplice is one whose card asks the most of the differing questions
 
 
 def frame_case(rng):
@@ -32,6 +36,18 @@ def frame_case(rng):
     fact = lambda s: {1: 'Y' if rows[row_of[s]]['side'] == 2 else 'N', 2: 'Y' if male(s) else 'N',
                       3: str(rows[row_of[s]]['area']), 8: 'Y' if rows[row_of[s]]['letter'] in 'ABC' else 'N'}
     people = sorted(obs['alibi'])
+    best = lambda pool, score: [s for s in pool if score(s) == max(map(score, pool))]
+    if FAR or LOUD:                      # the framed one first: the accomplice is chosen for the false version
+        diff = lambda s: sum(fact(s)[q] != fact(murderer)[q] for q in FRAMED)
+        pool = [s for s in people if s != murderer and row_of[s] not in (1, 2) and diff(s)]
+        x = rng.choice(best(pool, diff) if FAR else pool)
+        loud = lambda c: sum(q in CARDS[c] and fact(x)[q] != fact(murderer)[q] for q in FRAMED)
+        pool = [s for s in people if s not in (murderer, x)]
+        accomplice = rng.choice(best(pool, loud) if LOUD else pool)
+        for s in (murderer, accomplice):
+            for q in FRAMED:
+                if (s, q) in obs['ans']: obs['ans'][(s, q)] = fact(x)[q]
+        return obs, murderer, accomplice, x
     accomplice = rng.choice([s for s in people if s != murderer])
     # the framed one: innocent, not at a gun (the murderer never is), and different from the truth in something
     x = rng.choice([s for s in people if s not in (murderer, accomplice) and row_of[s] not in (1, 2)
@@ -156,7 +172,8 @@ def methodical(obs, level, cap=150, sus=None, framed=FRAMED, check=False):
 
 def run(job):
     import random
-    kind, seed, level = job
+    global FAR, LOUD
+    kind, seed, level, FAR, LOUD = job
     obs, murderer, accomplice, x = frame_case(random.Random(seed))
     if kind == 'full':
         pairs = set()
@@ -180,9 +197,10 @@ if __name__ == '__main__':
     from collections import Counter
     from multiprocessing import Pool
     kind = sys.argv[1]; n = int(sys.argv[2]) if len(sys.argv) > 2 else 100
-    level = int(sys.argv[3]) if len(sys.argv) > 3 else 3
+    level = int(sys.argv[3]) if len(sys.argv) > 3 and sys.argv[3].isdigit() else 3
+    print('variant: %s' % (' '.join(a for a in ('far', 'loud') if a in sys.argv) or 'the draft of 2026-11-16'))
     with Pool(2) as p:                                   # half of the cores stay free
-        res = p.map(run, [(kind, i, level) for i in range(n)], chunksize=2)
+        res = p.map(run, [(kind, i, level, 'far' in sys.argv, 'loud' in sys.argv) for i in range(n)], chunksize=2)
     if kind == 'full':
         c = Counter(r[0] for r in res)
         print('everything asked, %d cases: names left %s' % (n, ' '.join('%d:%d' % kv for kv in sorted(c.items()))))
