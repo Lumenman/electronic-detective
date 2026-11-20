@@ -26,6 +26,8 @@ original cards or your own copy of them (the help screen lists who answers which
   the same case to a friend, on any device.
 - **Two False Alibis** (`2` + `ON`): a variant where the murderer and one more suspect lie about where they were;
   every case is checked by the solver to be solvable by reasoning.
+- **The Accomplice** (`3` + `ON`): the murderer and an accomplice tell one false story about the murderer; accuse
+  both.
 - The rules in several pages, in English and Russian (`?` or `F1`).
 - The original ROM on `1` + `ON`, with the display drawn by how long each segment was really lit.
 

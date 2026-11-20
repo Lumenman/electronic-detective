@@ -16,6 +16,7 @@ from help_text import QUESTIONS_EN, QUESTIONS_RU
 from machine import GLYPH, MASK, NUMBER, VARIANTS, Machine, digits
 from rules import CARDS
 
+GAMES = ('fair', 'lies')                 # the games with a book; the accomplice needs an accusation of two
 MOST = 10                                # cases in one file: 22 sheets; the par takes seconds per case
 FROZEN = getattr(sys, 'frozen', False)       # built into one file by desktop/build.py
 BOOKS = os.path.dirname(sys.executable if FROZEN else os.path.abspath(__file__))   # beside the program: the place a player looks first

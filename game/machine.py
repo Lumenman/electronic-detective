@@ -12,11 +12,11 @@ so the window can drive either. Time is counted in CPU cycles of the original (I
 """
 import os, random, sys
 from board import IPS, SEG
-from rules import deal, deal_lies, observe
+from rules import deal, deal_frame, deal_lies, observe
 from sounds import SOUNDS
 
 GLYPH = {'A': 'A', 'B': 'b', 'C': 'C', 'D': 'd', 'E': 'E', 'F': 'F'}
-MASK = {ch: m for m, ch in SEG.items() if m != 0x67}
+MASK = {ch: m for m, ch in SEG.items() if m != 0x67} | {'-': 0x40}   # '-': ours, the ROM never shows it
 BLANK, EE, END, ON = ' ' * 7, '     EE', '  ENd  ', '     0N'
 SEC = int(IPS)
 NUMBER = 7                                         # digits in the number of a case
@@ -27,6 +27,7 @@ NUMBER = 7                                         # digits in the number of a c
 VARIANTS = {
     'fair': (0, None, deal, None, 'the usual game'),
     'lies': (1, '2', deal_lies, 'lie_suspects', 'two false alibis'),
+    'frame': (2, '3', deal_frame, None, 'the accomplice'),            # always solvable: dealt unchecked
 }
 
 
@@ -51,6 +52,7 @@ def deal_checked(rng, variant, check=None):
         if not name or len(check(observe(case)[0])) == 1: return case, skip
         skip += 1
 BLINK, BLINK_NO = (0.44, 0.14), (0.26, 0.14)       # seconds on, off
+ALT = 1.16                                          # seconds per frame when two alternate (the pair)
 OFF_AFTER, OFF_EXTEND = 240, 177                   # a finished game switches itself off; END TURN gives more time
 
 
@@ -86,8 +88,10 @@ class Machine:
     def at(self, seconds, fn):
         self.timeline.append((self.cycles + int(seconds * SEC), len(self.timeline), fn)); self.timeline.sort()
 
-    def show(self, text, blink=None):
-        self.shown, self.blink = text, (blink + (self.cycles,)) if blink else None
+    def show(self, text, blink=None, alt=None):
+        """alt: a second text that takes turns with the first, ALT seconds each (blinking alike)."""
+        self.shown, self.blink, self.alt = text, (blink + (self.cycles,)) if blink else None, alt
+        self.alt_from = self.cycles
 
     def sound(self, name):
         """Queue a sound; returns its length in seconds. Keys are ignored while it plays."""
@@ -117,6 +121,7 @@ class Machine:
         if self.blink:
             on, off, start = self.blink
             if (self.cycles - start) % int((on + off) * SEC) >= int(on * SEC): return BLANK
+        if self.alt and (self.cycles - self.alt_from) // int(ALT * SEC) % 2: return self.alt
         return self.shown
 
     def segments(self):
@@ -166,6 +171,7 @@ class Machine:
             self.case = deal_checked(number_rng(self.number, self.variant), self.variant)[0]
         self.obs, self.murderer = observe(self.case)
         self.victim = self.obs['victim']
+        self.pair = self.case.get('frame', [None] * 2)[1]   # the accomplice, to be named after the murderer; or None
         self.over = self.deviation = False   # solved, or everybody is out; known difference from the ROM met
         self.who = None                   # the suspect whose answers are loaded (survives END TURN and the victim)
         self.new_turn()
@@ -177,13 +183,14 @@ class Machine:
     def new_turn(self):
         self.active = self.touched = False   # a suspect is being questioned; something was entered this turn
         self.used, self.mode, self.typed, self.fresh, self.last_ee = 0, None, '', False, False
+        self.first = False                # the accomplice game: the number accused of the murder, waiting for the second
 
     def key_play(self, k):
         if k in ('SUSPECT', 'PQ', 'ACCUSE'):
             if k == 'ACCUSE' and self.rom_like: self.active = self.touched = False   # forgets the turn's suspect
             asked = self.mode in ('SUSPECT', 'PQ') if self.rom_like else self.active
             ok = k == 'ACCUSE' or (asked if k == 'PQ' else not self.touched)   # checked when the key is pressed
-            self.typed, self.fresh = '', False
+            self.typed, self.fresh, self.first = '', False, False
             if ok:
                 self.mode = k; self.show(BLANK)
                 if k == 'SUSPECT': self.active, self.touched = False, self.rom_like and not self.over
@@ -202,7 +209,9 @@ class Machine:
             if repeat: n = None
             if self.mode == 'SUSPECT': self.show(self.enter_suspect(n))
             elif self.mode == 'PQ': self.enter_question(n, repeat)
-            elif self.mode == 'ACCUSE': self.enter_accuse(n)
+            elif self.mode == 'ACCUSE' and self.pair and self.first is False:   # the murderer; now the accomplice
+                self.first = n; self.show((digits(n) if n else '  ') + ' --  ')
+            elif self.mode == 'ACCUSE': self.enter_accuse(self.first if self.pair else n, n)
             else: self.show(EE)
 
     def enter_suspect(self, n):
@@ -249,11 +258,13 @@ class Machine:
         self.show(BLANK)
         self.at(self.sound('bong'), lambda: self.show(END))
 
-    def enter_accuse(self, n):
-        self.active = self.touched = False; self.mode = None      # the questions used this turn stay used
+    def enter_accuse(self, n, second=None):
+        """second: the accomplice named, in the accomplice game (one answer for the pair: what was wrong stays unsaid)."""
+        self.active = self.touched = False; self.mode = None; self.first = False   # the questions used this turn stay used
         self.show(BLANK)
-        if n == self.murderer:
-            self.at(self.sound('solved') + 0.2, lambda: self.show(digits(self.murderer) + '4E5  ', BLINK))
+        pair = lambda end: dict(alt=digits(self.pair) + end) if self.pair else {}   # the accomplice takes turns
+        if n == self.murderer and (not self.pair or second == self.pair):
+            self.at(self.sound('solved') + 0.2, lambda: self.show(digits(self.murderer) + '4E5  ', BLINK, **pair('4E5  ')))
             self.off_at = self.cycles + OFF_AFTER * SEC; self.over = True
             return
         self.left = max(self.left - 1, 0)
@@ -265,4 +276,4 @@ class Machine:
         else:                             # everybody is out: the machine names the murderer
             self.over = True
             self.at(2.3, lambda: self.show(BLANK))
-            self.at(self.sound('wrong_last'), lambda: self.show(digits(self.murderer) + 'd1d  ', BLINK))
+            self.at(self.sound('wrong_last'), lambda: self.show(digits(self.murderer) + 'd1d  ', BLINK, **pair('d1d  ')))

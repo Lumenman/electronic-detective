@@ -202,6 +202,17 @@ lies = g.board.case['lies']; from rules import observe as _obs
 true = _obs(dict(g.board.case, lies=[]))[0]['alibi']
 assert lies[0][0] == g.board.murderer and all(g.board.obs['alibi'][s] == true[o] != true[s] for s, o in lies), lies
 assert _obs(dict(g.board.case, lies=[]))[0]['ans'] == g.board.obs['ans']             # every answer stays true
+g.press('OFF', True); g.press('3', True); g.press('ON', True); g.press('3', False)    # 3 + ON: the accomplice
+assert g.board.variant == 'frame' and g.decoder.pair and g.kind() == '_frame'
+wait(3.5); click('3'); click('1'); click('ENTER'); wait(6)
+m_, c_ = g.board.murderer, g.board.pair; g.counted = g.final_seq = -1; g.rec = ''   # what Game.__init__ sets
+assert [m_, c_] == g.board.case['frame'][:2] and m_ != c_
+click('ACCUSE'); [click(k) for k in str(m_)]; click('ENTER'); wait(1); g.update_status()
+from machine import digits as _digits
+assert g.board.display() == _digits(m_) + ' --  ' and 'Now the accomplice' in g.status and not g.score.over, g.status
+[click(k) for k in str(c_)]; click('ENTER'); wait(6); g.update_status()
+assert g.score.winner == 0 and 'The accomplice: #%d' % c_ in g.status, g.status
+assert eg.load_settings()['records_frame'], 'a solo win is a record of its own game'
 g.press('OFF', True)
 g.press('ON', True); assert g.board.powered and not g.original                         # ON alone: our machine
 eg.save_settings(records_fair={'3': [4, 9]}, par_fair={'3': [1]})
@@ -211,7 +222,7 @@ click('ENDTURN'); assert not g.wipe_ask and eg.load_settings()['records_fair'] =
 g.press('0', True); g.press('ON', True); g.press('0', False); click('ENTER')            # ENTER: a clean sheet, still off
 st = eg.load_settings()
 assert not g.board.powered and g.wiped and st['records_fair'] == st['par_fair'] == st['records'] == {} and 'rom' in st
-assert st['records_lies'] == st['par_lies'] == {}
+assert st['records_lies'] == st['par_lies'] == st['records_frame'] == {}
 g.press('ON', True); assert g.board.powered and not g.wiped
 wait(3.5); click('3'); click('1'); click('ENTER'); wait(6)
 s3 = 1 if g.decoder.victim != 1 else 2

@@ -33,6 +33,7 @@ count par like `par.py`.
 | `O` / `X` | ON / OFF |
 | hold `1` and press `O` (or click ON) | the original game (the ROM deals the case) |
 | hold `2` and press `O` | the game of Two False Alibis |
+| hold `3` and press `O` | the Accomplice |
 | hold `8` and press `O` | write cases for the board game (PC only) |
 | hold `9` and press `O` | choose a case by its number |
 | hold `0` and press `O` (machine off) | clear the records and the running score: `ENTER` confirms, any other key cancels |
@@ -84,6 +85,10 @@ reachable. Held for longer than about 0.8 s, the machine goes on by itself, as t
   the power-on tune plays and checked by the solver (`../research/solver`): about 1 deal in 25 cannot be solved by
   reasoning and is dealt again. Without the solver the case is not checked. Records and par: `records_lies`,
   `par_lies`.
+- **`3` + `ON` — the Accomplice** (rules: `../PLAYER_RULES.md`). The murderer and an accomplice answer questions
+  1, 2, 3, 8 as if an innocent one had done it (`rules.deal_frame`, drafted in `../research/solver/frame.py`);
+  I ACCUSE takes two numbers and gives one answer. Always solvable, so dealt unchecked. Records and par:
+  `records_frame`, `par_frame`. The games are listed in `machine.VARIANTS`.
 - Verification: `../research/emu/diff_machine.py` gives our machine and the ROM the same case and the same random
   keys and compares the displays after each key; for this, our machine runs in `rom_like` mode, where the
   differences above are switched off.

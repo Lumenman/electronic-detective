@@ -41,9 +41,10 @@ HELP = {
         'Hold 1 and press ON - the original (needs its ROM; not on the phone). In the original the case depends on '
         'the moment you press ENTER at the start and on how long you hold it: up to about 0.8 s, after that the '
         'machine goes on by itself.',
-        'Hold 2 and press ON - the game of Two False Alibis (see the last section).',
+        'Hold 2 and press ON - the game of Two False Alibis; hold 3 and press ON - the Accomplice (see the last '
+        'sections).',
         'Hold 9 and press ON - choose a case by its number: type a number from 1 to 9999999 and press ENTER. The '
-        'machine remembers it and goes dark; the next game you start (ON, or 2 + ON) plays that case '
+        'machine remembers it and goes dark; the next game you start (ON, 2 + ON or 3 + ON) plays that case '
         '(OFF before that forgets the number). '
         'The same number is the same case on any device: give it to a friend, or agree to play the date as the case '
         'of the day. Every case shows its number at the start and in the final summary. A case chosen by its number '
@@ -128,6 +129,17 @@ HELP = {
         'about the place (9-11) to the same suspect, or by the word of those who were there.',
         '3. Nobody claims to have been where a gun lies.',
         'Catching a liar is not yet finding the murderer: there are two liars. Every case can be solved by reasoning.',
+        '',
+        '# The Accomplice (3 + ON)',
+        'Everything as in the usual game, except:',
+        '1. The murderer has an accomplice, and the two keep to one false story: to the questions about the murderer '
+        '(1 east side, 2 male, 3 area, 8 place A, B or C) both answer as if another suspect, an innocent one, had '
+        'done it.',
+        '2. Their alibis are true, and so are their other answers. Everybody else tells the truth.',
+        '3. Name both: I ACCUSE, the number of the murderer, ENTER - the display shows it with -- ; then the number '
+        'of the accomplice, ENTER. YES only if both are right, in this order. NO does not say which one was wrong, '
+        'and the player is out.',
+        'Every case can be solved by reasoning, the pair included. The board game has no cases of this game.',
     ],
     'ru': [
         '# Начало игры',
@@ -135,9 +147,9 @@ HELP = {
         'Удерживая 1, нажмите ON - оригинал (нужен его ROM; на телефоне нет). В оригинале дело зависит от того, '
         'в какой момент вы нажмёте ENTER в начале игры и сколько его продержите: до 0,8 с, дальше машина '
         'продолжает сама.',
-        'Удерживая 2, нажмите ON - игра «Два ложных алиби» (см. последний раздел).',
+        'Удерживая 2, нажмите ON - игра «Два ложных алиби»; удерживая 3 - «Сообщник» (см. последние разделы).',
         'Удерживая 9, нажмите ON - выбор дела по номеру: введите номер от 1 до 9999999 и нажмите ENTER. Машина '
-        'запомнит его и погаснет; следующая игра, которую вы начнёте (ON или 2 + ON), будет этим делом '
+        'запомнит его и погаснет; следующая игра, которую вы начнёте (ON, 2 + ON или 3 + ON), будет этим делом '
         '(OFF до этого - забыть номер). Один номер - '
         'одно и то же дело на любом устройстве: продиктуйте его другу или договоритесь играть дату как дело дня. '
         'Номер каждого дела показан в начале и в итоге. Дело, выбранное по номеру, в рекорды и накопленный счёт '
@@ -223,5 +235,14 @@ HELP = {
         'о месте (9-11) тому же подозреваемому или показаниями тех, кто там был.',
         '3. Никто не говорит, что был там, где лежит оружие.',
         'Поймать лжеца - ещё не значит найти убийцу: лжецов двое. Каждое дело можно раскрыть рассуждением.',
+        '',
+        '# Сообщник (3 + ON)',
+        'Всё как в обычной игре, кроме следующего:',
+        '1. У убийцы есть сообщник, и они держатся одной ложной версии: на вопросы об убийце (1 восточная сторона, '
+        '2 мужчина, 3 район, 8 место A, B или C) оба отвечают так, будто это сделал другой подозреваемый, невиновный.',
+        '2. Их алиби правдивы, остальные их ответы тоже. Все прочие говорят правду.',
+        '3. Назовите обоих: I ACCUSE, номер убийцы, ENTER - на табло он и -- ; затем номер сообщника, ENTER. '
+        'YES - только если верны оба и в этом порядке. NO не говорит, кто назван неверно, и игрок выбывает.',
+        'Каждое дело можно раскрыть рассуждением, вместе с парой. Для настольной игры дел этой игры нет.',
     ],
 }

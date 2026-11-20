@@ -18,8 +18,17 @@ TPL = {1: [('s', (1, 3)), ('p', ()), ('a', (0,)), ('a', ())], 2: [('p', (3,)), (
 THREE = [('ap', None), ('sa', 2), ('s', 0)]          # place of three: position -> (fields, companion position)
 
 
+FRAMED = (1, 2, 3, 8)                # the accomplice game: questions answered by the false story
+
+
 def male(n): return n <= 10
 def col_of(n): return (0 if n % 2 == 0 else 1) + (0 if n <= 10 else 2)
+def yn(b): return 'Y' if b else 'N'
+
+
+def story(rows, r, s):
+    """Answers to 1, 2, 3, 8 if suspect s, at row r, were the murderer."""
+    return {1: yn(rows[r]['side'] == 2), 2: yn(male(s)), 3: str(rows[r]['area']), 8: yn(rows[r]['letter'] in 'ABC')}
 
 
 def from_ram(ram):
@@ -59,11 +68,30 @@ def deal_lies(rng):
     return case
 
 
+def deal_frame(rng):
+    """The accomplice game: the murderer and an accomplice answer 1, 2, 3, 8 as if an innocent one (framed, never at
+    a gun) had done it; all alibis and other answers are true. The framed one differs from the truth in as many of
+    these answers as can be, and the accomplice is one whose card asks the most of the differing ones (research/
+    solver/frame.py 'far loud': always solvable, the pair always known). The case gets 'frame': [murderer,
+    accomplice, framed]."""
+    case = deal(rng)
+    rows = case['rows']
+    victim, murderer = rows[4]['people'][case['vcol']], rows[0]['people'][case['mcol']]
+    row_of = {s: r for r, row in enumerate(rows) for s in row['people'] if s != victim}
+    true = story(rows, 0, murderer)
+    best = lambda pool, score: [s for s in pool if score(s) == max(map(score, pool))]
+    diff = lambda s: sum(story(rows, row_of[s], s)[q] != true[q] for q in FRAMED)
+    x = rng.choice(best([s for s in sorted(row_of) if s != murderer and row_of[s] not in (1, 2) and diff(s)], diff))
+    false = story(rows, row_of[x], x)
+    loud = lambda c: sum(q in CARDS[c] and false[q] != true[q] for q in FRAMED)
+    case['frame'] = [murderer, rng.choice(best([s for s in sorted(row_of) if s not in (murderer, x)], loud)), x]
+    return case
+
+
 def observe(case):
     rows, vcol, mcol, w38 = case['rows'], case['vcol'], case['mcol'], case['w38']
     victim, murderer = rows[4]['people'][vcol], rows[0]['people'][mcol]
     loc = {s: (r, c) for r in range(5) for c, s in enumerate(rows[r]['people']) if s != victim}
-    yn = lambda b: 'Y' if b else 'N'
     alibi, ans, hidden = {}, {}, {}
     for s, (r, c) in loc.items():
         row = rows[r]
@@ -90,6 +118,11 @@ def observe(case):
         for q in CARDS[s] + (13, 14): ans[(s, q)] = table[q]
         if s in OFF_CARD: hidden[(s, 12)] = table[12]
     for s, o in case.get('lies', ()): alibi[s] = dict(alibi[o])        # the liar tells the other one's alibi
+    if case.get('frame'):                                               # the pair tells the framed one's story
+        m, c, x = case['frame']; false = story(rows, loc[x][0], x)
+        for s in (m, c):
+            for q in FRAMED:
+                if (s, q) in ans: ans[(s, q)] = false[q]
     return {'victim': victim, 'scene': rows[5]['letter'], 'alibi': alibi, 'ans': ans, 'hidden': hidden}, murderer
 
 

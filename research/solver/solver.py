@@ -12,10 +12,10 @@ the case is solvable. obs is what rules.observe() returns, or any subset of it (
     python solver.py classic [n]     cases from the emulator sweep (the ROM's own deals)
     python solver.py fair [n]        random deals as made by game/dealer.py
 """
-from itertools import permutations
+from itertools import combinations, permutations
 import os, sys
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', 'game'))
-from rules import CARDS, male, col_of
+from rules import CARDS, FRAMED, male, col_of
 
 LETTERS = 'ABCDEF'
 ADDR = [(s, a) for s in (1, 2) for a in (3, 4, 5)]
@@ -152,6 +152,49 @@ def lie_suspects(obs, worlds=None, pause=None):
                         found.add(m)
                         if worlds is not None: worlds[m] = (amap, loc)
                         break
+    return found
+
+
+def frame_suspects(obs, worlds=None, pairs=None):
+    """The accomplice game (rules.deal_frame; drafted in frame.py): possible murderers. pairs: a set that receives the possible (murderer, accomplice) pairs."""
+    people = sorted(s for s in range(1, 21) if s != obs['victim'])
+    ans = obs['ans']
+    told = {}                                            # informant -> {framed question: answer}
+    for (s, q), a in ans.items():
+        if q in FRAMED: told.setdefault(s, {})[q] = a
+    cache, found = {}, set()
+
+    def allowed(liars):
+        """Murderers solver.suspects() allows when the framed answers of these informants are set aside."""
+        mine = [told[s] for s in liars]
+        if len(mine) == 2 and any(mine[0][q] != mine[1][q] for q in mine[0] if q in mine[1]):
+            return ()                                    # the two tell one story
+        rest = {}
+        for s, d in told.items():
+            if s in liars: continue
+            for q, a in d.items():
+                if rest.setdefault(q, a) != a: return ()  # the honest ones do not contradict each other
+        key = tuple(sorted(rest.items()))
+        if key not in cache:
+            w = {}
+            o = dict(obs, ans={k: a for k, a in ans.items() if k[1] not in FRAMED})
+            o['ans'].update({(0, q): a for q, a in rest.items()})      # the facts that stand, from nobody in particular
+            cache[key] = suspects(o, worlds=w), w
+        cand, w = cache[key]
+        if worlds is not None:
+            for m in cand: worlds.setdefault(m, w[m])
+        return cand
+
+    silent = [s for s in people if s not in told]
+    for liars in [()] + [(a,) for a in told] + list(combinations(told, 2)):
+        cand = allowed(liars)
+        for m in cand:
+            if len(liars) == 2: cs = [c for c in liars if c != m] if m in liars else []
+            elif len(liars) == 1: cs = [c for c in silent if c != m] if m in liars else list(liars) if m in silent else []
+            else: cs = [c for c in silent if c != m] if m in silent else []
+            if cs:
+                found.add(m)
+                if pairs is not None: pairs.update((m, c) for c in cs)
     return found
 
 

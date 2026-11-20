@@ -18,11 +18,9 @@ c are set aside. (That the false version must fit a real person is not used: the
 """
 import os, sys
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', 'game'))
-from itertools import combinations
-from rules import CARDS, male, deal, observe
-from solver import suspects
+from rules import CARDS, FRAMED, male, deal, observe
+from solver import suspects, frame_suspects      # the rule went into the game: solver.py
 
-FRAMED = (1, 2, 3, 8)
 FAR = False          # the variant 'far': the false version differs from the truth as much as it can
 LOUD = False         # the variant 'loud': the accomplice is one whose card asks the most of the differing questions
 
@@ -56,49 +54,6 @@ def frame_case(rng):
         for q in FRAMED:
             if (s, q) in obs['ans']: obs['ans'][(s, q)] = fact(x)[q]
     return obs, murderer, accomplice, x
-
-
-def frame_suspects(obs, worlds=None, pairs=None):
-    """Possible murderers under the rule. pairs: a set that receives the possible (murderer, accomplice) pairs."""
-    people = sorted(s for s in range(1, 21) if s != obs['victim'])
-    ans = obs['ans']
-    told = {}                                            # informant -> {framed question: answer}
-    for (s, q), a in ans.items():
-        if q in FRAMED: told.setdefault(s, {})[q] = a
-    cache, found = {}, set()
-
-    def allowed(liars):
-        """Murderers solver.suspects() allows when the framed answers of these informants are set aside."""
-        mine = [told[s] for s in liars]
-        if len(mine) == 2 and any(mine[0][q] != mine[1][q] for q in mine[0] if q in mine[1]):
-            return ()                                    # the two tell one story
-        rest = {}
-        for s, d in told.items():
-            if s in liars: continue
-            for q, a in d.items():
-                if rest.setdefault(q, a) != a: return ()  # the honest ones do not contradict each other
-        key = tuple(sorted(rest.items()))
-        if key not in cache:
-            w = {}
-            o = dict(obs, ans={k: a for k, a in ans.items() if k[1] not in FRAMED})
-            o['ans'].update({(0, q): a for q, a in rest.items()})      # the facts that stand, from nobody in particular
-            cache[key] = suspects(o, worlds=w), w
-        cand, w = cache[key]
-        if worlds is not None:
-            for m in cand: worlds.setdefault(m, w[m])
-        return cand
-
-    silent = [s for s in people if s not in told]
-    for liars in [()] + [(a,) for a in told] + list(combinations(told, 2)):
-        cand = allowed(liars)
-        for m in cand:
-            if len(liars) == 2: cs = [c for c in liars if c != m] if m in liars else []
-            elif len(liars) == 1: cs = [c for c in silent if c != m] if m in liars else list(liars) if m in silent else []
-            else: cs = [c for c in silent if c != m] if m in silent else []
-            if cs:
-                found.add(m)
-                if pairs is not None: pairs.update((m, c) for c in cs)
-    return found
 
 
 def partial(obs, asked, visited):

@@ -159,6 +159,22 @@ except one thing:
 Catching a liar does not yet mean finding the murderer: there are two liars. Every case is checked: it can be
 solved by reasoning. This game has its own records and score against par.
 
+## The Accomplice (`3` + `ON`)
+
+Hold `3` and press `ON`. Everything is as in the usual game, except:
+
+1. **The murderer has an accomplice**, and the two keep to one false story: to the questions about the murderer
+   (1 — east side, 2 — male, 3 — area, 8 — place A, B or C) both answer as if another suspect, an innocent one,
+   had done it.
+2. **Their alibis are true**, and so are all their other answers. The other 17 suspects tell the truth.
+3. **Name both.** `I ACCUSE`, the number of the murderer, `ENTER` — the display shows it with `--`; then the number
+   of the accomplice, `ENTER`. `YES` only if both are right, in this order. `NO` does not say which one was wrong,
+   and the player is out. `END TURN` or another command key before the second `ENTER` cancels the accusation.
+   At the end the display shows the murderer and the accomplice in turn.
+
+Every case can be solved by reasoning, the pair included. This game has its own records and score against par;
+the board game (`8` + `ON`) has no cases of it.
+
 ## Messages and errors
 
 - `EE` — a wrong key sequence, a question not on the card, or an attempt to question another suspect without

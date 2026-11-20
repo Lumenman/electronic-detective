@@ -19,7 +19,8 @@ The accusation itself is not counted.
 import os, sys
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', 'game'))
 from rules import CARDS, male
-from solver import suspects, lie_suspects
+from solver import suspects, lie_suspects, frame_suspects
+from rules import FRAMED
 
 
 def partial(obs, asked, visited):
@@ -27,14 +28,20 @@ def partial(obs, asked, visited):
             'ans': {k: obs['ans'][k] for k in asked}}
 
 
-def methodical(obs, level, cap=120, trace=None, once=False, lies=False):
+def methodical(obs, level, cap=120, trace=None, once=False, lies=False, framed=()):
     """once: a draft rule - every suspect can be visited one time only.
-    lies: the game of two false alibis - a question whose answer the alibi gave already tests that alibi."""
+    lies: the game of two false alibis - a question whose answer the alibi gave already tests that alibi.
+    framed: the accomplice game (rules.FRAMED) - a fact of these questions counts as known once three agree on it."""
     people = sorted(obs['alibi'])
     visited, asked = set(), set()
     cand, worlds = set(people), {}
     for turn in range(1, cap + 1):
-        fact = {q: next((obs['ans'][k] for k in asked if k[1] == q), None) for q in range(1, 9)}
+        def known(q):
+            v = [obs['ans'][k] for k in asked if k[1] == q]
+            if q not in framed: return v[0] if v else None
+            return next((a for a in set(v) if v.count(a) >= 3), None)
+        fact = {q: known(q) for q in range(1, 9)}
+        heard = {q: sum(1 for k in asked if k[1] == q) for q in framed}
         sex = None if fact[2] is None else fact[2] == 'Y'
         weapon_q = None if fact[4] is None else 13 if fact[4] == 'Y' else 14
         told = lambda s, q: obs['ans'][(s, q)] if (s, q) in asked else None
@@ -48,6 +55,7 @@ def methodical(obs, level, cap=120, trace=None, once=False, lies=False):
             """What an answer can be worth, judged from what is known (a = the alibi of s, {} before the visit)."""
             if q <= 8:                                                 # a fact of the murder
                 if fact[q] is not None or q == 2 and len({male(c) for c in cand}) == 1: return 0
+                if q in framed and heard[q]: return 7                  # heard, not yet sure: a second and third voice
                 k = {1: 0, 3: 1, 8: 2}.get(q)                          # about the murderer's place: do they disagree?
                 return 10 if k is None or len(spots) != 1 and len({v[k] for v in spots}) != 1 else 3
             place = a.get('place')
@@ -81,7 +89,7 @@ def methodical(obs, level, cap=120, trace=None, once=False, lies=False):
         qs = questions(s, obs['alibi'][s])[:level]                 # chosen after hearing the alibi
         asked.update((s, q) for q in qs)
         worlds = {}
-        cand = (lie_suspects if lies else suspects)(partial(obs, asked, visited), worlds=worlds)
+        cand = (lie_suspects if lies else frame_suspects if framed else suspects)(partial(obs, asked, visited), worlds=worlds)
         if trace is not None: trace.append((s, qs, len(cand)))
         if len(cand) == 1:
             return turn
@@ -91,7 +99,7 @@ def methodical(obs, level, cap=120, trace=None, once=False, lies=False):
 def case_par(case, level):
     """Par of a case as the game holds it (a dict, perhaps through JSON); None if the routine does not get there."""
     from rules import observe
-    return methodical(observe(case)[0], level, lies=bool(case.get('lies')))
+    return methodical(observe(case)[0], level, lies=bool(case.get('lies')), framed=FRAMED if case.get('frame') else ())
 
 
 def ideal(obs, level, cap=40):

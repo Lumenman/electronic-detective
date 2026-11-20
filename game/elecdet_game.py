@@ -90,6 +90,7 @@ class Decoder:
         self.victim = None
         self.players, self.level = 1, 0
         self.seq = 0             # ENTER counter: one answer per ENTER
+        self.pair = False        # the accomplice game: I ACCUSE takes two numbers, murderer then accomplice
 
     def key(self, k):
         before = self.context[0] in ('number', 'setup')      # the machine shows ON and takes digits and ENTER only
@@ -115,6 +116,8 @@ class Decoder:
                 self.context = ('question', n, self.suspect())
             elif e[:1] == ['ACCUSE']:
                 self.context = ('accuse', n)
+            elif self.pair and self.context[0] == 'accuse' and len(self.context) == 2:
+                self.context += (n,)             # the accomplice
         elif k == 'ENDTURN':
             self.entry, self.context = [], ('turn',)
         elif k != 'OFF':
@@ -181,6 +184,8 @@ class Decoder:
             return '%sQ%s %s  ->  %s' % (who(s) + ', ' if s else '', q, QUESTIONS.get(q, ''), ans)
         if c[0] == 'accuse':
             m = re.match(r'^([0-9b]+)(4E5|d1d)$', t)
+            if m and len(c) == 3 and m.group(2) == '4E5':
+                return 'YES! %s is the murderer, %s the accomplice. Case solved!' % (who(c[1]), who(c[2]))
             if m:
                 n = num(m.group(1))
                 if m.group(2) == '4E5':
@@ -188,7 +193,9 @@ class Decoder:
                 return 'WRONG. The murderer was %s. You are out of the game.' % who(n)
             if t == 'N0':
                 return 'NO! Wrong accusation - out of the game. Next player: press END TURN first.'
-            return 'Accusing %s...' % who(c[1])
+            if t.endswith('--'):
+                return 'Accusing %s of the murder. Now the accomplice: number, ENTER.' % who(c[1])
+            return 'Accusing %s...' % who(c[1]) if len(c) == 2 else 'Accusing %s and %s...' % (who(c[1]), who(c[2]))
         return ''
 
 
@@ -622,12 +629,14 @@ class Game:
                     except SystemExit:           # no ROM chosen: stay off
                         return
                 self.decoder.key(key)
+                if key == 'ON': self.decoder.pair = variant == 'frame'
                 self.score = self.note = self.final = None
                 self.stop_par()
                 if key == 'OFF': self.pending = self.count = None                 # OFF forgets the number that was set
                 self.printed = None
                 if key == 'ON' and self.count and not ask and not original:       # the game is picked: write, stay off
-                    self.write_cases(variant)
+                    if variant in paper.GAMES: self.write_cases(variant)
+                    else: self.printed, self.count = 'The board game has no cases of %s.' % VARIANTS[variant][4], None
                 elif key == 'ON' and (self.board is None or not self.board.powered):
                     number = None if ask or original else self.pending            # the ROM's cases have no numbers
                     self.board = ElecDet(self.files) if original else Machine(
@@ -835,6 +844,7 @@ class Game:
             if m and sc.over and dec.seq == self.counted and self.final_seq != dec.seq:
                 self.final_seq = dec.seq
                 head = ('YES! %s is the murderer.' if sc.winner is not None else 'The murderer was %s.') % who(num(m.group(1)))
+                if getattr(self.board, 'pair', None): head += ' The accomplice: %s.' % who(self.board.pair)
                 self.final = ('%s %s %s' % (head, sc.summary(), self.rec)).strip()
 
     def running(self):
