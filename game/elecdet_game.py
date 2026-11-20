@@ -431,11 +431,11 @@ class Game:
     M, U, KEY_H, GAP = 24, 91, 56, 12    # outer margin, key width/height, gap
     CW = 5 * U + 4 * GAP                 # keypad width = width of every area
     W = CW + 2 * M
-    K, Z, LINES = 1, 1, 2                # pixels per unit of this layout, text size, lines of status
+    K, Z, LINES, ROWS = 1, 1, 2, 3       # pixels per unit of this layout, text size, lines of the display, of status
     DIGIT = 44, 68                       # a digit of the display
     LABEL, CMD = 13, (60, 140, 210)      # size of a word on a key; colour of the command keys
     DISP = pygame.Rect(M, M, CW, 100)
-    STATUS = pygame.Rect(M, DISP.bottom + 14, CW, 52)
+    STATUS = pygame.Rect(M, DISP.bottom + 14, CW, 71)   # three lines: the summary of four players
     PAD_TOP = STATUS.bottom + 16
     H = PAD_TOP + 5 * KEY_H + 4 * GAP + 44
 
@@ -446,6 +446,7 @@ class Game:
         """The phone: the whole upright screen, drawn at its own resolution (sharp text) - larger text, 3 x 6 keys."""
         # shortcut: upright screens only (the apk is locked to portrait); a wide one needs side margins
         self.K, self.Z, self.LINES, self.DIGIT = ww / self.W, 1.8, 4, (48, 82)
+        self.ROWS = self.LINES
         self.LABEL, self.CMD = 15, (40, 105, 175)                               # the commands stand out from the digits
         self.M, self.GAP, self.W, self.H = self.px(24), self.px(12), ww, wh
         self.CW = ww - 2 * self.M
@@ -1001,10 +1002,10 @@ class Game:
         self.update_status()
         pin = self.running()
         if (self.status, pin) != getattr(self, '_status_src', None):
-            f, room, self._step = self.font, self.LINES - bool(pin), self.px(19 * self.Z)
+            f, room, self._step = self.font, self.ROWS - bool(pin), self.px(19 * self.Z)
             wide = self.CW - self.px(24) - self.help_rect().w
-            if self.LINES > 2 and len(self.wrap(self.status, wide)) > room:
-                f, room, self._step = self.fine, 5, self.px(19 * self.Z * 4 / 5)     # the phone's long final summary
+            if len(self.wrap(self.status, wide)) > room:                        # a long final summary: smaller
+                f, room, self._step = self.fine, self.ROWS + 1, self.px(19 * self.Z * 4 / 5)
             self._status_src, self._status_lines = (self.status, pin), [
                 f.render(t, True, (20, 20, 20)) for t in self.wrap(self.status, wide, f)[:room]]
             self._pin = self.font.render(pin, True, (120, 120, 110))
@@ -1015,7 +1016,7 @@ class Game:
             self.draw_cover(sc)
             c = self.decoder.context
             lines = [self.font.render(t, True, (20, 20, 20)) for t in self.wrap(
-                'Q%s for %s: %s here to see the answer.' % (c[1], who(c[2]), 'touch' if ANDROID else 'hold SPACE or click'), self.CW - self.px(24))[:self.LINES]]
+                'Q%s for %s: %s here to see the answer.' % (c[1], who(c[2]), 'touch' if ANDROID else 'hold SPACE or click'), self.CW - self.px(24))[:self.ROWS]]
         step = self._step if lines is self._status_lines else self.px(19 * self.Z)
         for k, img in enumerate(lines):
             sc.blit(img, (self.STATUS.x + self.px(12), self.STATUS.y + self.px(7) + k * step))

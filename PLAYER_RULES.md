@@ -70,7 +70,8 @@ There are two guns in the city: a **.38** and a **.45**. One of them is the murd
 3. `END TURN`. The turn passes to the player on the left.
 
 The same suspect may be questioned again, also after other players.
-The victim cannot be questioned — the display shows `00 000 00`.
+The victim cannot be questioned — the display shows `00 000 00`. The turn is not used up: choose another suspect
+(in the original, `1` + `ON`, it is: press `END TURN`).
 
 ## Private questions
 

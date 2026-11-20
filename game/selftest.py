@@ -188,6 +188,8 @@ assert r[n] == 'EE' and r[-3 - len(str(CARDS[a][0]))] == 'EE' and r[-1] != 'EE',
 v = ' '.join(str(obs['victim']))
 r = play('S %s E Q 1 3 E' % v, case)
 assert r[len(v.split()) + 1] == '0000000' and r[-1] == 'EE', r         # the victim cannot be questioned
+r = play('S %s E S %s E' % (v, ' '.join(str(a))), case)
+assert r[-1] not in ('EE', '0000000'), r                               # and another suspect can be chosen after it
 r = play('S %s E Q 1 2 E' % ' '.join(str(a)), case)
 assert r[-1] == 'EE', r                                                # question 12 is not on the card of 11-15
 r = play('A %s E w600 T' % ' '.join(str(murderer)), case)

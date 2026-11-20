@@ -1,11 +1,11 @@
 """The game machine without the ROM: key entry, turns, answers, display and sounds.
 
 It behaves like the original (compared key by key with the ROM in research/emu/diff_machine.py), but the case is
-dealt by rules.deal() and the answers come from rules.observe(). Four oddities of the original are left out
+dealt by rules.deal() and the answers come from rules.observe(). These oddities of the original are left out
 unless rom_like=True (which the comparison uses): SUSPECT pressed again before ENTER shows EE; the I ACCUSE key
 forgets the turn's suspect, so another one can be questioned; a rejected mode key leaves the previous mode on, so
 the next number is read as something else; questions go to the previous suspect when nobody is being questioned
-(the victim); suspects 11-15 answer question 12, which is not on their cards; a finished game switches itself off. It offers the same interface as board.ElecDet,
+(the victim); the victim, questioned, takes up the turn; suspects 11-15 answer question 12, which is not on their cards; a finished game switches itself off. It offers the same interface as board.ElecDet,
 so the window can drive either. Time is counted in CPU cycles of the original (IPS per second).
 
     m = Machine(); m.power_on(); m.run(3 * SEC); m.key('3'); m.key('1'); m.key('ENTER'); m.run(6 * SEC); m.display()
@@ -217,9 +217,10 @@ class Machine:
     def enter_suspect(self, n):
         if n is None or not 1 <= n <= 20 or self.active:
             return EE
-        self.touched = not self.over      # one suspect per turn (the ROM marks the turn already when SUSPECT is pressed)
         if n == self.victim:              # as in the original: the victim keeps the previous suspect's answers
+            self.touched = self.rom_like and not self.over                 # but here the turn stays free
             return '0000000'
+        self.touched = not self.over      # one suspect per turn (the ROM marks the turn already when SUSPECT is pressed)
         self.active, self.who = True, n
         a = self.obs['alibi'][n]
         mates = [digits(m) for m in a.get('with', ())]
