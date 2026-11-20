@@ -12,6 +12,9 @@ other than m is still unheard. (That the field must be wrong is not used: the se
     python fallible.py full [n]           is the case solvable when everything has been asked?
     python fallible.py play [n] [level]   turns of the methodical detective taught the rule
     python fallible.py naive [n] [level]  where the usual routine ends when it trusts every alibi
+    add 'kin' for a witness of the murderer's kind (sex and parity): their alibis decide who of the kind did it
+    (the option 'bite' of 2026-11-20 - a mistake that misleads with everything asked - is gone: with everything
+    asked a single mistake is always seen or harmless, never misleading; 1200 tried)
 """
 import os, sys
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', 'game'))
@@ -20,6 +23,7 @@ from rules import col_of, deal, male, observe
 from solver import ADDR, LETTERS, place_all, suspects
 
 FIELDS = ('side', 'area', 'place', 'with')
+KIN = False          # the variant 'kin': the witness is of the murderer's kind
 
 
 def fallible_case(rng):
@@ -28,8 +32,8 @@ def fallible_case(rng):
     obs, murderer = observe(case)
     alibi = obs['alibi']
     people = sorted(alibi)
-    while True:
-        w = rng.choice([s for s in people if s != murderer])
+    for tries in range(1000):
+        w = rng.choice([s for s in people if s != murderer and (not KIN or col_of(s) == col_of(murderer))])
         f = rng.choice([f for f in FIELDS if f in alibi[w]] or ['none'])
         a = dict(alibi[w])
         if f == 'side':
@@ -128,7 +132,8 @@ def partial(obs, asked, visited):
 
 def run(job):
     import random, par
-    kind, seed, level = job
+    global KIN
+    kind, seed, level, KIN = job
     obs, murderer, w, f = fallible_case(random.Random(seed))
     if kind == 'full':
         cand = fallible_suspects(obs)
@@ -150,9 +155,10 @@ if __name__ == '__main__':
     from collections import Counter
     from multiprocessing import Pool
     kind = sys.argv[1]; n = int(sys.argv[2]) if len(sys.argv) > 2 else 100
-    level = int(sys.argv[3]) if len(sys.argv) > 3 else 3
+    level = int(sys.argv[3]) if len(sys.argv) > 3 and sys.argv[3].isdigit() else 3
+    print('variant: %s' % ('kin' if 'kin' in sys.argv else 'any mistake'))
     with Pool(2) as p:                                   # half of the cores stay free
-        res = p.map(run, [(kind, i, level) for i in range(n)], chunksize=2)
+        res = p.map(run, [(kind, i, level, 'kin' in sys.argv) for i in range(n)], chunksize=2)
     if kind == 'full':
         c = Counter(r[0] for r in res)
         print('everything asked, %d cases: names left %s' % (n, ' '.join('%d:%d' % kv for kv in sorted(c.items()))))

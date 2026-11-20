@@ -7,3 +7,36 @@ level 3, 200 cases, the detective who trusts every alibi ends with: murderer 155
 level 3, 200 cases: solved 200; turns min 4  median 7  mean 7.5  max 16   4:3 5:9 6:43 7:52 8:45 9:24 10:16 11:5 12:2 16:1
 level 2, 200 cases: solved 200; turns min 5  median 9  mean 8.9  max 17   5:3 6:14 7:32 8:47 9:37 10:24 11:19 12:17 13:3 14:1 15:2 17:1
 level 1, 200 cases: solved 200; turns min 7  median 11  mean 11.9  max 22   7:1 8:3 9:16 10:50 11:44 12:33 13:8 14:12 15:9 16:9 17:6 18:1 19:4 20:2 21:1 22:1
+
+# 2026-11-20: option bite (no effect: with everything asked, nearly every mistake contradicts; removed)
+variant: bite
+everything asked, 500 cases: names left 1:500
+  mistake in side : 90 cases, solved 90
+  mistake in area : 116 cases, solved 116
+  mistake in place: 91 cases, solved 91
+  mistake in with : 203 cases, solved 203
+variant: bite
+level 3, 200 cases, the detective who trusts every alibi ends with: murderer 153  stuck 45  the witness 1  other 1
+variant: bite
+level 3, 200 cases: solved 200; turns min 4  median 7  mean 7.5  max 16   4:3 5:9 6:44 7:51 8:46 9:23 10:16 11:5 12:2 16:1
+variant: bite
+level 2, 200 cases: solved 200; turns min 5  median 9  mean 8.9  max 17   5:3 6:15 7:32 8:45 9:36 10:27 11:19 12:16 13:3 14:1 15:2 17:1
+variant: bite
+level 1, 200 cases: solved 200; turns min 7  median 11  mean 11.9  max 22   7:1 8:4 9:17 10:49 11:45 12:32 13:8 14:11 15:9 16:9 17:6 18:1 19:4 20:2 21:1 22:1
+
+
+# 2026-11-21: option kin
+variant: kin
+everything asked, 500 cases: names left 1:500
+  mistake in side : 99 cases, solved 99
+  mistake in area : 116 cases, solved 116
+  mistake in place: 92 cases, solved 92
+  mistake in with : 193 cases, solved 193
+variant: kin
+level 3, 200 cases, the detective who trusts every alibi ends with: murderer 120  stuck 71  the witness 7  other 2
+variant: kin
+level 3, 200 cases: solved 200; turns min 4  median 7  mean 7.5  max 15   4:1 5:13 6:47 7:55 8:37 9:23 10:15 11:3 12:3 13:1 14:1 15:1
+variant: kin
+level 2, 200 cases: solved 200; turns min 5  median 8  mean 8.8  max 17   5:2 6:14 7:38 8:49 9:35 10:21 11:22 12:14 13:4 17:1
+variant: kin
+level 1, 200 cases: solved 200; turns min 7  median 11  mean 11.9  max 21   7:1 8:6 9:19 10:52 11:38 12:25 13:14 14:7 15:9 16:15 17:7 18:2 19:3 20:1 21:1
