@@ -1,0 +1,9 @@
+everything asked, 500 cases: names left 1:500
+  mistake in side : 88 cases, solved 88
+  mistake in area : 116 cases, solved 116
+  mistake in place: 85 cases, solved 85
+  mistake in with : 211 cases, solved 211
+level 3, 200 cases, the detective who trusts every alibi ends with: murderer 155  stuck 43  the witness 1  other 1
+level 3, 200 cases: solved 200; turns min 4  median 7  mean 7.5  max 16   4:3 5:9 6:43 7:52 8:45 9:24 10:16 11:5 12:2 16:1
+level 2, 200 cases: solved 200; turns min 5  median 9  mean 8.9  max 17   5:3 6:14 7:32 8:47 9:37 10:24 11:19 12:17 13:3 14:1 15:2 17:1
+level 1, 200 cases: solved 200; turns min 7  median 11  mean 11.9  max 22   7:1 8:3 9:16 10:50 11:44 12:33 13:8 14:12 15:9 16:9 17:6 18:1 19:4 20:2 21:1 22:1

@@ -28,10 +28,11 @@ def partial(obs, asked, visited):
             'ans': {k: obs['ans'][k] for k in asked}}
 
 
-def methodical(obs, level, cap=120, trace=None, once=False, lies=False, framed=()):
+def methodical(obs, level, cap=120, trace=None, once=False, lies=False, framed=(), sus=None):
     """once: a draft rule - every suspect can be visited one time only.
     lies: the game of two false alibis - a question whose answer the alibi gave already tests that alibi.
-    framed: the accomplice game (rules.FRAMED) - a fact of these questions counts as known once three agree on it."""
+    framed: the accomplice game (rules.FRAMED) - a fact of these questions counts as known once three agree on it.
+    sus: the solver to use instead (a draft rule)."""
     people = sorted(obs['alibi'])
     visited, asked = set(), set()
     cand, worlds = set(people), {}
@@ -89,7 +90,7 @@ def methodical(obs, level, cap=120, trace=None, once=False, lies=False, framed=(
         qs = questions(s, obs['alibi'][s])[:level]                 # chosen after hearing the alibi
         asked.update((s, q) for q in qs)
         worlds = {}
-        cand = (lie_suspects if lies else frame_suspects if framed else suspects)(partial(obs, asked, visited), worlds=worlds)
+        cand = (sus or (lie_suspects if lies else frame_suspects if framed else suspects))(partial(obs, asked, visited), worlds=worlds)
         if trace is not None: trace.append((s, qs, len(cand)))
         if len(cand) == 1:
             return turn
