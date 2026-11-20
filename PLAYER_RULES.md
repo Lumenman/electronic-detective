@@ -173,8 +173,9 @@ Hold `3` and press `ON`. Everything is as in the usual game, except:
    and the player is out. `END TURN` or another command key before the second `ENTER` cancels the accusation.
    At the end the display shows the murderer and the accomplice in turn.
 
-Every case can be solved by reasoning, the pair included. This game has its own records and score against par;
-the board game (`8` + `ON`) has no cases of it.
+Every case can be solved by reasoning, the pair included. This game has its own records and score against par.
+In the board game (`8` + `ON`, then `3` + `ON`) the pair is accused on the last sheet of the case, a grid of murderer and
+accomplice.
 
 ## Messages and errors
 

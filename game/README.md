@@ -124,7 +124,7 @@ reachable. Held for longer than about 0.8 s, the machine goes on by itself, as t
   not go to the records or the running score; par is shown. For a "case of the day", agree to type the date.
   `selftest.py` keeps samples: number 1 must give the same case under any Python version.
 - **Board game** (PC only): hold `8`, press `ON`, type how many cases to write (1-10), `ENTER`: the machine goes
-  dark; then `ON` (the usual game) or `2` + `ON` (Two False Alibis) writes that many random cases to
+  dark; then `ON` (the usual game), `2` + `ON` (Two False Alibis) or `3` + `ON` (the Accomplice) writes that many random cases to
   `cases_<date>_<time>.html` beside the program and stays off; `OFF` cancels. Nothing of the cases is shown on the screen.
   Open the file in a browser and print it on portrait A4 (untick "Headers and footers"); it is black and white, in
   the look of the window: the display in a frame, the keys as boxes. First come two sheets for any number of cases —
@@ -134,7 +134,9 @@ reachable. Held for longer than about 0.8 s, the machine goes on by itself, as t
   digit). A paragraph does not say whose it is, and the answer to an accusation looks like any other YES or NO. The
   questions-per-turn limit is on the player's honour. The answers sheet ends with the par of the case on each level
   (counted by `..\research\solver\par.py` on half of the cores: seconds per case, under a minute for 10 cases). The case number is on both sheets, so the same case can be
-  played on the machine (`9` + `ON`). The sheets are written in the language of the help (`F1`, the `RU`/`EN`
+  played on the machine (`9` + `ON`). An Accomplice case has four sheets: the index has no `I ACCUSE`; the answers (456
+  paragraphs, smaller, two sheets) include one for every pair; the last sheet is a grid murderer × accomplice → a paragraph.
+  Every cell has its own number, so no number stands out; the grid is last, so it is not leafed through on the way. The sheets are written in the language of the help (`F1`, the `RU`/`EN`
   button): names of people, places and keys stay English; a Russian file ends in `_ru`. Without the window:
   `python paper.py 3 [lies] [en|ru]`.
 - **Reset**: hold `0` and press `ON` on a switched-off machine — the program asks whether to clear the records and

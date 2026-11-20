@@ -315,6 +315,13 @@ for lang in paper.TEXT:                                             # every text
     assert page.count('<div><b>') == 133 and '%s 1<' % paper.TEXT[lang]['case'] in page
 row = re.search(r'<th class="n"><b>%d</b>.*?</tr>' % m1, page).group()    # the last number of a row is the accusation
 assert int(re.findall(r'<td>(\d+)</td>', row)[-1]) == para[m1, 'accuse']
+shown3, m3, para3 = paper.paragraphs(1, 'frame')                    # the accomplice: a grid of pairs on the last sheet
+page3 = paper.book(1, 'frame', eg.NAMES, 'en')
+cells = [int(x) for x in re.findall(r'<td>(\d+)</td>', page3[page3.index('class="pairs"'):])]
+assert len(set(cells)) == len(cells) == 19 * 18                     # every pair its own number: none stands out
+assert [k for k in para3 if para3[k] in cells and shown3[k] == '  4E5  '] == [(m3.murderer, ('pair', m3.pair))]
+assert not any(c == 'accuse' for s, c in shown3) and page3.index('>Answers<') < page3.index('>Accusation<')
+assert 'The Accomplice' in paper.front('en', 'frame') and 'Two False Alibis' in paper.front('en', 'lies')
 paper.BOOKS = os.path.join(tmpdir, 'books')
 eg.save_settings(help_lang='ru')                                    # the book speaks the language of the help
 g.press('OFF', True)

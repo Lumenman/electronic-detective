@@ -16,7 +16,7 @@ from help_text import QUESTIONS_EN, QUESTIONS_RU
 from machine import GLYPH, MASK, NUMBER, VARIANTS, Machine, digits
 from rules import CARDS
 
-GAMES = ('fair', 'lies')                 # the games with a book; the accomplice needs an accusation of two
+GAMES = ('fair', 'lies', 'frame')        # the games with a book
 MOST = 10                                # cases in one file: 22 sheets; the par takes seconds per case
 FROZEN = getattr(sys, 'frozen', False)       # built into one file by desktop/build.py
 BOOKS = os.path.dirname(sys.executable if FROZEN else os.path.abspath(__file__))   # beside the program: the place a player looks first
@@ -60,6 +60,11 @@ td.v { font-style: italic }
 .rules ol { margin: 0; padding-left: 5mm } .rules li { margin: 0 0 1mm } .rules table { font-size: 9pt }
 .rules td, .rules th { padding: .7mm 1.2mm; text-align: left } .rules td.a { white-space: nowrap; text-align: center; width: 1% }
 .par { margin: 4mm 0 0; font-weight: bold }
+.grid.small { columns: 6; column-gap: 4mm; font-size: 9pt } .grid.small div { padding: .25mm 0 }
+.grid.small b { min-width: 8mm } .grid.small .s { width: 1.8mm; height: 3.2mm; margin-right: .5mm }
+table.pairs { font-size: 8.5pt } .pairs th, .pairs td { padding: .9mm .3mm } .pairs td.x { background: #ddd }
+.pairs .corner { text-align: left; font-size: 8pt; font-weight: normal; white-space: nowrap } .pairs th.n { font-size: 8.5pt }
+.howto { font-size: 9.5pt; margin: 2mm 0 3mm }
 .rules .s { width: 1.9mm; height: 3.4mm; margin-right: .5mm } .rules .box { border: 1.5pt solid #000; border-radius: 2mm; padding: 3mm }
 </style>
 '''
@@ -67,7 +72,11 @@ td.v { font-style: italic }
 # the texts of the sheets; names of people, places and keys stay as the cards and the machine have them
 TEXT = {'en': {
     'sub': 'Case Materials', 'case': 'CASE', 'index': 'Index', 'answers': 'Answers', 'victim_row': 'the victim',
-    'game': ('THE USUAL GAME', 'TWO FALSE ALIBIS'), 'victim': 'The victim is #%d %s. The body was found at the %s.',
+    'game': ('THE USUAL GAME', 'TWO FALSE ALIBIS', 'THE ACCOMPLICE'), 'accusation': 'Accusation',
+    'to_accuse': 'To accuse, use the last sheet of the case, %s.',
+    'pairs_howto': 'Find the row of the one you accuse of the murder and the column of the accomplice: the number in '
+                   'that cell is a paragraph of the answers. YES only if both are right; NO does not say which one is wrong.',
+    'pairs_corner': '&darr; murderer &nbsp; accomplice &rarr;', 'victim': 'The victim is #%d %s. The body was found at the %s.',
     'par': 'PAR &mdash; the turns a methodical detective needs: level 1 &mdash; %s, level 2 &mdash; %s, level 3 &mdash; %s.',
     'questions': QUESTIONS_EN, 'yes_no': 'YES / NO', 'key_title': 'READING THE DISPLAY', 'rules_title': 'RULES IN BRIEF',
     'key': '''<p>Every paragraph of the book is the seven digits of the machine's display. A dot is a dark digit: nothing is shown there.</p>
@@ -126,16 +135,29 @@ Where there is no gun, questions 13 and 14 are answered &ldquo;I don't know&rdqu
 <div><h2>The private questions</h2>
 <table>%(questions)s</table>
 <p style="margin-top: 1.5mm">Everybody has questions 13 and 14; they may also be answered &ldquo;I don't know&rdquo;.</p></div>
-</div></div>
+</div></div>''', 'box_lies': '''
 <div class="box"><h2>The game of Two False Alibis</h2>
 <p>For the cases marked <b>TWO FALSE ALIBIS</b>. Everything is as above, except:</p>
 <ol><li>Two suspects lie in their alibis: the murderer and one more. Each repeats the alibi of another suspect of the
 same sex and the same parity who was at another place.</li>
 <li>Private questions are answered truly by everybody, these two as well.</li>
 <li>Nobody says they were where a gun is.</li>
-<li>The other 17 tell the truth; the rule about the prints works as usual.</li></ol></div>'''}, 'ru': {
+<li>The other 17 tell the truth; the rule about the prints works as usual.</li></ol></div>''',
+    'box_frame': '''
+<div class="box"><h2>The Accomplice</h2>
+<p>For the cases marked <b>THE ACCOMPLICE</b>. Everything is as above, except:</p>
+<ol><li>The murderer has an accomplice, and the two keep to one false story: to questions 1, 2, 3 and 8 (about the
+murderer) both answer as if another suspect, an innocent one, had done it.</li>
+<li>Their alibis are true, and so are their other answers. The other 17 tell the truth.</li>
+<li>Name both. The index has no %(accuse)s column: on the last sheet of the case, <b>Accusation</b>, find the row of
+the murderer and the column of the accomplice, and read that paragraph. YES only if both are right; NO does not say
+which one is wrong, and you are out.</li></ol></div>'''}, 'ru': {
     'sub': 'Материалы дела', 'case': 'ДЕЛО', 'index': 'Указатель', 'answers': 'Ответы', 'victim_row': 'жертва',
-    'game': ('ОБЫЧНАЯ ИГРА', 'ДВА ЛОЖНЫХ АЛИБИ'), 'victim': 'Жертва &mdash; №&nbsp;%d %s. Тело найдено в %s.',
+    'game': ('ОБЫЧНАЯ ИГРА', 'ДВА ЛОЖНЫХ АЛИБИ', 'СООБЩНИК'), 'accusation': 'Обвинение',
+    'to_accuse': 'Чтобы обвинить, откройте последний лист дела, &laquo;%s&raquo;.',
+    'pairs_howto': 'Найдите строку того, кого обвиняете в убийстве, и столбец сообщника: число в клетке &mdash; номер '
+                   'параграфа ответов. YES &mdash; только если верны оба; NO не говорит, кто из двоих назван неверно.',
+    'pairs_corner': '&darr; убийца &nbsp; сообщник &rarr;', 'victim': 'Жертва &mdash; №&nbsp;%d %s. Тело найдено в %s.',
     'par': 'ПАР &mdash; столько ходов нужно методичному сыщику: уровень 1 &mdash; %s, уровень 2 &mdash; %s, уровень 3 &mdash; %s.',
     'questions': QUESTIONS_RU, 'yes_no': 'YES / NO', 'key_title': 'КАК ЧИТАТЬ ТАБЛО', 'rules_title': 'КРАТКИЕ ПРАВИЛА',
     'key': '''<p>Каждый параграф книги &mdash; семь разрядов табло машины. Точка &mdash; погасший разряд: там ничего не показано.</p>
@@ -194,14 +216,23 @@ NO &mdash; вы выбыли. В одиночной игре неверное о
 <div><h2>Частные вопросы</h2>
 <table>%(questions)s</table>
 <p style="margin-top: 1.5mm">Вопросы 13 и 14 есть у всех; на них могут ответить и &laquo;не знаю&raquo;.</p></div>
-</div></div>
+</div></div>''', 'box_lies': '''
 <div class="box"><h2>Игра &laquo;Два ложных алиби&raquo;</h2>
 <p>Для дел с меткой <b>ДВА ЛОЖНЫХ АЛИБИ</b>. Всё как выше, кроме:</p>
 <ol><li>Двое лгут в алиби: убийца и ещё один подозреваемый. Каждый повторяет алиби другого подозреваемого того же пола
 и той же чётности, который был в другом месте.</li>
 <li>На частные вопросы все отвечают правду &mdash; и эти двое тоже.</li>
 <li>Никто не говорит, что был там, где лежит оружие.</li>
-<li>Остальные 17 говорят правду; правило об отпечатках действует как обычно.</li></ol></div>'''}}
+<li>Остальные 17 говорят правду; правило об отпечатках действует как обычно.</li></ol></div>''',
+    'box_frame': '''
+<div class="box"><h2>Игра &laquo;Сообщник&raquo;</h2>
+<p>Для дел с меткой <b>СООБЩНИК</b>. Всё как выше, кроме:</p>
+<ol><li>У убийцы есть сообщник, и они держатся одной ложной версии: на вопросы 1, 2, 3 и 8 (об убийце) оба отвечают
+так, будто это сделал другой подозреваемый, невиновный.</li>
+<li>Их алиби правдивы, остальные их ответы тоже. Прочие 17 говорят правду.</li>
+<li>Назовите обоих. Колонки %(accuse)s в указателе нет: на последнем листе дела, &laquo;Обвинение&raquo;, найдите
+строку убийцы и столбец сообщника и прочтите этот параграф. YES &mdash; только если верны оба; NO не говорит, кто
+назван неверно, и вы выбываете.</li></ol></div>'''}}
 
 # --- the display: seven segments a..g of a digit, as lines in a 10 x 18 box ---
 LINES = [(2, 1, 8, 1), (9, 2, 9, 8), (9, 10, 9, 16), (2, 17, 8, 17), (1, 10, 1, 16), (1, 2, 1, 8), (2, 9, 8, 9)]
@@ -237,8 +268,9 @@ def top(title, note, right=''):
 
 
 # --- the sheets ---
-def front(lang):
-    """The two sheets that go with any number of cases: how to read the display, and the rules in brief."""
+def front(lang, variant='fair'):
+    """The two sheets that go with any number of cases: how to read the display, and the rules in brief (with the box
+    of the accomplice for its cases, else that of two false alibis)."""
     t = TEXT[lang]
     keys = {'suspect': key('SUSPECT'), 'pq': key('PRIVATE QUESTION'), 'accuse': key('I ACCUSE'), 'end': key('END TURN'),
             'places': ', '.join('%s&nbsp;%s' % (seg(g), name) for g, name in PLACES.items())}
@@ -250,7 +282,8 @@ def front(lang):
                               six=seg('b'), yes=seg('  4E5  '), no=seg('     N0'), unknown=seg('0000000'),
                               **{'d%d' % n: seg(str(n)) for n in range(1, 6)})
     return ('<section>%s%s</section>\n<section class="rules">%s%s</section>\n' % (
-        top(t['key_title'], t['sub']), reading, top(t['rules_title'], t['sub']), t['rules'] % dict(keys, questions=questions)))
+        top(t['key_title'], t['sub']), reading, top(t['rules_title'], t['sub']),
+        (t['rules'] + t['box_frame' if variant == 'frame' else 'box_lies']) % dict(keys, questions=questions)))
 
 
 def codes(number, variant):
@@ -265,7 +298,11 @@ def codes(number, variant):
         shown[s, 'alibi'] = m.enter_suspect(s)
         for q in CARDS[s] + (13, 14):
             m.enter_question(q); shown[s, q] = m.shown
-        shown[s, 'accuse'] = '  4E5  ' if s == m.murderer else '     N0'    # not the machine's show: like any answer
+        if not m.pair:
+            shown[s, 'accuse'] = '  4E5  ' if s == m.murderer else '     N0'    # not the machine's show: like any answer
+    people = [s for s in range(1, 21) if s != m.victim]
+    for a, b in ((a, b) for a in people for b in people if m.pair and a != b):   # the accomplice: every pair its paragraph
+        shown[a, ('pair', b)] = '  4E5  ' if (a, b) == (m.murderer, m.pair) else '     N0'
     return shown, m
 
 
@@ -301,11 +338,14 @@ def book(number, variant, names, lang='en', par=None):
     shown, m, para = paragraphs(number, variant)
     right = '<span class="game">%s</span>%s' % (t['game'][VARIANTS[variant][0]], seg(digits(number, NUMBER), True))
     scene = GLYPH[m.obs['scene']]
+    cols = COLS[:-1] if m.pair else COLS              # the accomplice: accused in pairs, on the last sheet
     rows = ''
     for s in range(1, 21):
-        cells = ('<td colspan="%d" class="v">%s</td>' % (len(COLS), t['victim_row']) if s == m.victim else
-                 ''.join('<td>%s</td>' % para.get((s, c), '') for c in COLS))
+        cells = ('<td colspan="%d" class="v">%s</td>' % (len(cols), t['victim_row']) if s == m.victim else
+                 ''.join('<td>%s</td>' % para.get((s, c), '') for c in cols))
         rows += '<tr><th class="n"><b>%d</b> %s</th>%s</tr>\n' % (s, html.escape(names[s - 1]), cells)
+    if m.pair:
+        return accomplice_book(t, number, m, shown, para, rows, right, names, par)
     return ''.join((
         '<section class="case">', top('%s %d' % (t['case'], number), t['index'], right),
         '<div class="status">%s<span>%s</span></div>\n' % (
@@ -319,6 +359,30 @@ def book(number, variant, names, lang='en', par=None):
         '</div></section>\n'))
 
 
+def accomplice_book(t, number, m, shown, para, rows, right, names, par):
+    """The sheets of an accomplice case: the index (no I ACCUSE), the answers (the accusations of pairs mixed in,
+    smaller), and last, so that it is not leafed through on the way, the grid of pairs."""
+    people = [s for s in range(1, 21) if s != m.victim]
+    scene = GLYPH[m.obs['scene']]
+    grid = ''.join('<tr><th class="n"><b>%d</b> %s</th>%s</tr>\n' % (a, html.escape(names[a - 1]), ''.join(
+        '<td class="x"></td>' if a == b else '<td>%d</td>' % para[a, ('pair', b)] for b in people)) for a in people)
+    return ''.join((
+        '<section class="case">', top('%s %d' % (t['case'], number), t['index'], right),
+        '<div class="status">%s<span>%s</span></div>\n' % (
+            seg(digits(m.victim) + scene + '    ', True), t['victim'] % (m.victim, html.escape(names[m.victim - 1]), PLACES[scene])),
+        '<table><thead><tr><th></th><th>%s</th><th colspan="14">%s</th></tr>\n' % (key('SUSPECT'), key('PRIVATE QUESTION')),
+        '<tr><th></th><th></th>%s</tr></thead>\n' % ''.join('<th>%s</th>' % key(q, 'd') for q in range(1, 15)),
+        rows, '</table>\n<p class="howto">%s</p>' % (t['to_accuse'] % t['accusation']),
+        '<div class="answers">', top('%s %d' % (t['case'], number), t['answers'], right), '<div class="grid small">\n',
+        ''.join('<div><b>%d</b> %s</div>\n' % (n, seg(shown[k])) for k, n in sorted(para.items(), key=lambda kn: kn[1])),
+        '</div>', '<p class="par">%s</p>' % (t['par'] % tuple(p or '&ndash;' for p in par)) if par and any(par) else '',
+        '</div><div class="answers">', top('%s %d' % (t['case'], number), t['accusation'], right),
+        '<p class="howto">%s</p>' % t['pairs_howto'],
+        '<table class="pairs"><thead><tr><th class="corner">%s<br>%s</th>%s</tr></thead>\n' % (
+            key('I ACCUSE'), t['pairs_corner'], ''.join('<th>%d</th>' % b for b in people)),
+        grid, '</table></div></section>\n'))
+
+
 def write(count, variant, names, lang='en', folder=None, rng=None, numbers=None):
     """Writes a file of `count` random cases (or of the given numbers) and returns its path. The par takes seconds
     per case, and so does checking a deal by the solver in the games that need it, as in the game."""
@@ -329,7 +393,7 @@ def write(count, variant, names, lang='en', folder=None, rng=None, numbers=None)
     os.makedirs(folder, exist_ok=True)
     name = time.strftime('cases_%Y%m%d_%H%M%S') + ('_' + variant) * (variant != 'fair') + ('_' + lang) * (lang != 'en') + '.html'
     with open(os.path.join(folder, name), 'w', encoding='utf-8') as f:
-        f.write(STYLE + DEFS + front(lang) + ''.join(book(n, variant, names, lang, p) for n, p in zip(numbers, par)))
+        f.write(STYLE + DEFS + front(lang, variant) + ''.join(book(n, variant, names, lang, p) for n, p in zip(numbers, par)))
     return os.path.join(folder, name)
 
 

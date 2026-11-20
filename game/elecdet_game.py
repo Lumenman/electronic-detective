@@ -790,8 +790,8 @@ class Game:
         if isinstance(b, Machine) and b.ask and not b.powered and b.number:
             self.pending, self.count, b.number = (None, b.number, None) if self.booking else (b.number, None, None)
         if self.count and not (b and b.powered):
-            self.status = ('%d case%s to write for the board game. Press ON for the usual game, or hold 2 and press ON for two '
-                           'false alibis. OFF cancels.' % (self.count, 's' * (self.count > 1)))
+            self.status = ('%d case%s to write for the board game. Press ON for the usual game, hold 2 and press ON for two '
+                           'false alibis, or 3 for the accomplice. OFF cancels.' % (self.count, 's' * (self.count > 1)))
         if self.printed and not (b and b.powered):
             self.status = self.printed + ('' if self.printed.endswith('...') else 'ON: a new case.')
         if self.pending and not (b and b.powered):

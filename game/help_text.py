@@ -110,7 +110,7 @@ HELP = {
         '',
         '# Board game (8 + ON, PC only)',
         'To play without the machine. Hold 8 and press ON, type how many cases to write (1-10) and press ENTER: the '
-        'machine goes dark. Then ON writes that many random cases of the usual game, and 2 + ON of Two False Alibis; '
+        'machine goes dark. Then ON writes that many random cases of the usual game, 2 + ON of Two False Alibis, 3 + ON of the Accomplice; '
         'OFF cancels. Nothing of the cases is shown on the screen.',
         'The file cases_<date>_<time>.html appears beside the program (if its folder is read-only: in the folder ElectronicDetective of your AppData or ~/.config). Open it in a browser and print it on A4, without headers and '
         'footers. First come two sheets for all cases: how to read the display, and the rules in brief. Then two '
@@ -139,7 +139,8 @@ HELP = {
         '3. Name both: I ACCUSE, the number of the murderer, ENTER - the display shows it with -- ; then the number '
         'of the accomplice, ENTER. YES only if both are right, in this order. NO does not say which one was wrong, '
         'and the player is out.',
-        'Every case can be solved by reasoning, the pair included. The board game has no cases of this game.',
+        'Every case can be solved by reasoning, the pair included. In the board game the pair is accused on the last '
+        'sheet of the case: a grid of murderer and accomplice.',
     ],
     'ru': [
         '# Начало игры',
@@ -216,7 +217,7 @@ HELP = {
         '',
         '# Настольная игра (8 + ON, только ПК)',
         'Чтобы играть без машины. Удерживая 8, нажмите ON, введите, сколько дел записать (1-10), и нажмите ENTER: '
-        'машина погаснет. Затем ON запишет столько случайных дел обычной игры, а 2 + ON - игры «Два ложных алиби»; '
+        'машина погаснет. Затем ON запишет столько случайных дел обычной игры, 2 + ON - игры «Два ложных алиби», 3 + ON - «Сообщника»; '
         'OFF отменяет. На экран о делах ничего не выводится.',
         'Файл cases_<дата>_<время>.html появится рядом с программой (если в её папку нельзя писать - в папке ElectronicDetective в AppData или ~/.config). Откройте его в браузере и напечатайте на A4, без колонтитулов. Сначала '
         'идут два листа на все дела: как читать табло и краткие правила. Затем по два листа на дело: указатель '
@@ -243,6 +244,7 @@ HELP = {
         '2. Их алиби правдивы, остальные их ответы тоже. Все прочие говорят правду.',
         '3. Назовите обоих: I ACCUSE, номер убийцы, ENTER - на табло он и -- ; затем номер сообщника, ENTER. '
         'YES - только если верны оба и в этом порядке. NO не говорит, кто назван неверно, и игрок выбывает.',
-        'Каждое дело можно раскрыть рассуждением, вместе с парой. Для настольной игры дел этой игры нет.',
+        'Каждое дело можно раскрыть рассуждением, вместе с парой. В настольной игре пару обвиняют на последнем листе '
+        'дела: в сетке «убийца × сообщник».',
     ],
 }
