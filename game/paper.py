@@ -8,12 +8,12 @@ game. Nothing in a paragraph says whose it is, and the answer to an accusation l
 The look follows the program's window in black and white: the display in a frame, the keys as boxes.
 
     python paper.py 3 [lies] [en|ru]     three random cases -> cases_....html beside this file
-                                         (lies: two false alibis; the language: by default that of the help)
+                                         (lies or another name in machine.VARIANTS: two false alibis; the language: by default that of the help)
 """
 import html, json, os, random, subprocess, sys, time
 from concurrent.futures import ThreadPoolExecutor
 from help_text import QUESTIONS_EN, QUESTIONS_RU
-from machine import GLYPH, MASK, NUMBER, Machine, digits
+from machine import GLYPH, MASK, NUMBER, VARIANTS, Machine, digits
 from rules import CARDS
 
 MOST = 10                                # cases in one file: 22 sheets; the par takes seconds per case
@@ -252,9 +252,9 @@ def front(lang):
         top(t['key_title'], t['sub']), reading, top(t['rules_title'], t['sub']), t['rules'] % dict(keys, questions=questions)))
 
 
-def codes(number, lies):
+def codes(number, variant):
     """{(suspect, column): the display} for every alibi, card question and accusation of a case; and its machine."""
-    m = Machine(lies=lies, number=number)
+    m = Machine(variant=variant, number=number)
     m.power_on(); m.level, m.left = 3, 1; m.start_case('31')
     m.over = True                        # a closed case answers without the limit of questions
     shown = {}
@@ -268,11 +268,11 @@ def codes(number, lies):
     return shown, m
 
 
-def paragraphs(number, lies):
+def paragraphs(number, variant):
     """The displays of a case, its machine, and {(suspect, column): the number of the paragraph}."""
-    shown, m = codes(number, lies)
+    shown, m = codes(number, variant)
     keys = sorted(shown, key=str)
-    random.Random(number * 2 + lies).shuffle(keys)              # a paragraph number says nothing about what is asked
+    random.Random(number * 2 + VARIANTS[variant][0]).shuffle(keys)              # a paragraph number says nothing about what is asked
     return shown, m, {k: i + 1 for i, k in enumerate(keys)}
 
 
@@ -294,11 +294,11 @@ def pars(cases):
     return [got[i:i + 3] for i in range(0, len(got), 3)]
 
 
-def book(number, lies, names, lang='en', par=None):
+def book(number, variant, names, lang='en', par=None):
     """The two sheets of a case: the index and the answers (with the par of each level at the bottom, if given)."""
     t = TEXT[lang]
-    shown, m, para = paragraphs(number, lies)
-    right = '<span class="game">%s</span>%s' % (t['game'][lies], seg(digits(number, NUMBER), True))
+    shown, m, para = paragraphs(number, variant)
+    right = '<span class="game">%s</span>%s' % (t['game'][VARIANTS[variant][0]], seg(digits(number, NUMBER), True))
     scene = GLYPH[m.obs['scene']]
     rows = ''
     for s in range(1, 21):
@@ -318,21 +318,21 @@ def book(number, lies, names, lang='en', par=None):
         '</div></section>\n'))
 
 
-def write(count, lies, names, lang='en', folder=None, rng=None, numbers=None):
+def write(count, variant, names, lang='en', folder=None, rng=None, numbers=None):
     """Writes a file of `count` random cases (or of the given numbers) and returns its path. The par takes seconds
-    per case, and so does checking two false alibis by the solver as in the game."""
+    per case, and so does checking a deal by the solver in the games that need it, as in the game."""
     lang = lang if lang in TEXT else 'en'
     numbers = numbers or (rng or random.SystemRandom()).sample(range(1, 10 ** NUMBER), min(count, MOST))
-    par = pars([codes(n, lies)[1].case for n in numbers])
+    par = pars([codes(n, variant)[1].case for n in numbers])
     folder = folder or BOOKS
     os.makedirs(folder, exist_ok=True)
-    name = time.strftime('cases_%Y%m%d_%H%M%S') + '_lies' * lies + ('_' + lang) * (lang != 'en') + '.html'
+    name = time.strftime('cases_%Y%m%d_%H%M%S') + ('_' + variant) * (variant != 'fair') + ('_' + lang) * (lang != 'en') + '.html'
     with open(os.path.join(folder, name), 'w', encoding='utf-8') as f:
-        f.write(STYLE + DEFS + front(lang) + ''.join(book(n, lies, names, lang, p) for n, p in zip(numbers, par)))
+        f.write(STYLE + DEFS + front(lang) + ''.join(book(n, variant, names, lang, p) for n, p in zip(numbers, par)))
     return os.path.join(folder, name)
 
 
 if __name__ == '__main__':
     from elecdet_game import NAMES, load_settings
     given = [a for a in sys.argv[2:] if a in TEXT]
-    print(write(int(sys.argv[1]), 'lies' in sys.argv[2:], NAMES, given[0] if given else load_settings().get('help_lang', 'en')))
+    print(write(int(sys.argv[1]), next((a for a in sys.argv[2:] if a in VARIANTS), 'fair'), NAMES, given[0] if given else load_settings().get('help_lang', 'en')))

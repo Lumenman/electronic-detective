@@ -15,8 +15,8 @@ os.environ.setdefault('PYGAME_HIDE_SUPPORT_PROMPT', '1')   # no pygame banner in
 import pygame
 from board import ElecDet, IPS, SEG, load_romset
 import paper
-from machine import Machine, NUMBER, number_rng
-from rules import CARDS, deal_lies, from_ram, observe
+from machine import Machine, NUMBER, VARIANTS, deal_checked, number_rng
+from rules import CARDS, from_ram, observe
 from help_text import HELP
 
 VERSION = '1.0'                          # of the builds (buildozer.spec reads it from here)
@@ -361,9 +361,9 @@ def find_rom(arg):
 
 
 class Stock(threading.Thread):
-    """Cases of the game of two false alibis, dealt and checked ahead while nothing sounds: 2 + ON then starts at once.
-    Kept in the settings as [number of the case, deals to skip]: the number seeds the deals, and the first of them
-    that can be solved is the case (a number tells nothing about the case)."""
+    """Cases of the games checked by the solver (two false alibis), dealt ahead while nothing sounds: 2 + ON then
+    starts at once. Kept in the settings as <variant>_dealt: [number of the case, deals to skip]; the number seeds the
+    deals, and the first of them that can be solved is the case (a number tells nothing about the case)."""
 
     def __init__(self, game):
         super().__init__(daemon=True)
@@ -373,22 +373,25 @@ class Stock(threading.Thread):
     def run(self):
         sys.path.append(os.path.dirname(PAR))        # on the phone the solver lies beside this file
         try:
-            from solver import lie_suspects
+            import solver
         except ImportError:
             return                       # no solver here: the machine deals unchecked
+        checked = [v for v, row in VARIANTS.items() if row[3]]
         while True:
-            if len(load_settings().get('lies_dealt', [])) >= STOCK:
+            short = [v for v in checked if len(load_settings().get(v + '_dealt', [])) < STOCK]
+            if not short:
                 time.sleep(1); continue
-            number, skip = random.SystemRandom().randrange(1, 10 ** NUMBER), 0
-            rng = number_rng(number, True)
-            while True:                  # as Machine.deal_solvable does for a number typed by the player
+            v, number = short[0], random.SystemRandom().randrange(1, 10 ** NUMBER)
+            check = getattr(solver, VARIANTS[v][3])
+
+            def timed(obs):
                 t = time.thread_time()
-                good = len(lie_suspects(observe(deal_lies(rng))[0], pause=self.game.quiet)) == 1
+                found = check(obs, pause=self.game.quiet)
                 self.game.timing['deal'] = time.thread_time() - t
-                if good: break
-                skip += 1
+                return found
+            skip = deal_checked(number_rng(number, v), v, timed)[1]      # as the machine does for a typed number
             with LOCK:
-                save_settings(lies_dealt=load_settings().get('lies_dealt', []) + [[number, skip]])
+                save_settings(**{v + '_dealt': load_settings().get(v + '_dealt', []) + [[number, skip]]})
 
 
 class ParThread(threading.Thread):
@@ -448,7 +451,7 @@ class Game:
     par = par_msg = None                 # the solver's process for this case; its line in the final summary
     wiped = False                        # the records were cleared: say so until the machine is switched on
     wipe_ask = False                     # 0 + ON was pressed: ENTER clears the records, any other key keeps them
-    lies = False                         # the game of two false alibis (2 + ON)
+    variant = 'fair'                     # the game of our machine: a name in VARIANTS (2 + ON: two false alibis)
     numbered = False                     # the case was chosen by its number: no records, no running score
     pending = None                       # the number typed after 9 + ON, kept for the next game
     booking = False                      # the machine is on after 8 + ON: it takes how many cases to write on paper
@@ -462,20 +465,20 @@ class Game:
         while isinstance(self.board, Machine) and self.board.powered and self.board.cycles < self.board.busy_until:
             time.sleep(0.02)
 
-    def take(self):
-        """A case dealt ahead for the game of two false alibis, with its number, or None."""
+    def take(self, variant):
+        """A case dealt ahead for a checked game, with its number, or None."""
         with LOCK:
-            stock = load_settings().get('lies_dealt', [])
+            stock = load_settings().get(variant + '_dealt', [])
             if not stock:
                 return None
-            save_settings(lies_dealt=stock[1:])
-        (number, skip), rng = stock[0], number_rng(stock[0][0], True)
-        for _ in range(skip): deal_lies(rng)
-        return number, deal_lies(rng)
+            save_settings(**{variant + '_dealt': stock[1:]})
+        (number, skip), rng, deal = stock[0], number_rng(stock[0][0], variant), VARIANTS[variant][2]
+        for _ in range(skip): deal(rng)
+        return number, deal(rng)
 
     def kind(self):
         """The game being played, as the ending of its records in the settings."""
-        return '' if self.original else '_lies' if self.lies else '_fair'
+        return '' if self.original else '_' + self.variant
 
     def __init__(self, files=None, rom=None):
         self.files, self.rom = files, rom   # the ROM (loaded files, or where to look) is asked for on 1 + ON only
@@ -596,7 +599,7 @@ class Game:
         if self.wipe_ask and down:               # after 0 + ON: ENTER clears, any other key keeps the records
             self.wipe_ask = False
             if key == 'ENTER':
-                save_settings(records={}, records_fair={}, records_lies={}, par={}, par_fair={}, par_lies={})
+                save_settings(**{t + e: {} for t in ('records', 'par') for e in [''] + ['_' + v for v in VARIANTS]})
                 self.wiped = True
                 return
         if key in ('ON', 'OFF'):
@@ -606,7 +609,8 @@ class Game:
             if key == 'ON' and down and self.held.get('0') and not (self.board and self.board.powered):
                 self.wipe_ask, self.wiped = True, False                    # 0 + ON: asks first
                 return
-            lies = bool(self.held.get('2')) and not original and not ask          # 2 + ON: two false alibis
+            variant = next((v for v, row in VARIANTS.items() if row[1] and self.held.get(row[1]) and not original
+                            and not ask), 'fair')                               # 2 + ON: two false alibis
             if key == 'ON' and down and original and ANDROID and self.files is None:
                 return                       # no ROM on the phone
             if key == 'ON' and self.board is not None and self.board.powered:
@@ -623,13 +627,13 @@ class Game:
                 if key == 'OFF': self.pending = self.count = None                 # OFF forgets the number that was set
                 self.printed = None
                 if key == 'ON' and self.count and not ask and not original:       # the game is picked: write, stay off
-                    self.write_cases(lies)
+                    self.write_cases(variant)
                 elif key == 'ON' and (self.board is None or not self.board.powered):
                     number = None if ask or original else self.pending            # the ROM's cases have no numbers
                     self.board = ElecDet(self.files) if original else Machine(
-                        lies=lies, take=self.take, ask=ask, number=number, **({'most': paper.MOST} if book else {}))
+                        variant=variant, take=self.take, ask=ask, number=number, **({'most': paper.MOST} if book else {}))
                     self.booking = book
-                    self.original, self.lies, self._level, self.wiped = original, lies, 0, False
+                    self.original, self.variant, self._level, self.wiped = original, variant, 0, False
                     self.numbered = number is not None
                     if number: self.pending = None                                # played once
                     if ask: self.decoder.context = ('number', paper.MOST) if book else ('number',)
@@ -643,8 +647,8 @@ class Game:
         if down and cnt == 1 and self.board:
             self.keyq.append(key)            # the status line follows it when it reaches the board (feed_keys)
 
-    def write_cases(self, lies):
-        """After 8 + ON: the cases go to a file, nothing of them to the screen. Two false alibis are checked by the
+    def write_cases(self, variant):
+        """After 8 + ON: the cases go to a file, nothing of them to the screen. Some games are checked by the
         solver (seconds each), so a thread writes and the window stays alive."""
         n, self.count = self.count, None
         self.printed = 'Writing %d case%s for the board game and counting the par (seconds per case)...' % (n, 's' * (n > 1))
@@ -653,11 +657,11 @@ class Game:
             try:
                 lang = load_settings().get('help_lang', 'en')        # the book speaks the language of the help
                 if writable(paper.BOOKS):
-                    where = os.path.basename(paper.write(n, lies, NAMES, lang)) + ' beside the program'
+                    where = os.path.basename(paper.write(n, variant, NAMES, lang)) + ' beside the program'
                 else:                                                # read-only folder: the user's folder
-                    where = paper.write(n, lies, NAMES, lang, folder=os.path.dirname(FALLBACK))
+                    where = paper.write(n, variant, NAMES, lang, folder=os.path.dirname(FALLBACK))
                 self.printed = '%d case%s of %s written to %s, in %s. ' % (
-                    n, 's' * (n > 1), 'two false alibis' if lies else 'the usual game', where,
+                    n, 's' * (n > 1), VARIANTS[variant][4], where,
                     {'ru': 'Russian'}.get(lang, 'English'))
             except OSError as e:
                 self.printed = 'The cases are not written: %s. ' % e
@@ -770,8 +774,8 @@ class Game:
         if self.board is not None and not self.board.powered:
             self.final = None
             self.status = SAVE_ERROR or 'Switched off. ' + OFF_HINT     # the messages below still go first
-        if self.lies and self.decoder.context[0] in ('number', 'setup') and self.board and self.board.powered:
-            self.status = 'Two false alibis. ' + self.status      # the rule is in the help: a longer line is cut
+        if self.variant != 'fair' and self.decoder.context[0] in ('number', 'setup') and self.board and self.board.powered:
+            self.status = VARIANTS[self.variant][4].capitalize() + '. ' + self.status      # the rule is in the help: a longer line is cut
         b = self.board
         if isinstance(b, Machine) and b.ask and not b.powered and b.number:
             self.pending, self.count, b.number = (None, b.number, None) if self.booking else (b.number, None, None)

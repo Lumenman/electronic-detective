@@ -196,7 +196,7 @@ print('oddities left out OK')
 g.press('OFF', True); g.press('1', True); g.press('ON', True); g.press('1', False)    # 1 + ON: the ROM
 assert g.original and not isinstance(g.board, Machine)
 g.press('OFF', True); g.press('2', True); g.press('ON', True); g.press('2', False)    # 2 + ON: two false alibis
-assert g.board.powered and g.board.lies and g.lies and not g.original and g.kind() == '_lies'
+assert g.board.powered and g.board.variant == g.variant == 'lies' and not g.original and g.kind() == '_lies'
 wait(3.5); click('3'); click('1'); click('ENTER'); wait(6)
 lies = g.board.case['lies']; from rules import observe as _obs
 true = _obs(dict(g.board.case, lies=[]))[0]['alibi']
@@ -279,14 +279,14 @@ assert not g.numbered and g.board.given is None
 m = Machine(); m.power_on(); m.run(4 * SEC)                         # a game without a typed number has one all the same
 for k in '31': m.key(k)
 m.key('ENTER'); assert 0 < m.number < 10 ** 7 and m.case == deal(random.Random(m.number))
-m = Machine(lies=True, number=1); m.power_on(); m.run(4 * SEC)      # the same number in the other game: another murder
+m = Machine(variant='lies', number=1); m.power_on(); m.run(4 * SEC)      # the same number in the other game: another murder
 for k in '31': m.key(k)
 m.key('ENTER'); assert m.number == 1 and m.case['rows'] != c1['rows']
 print('case number OK')
 
 # --- cases on paper: 8 + ON takes how many, then ON or 2 + ON picks the game and writes the file; the machine stays off ---
 import glob, paper, re, time
-shown, mp, para = paper.paragraphs(1, False)
+shown, mp, para = paper.paragraphs(1, 'fair')
 assert mp.case == c1 and len(shown) == 19 * 7 and sorted(para.values()) == list(range(1, 134))    # every paragraph once
 assert [s for (s, c), v in shown.items() if c == 'accuse' and v == '  4E5  '] == [m1]
 m = Machine(number=1); m.power_on(); m.run(4 * SEC)                 # the book against the keys: suspect 1 and his question 9
@@ -298,7 +298,7 @@ for k in ['PQ', '9', 'ENTER']: m.key(k)
 assert m.shown == shown[1, 9], (m.shown, shown[1, 9])
 for lang in paper.TEXT:                                             # every text and glyph of the sheets is there
     assert paper.front(lang).count('<section') == 2
-    page = paper.book(1, False, eg.NAMES, lang)
+    page = paper.book(1, 'fair', eg.NAMES, lang)
     assert page.count('<div><b>') == 133 and '%s 1<' % paper.TEXT[lang]['case'] in page
 row = re.search(r'<th class="n"><b>%d</b>.*?</tr>' % m1, page).group()    # the last number of a row is the accusation
 assert int(re.findall(r'<td>(\d+)</td>', row)[-1]) == para[m1, 'accuse']

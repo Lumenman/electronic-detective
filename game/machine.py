@@ -22,9 +22,34 @@ SEC = int(IPS)
 NUMBER = 7                                         # digits in the number of a case
 
 
-def number_rng(number, lies):
-    """The deals of a case number. The two games draw apart: the same number must not be the same murder in both."""
-    return random.Random(number + lies * 10 ** NUMBER)
+# The games of the machine. name: (index in the seed, digit held with ON, deal(rng), the solver's function that must
+# find only the murderer in a dealt case, or None, its name in the status). The index must stay: old numbers keep their cases.
+VARIANTS = {
+    'fair': (0, None, deal, None, 'the usual game'),
+    'lies': (1, '2', deal_lies, 'lie_suspects', 'two false alibis'),
+}
+
+
+def number_rng(number, variant):
+    """The deals of a case number. The games draw apart: the same number must not be the same murder in two of them."""
+    return random.Random(number + VARIANTS[variant][0] * 10 ** NUMBER)
+
+
+def deal_checked(rng, variant, check=None):
+    """The first deal of rng that the solver can solve (about 1 in 25 with two false alibis cannot), and the deals
+    skipped before it. check: the solver's function; by default imported, and no solver here means no check."""
+    deal, name = VARIANTS[variant][2:4]
+    if name and check is None:
+        sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'research', 'solver'))
+        try:
+            check = getattr(__import__('solver'), name)    # on the phone the solver lies beside this file
+        except ImportError:
+            name = None                  # no solver here: the case is played unchecked
+    skip = 0
+    while True:
+        case = deal(rng)
+        if not name or len(check(observe(case)[0])) == 1: return case, skip
+        skip += 1
 BLINK, BLINK_NO = (0.44, 0.14), (0.26, 0.14)       # seconds on, off
 OFF_AFTER, OFF_EXTEND = 240, 177                   # a finished game switches itself off; END TURN gives more time
 
@@ -34,11 +59,11 @@ def digits(n, width=2):
 
 
 class Machine:
-    def __init__(self, rng=None, case=None, rom_like=False, lies=False, take=None, ask=False, number=None,
+    def __init__(self, rng=None, case=None, rom_like=False, variant='fair', take=None, ask=False, number=None,
                  most=10 ** NUMBER - 1):
         self.most = most                         # the largest number taken when asked (ask=True)
         self.rng, self.fixed_case, self.rom_like = rng or random.SystemRandom(), case, rom_like
-        self.lies, self.take = lies, take        # two false alibis; take() gives (number, case) dealt ahead, or None
+        self.variant, self.take = variant, take  # a name in VARIANTS; take(variant) gives (number, case) dealt ahead, or None
         self.ask, self.given = ask, number       # switched on only to take the number of a case; the case to play
         self.powered = False
         self.cycles = self.busy_until = 0
@@ -130,28 +155,15 @@ class Machine:
             else:
                 self.show(ON)
 
-    def deal_solvable(self, rng):
-        """A case with two false alibis that logic can still solve (about 1 in 25 cannot: the next deal of rng is taken;
-        the thread that deals ahead in elecdet_game.py walks the same way)."""
-        sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'research', 'solver'))
-        try:
-            from solver import lie_suspects      # on the phone the solver lies beside this file
-        except ImportError:
-            lie_suspects = None                  # no solver here: the case is played unchecked
-        while True:
-            case = deal_lies(rng)
-            if lie_suspects is None or len(lie_suspects(observe(case)[0])) == 1: return case
-
     def start_case(self, typed):
-        ahead = self.lies and self.number is None and self.take and self.take()
+        ahead = VARIANTS[self.variant][3] and self.number is None and self.take and self.take(self.variant)
         if self.fixed_case:
             self.case = self.fixed_case
         elif ahead:
             self.number, self.case = ahead
-        else:                             # shortcut: two false alibis are checked here - the machine waits (seconds on a phone)
+        else:                             # shortcut: a checked deal is checked here - the machine waits (seconds on a phone)
             self.number = self.number or self.rng.randrange(1, 10 ** NUMBER)
-            rng = number_rng(self.number, self.lies)
-            self.case = self.deal_solvable(rng) if self.lies else deal(rng)
+            self.case = deal_checked(number_rng(self.number, self.variant), self.variant)[0]
         self.obs, self.murderer = observe(self.case)
         self.victim = self.obs['victim']
         self.over = self.deviation = False   # solved, or everybody is out; known difference from the ROM met

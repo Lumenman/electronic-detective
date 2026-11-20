@@ -222,7 +222,7 @@ round almost everybody); the same, but the answers to questions are true (`alibi
 7/8/10, 4% of deals redealt) — chosen; one false alibi (`one check`: a weak lie, 140 of 200). Without lies
 (`solver/hard.py`): "one questioning per suspect" changes nothing at level 3 and breaks a quarter of the cases at
 level 1; question use 21/16/10 — a budget of about 12 per game is possible as a hard level (not done). Figures:
-`solver/*_stats.txt`. In the game: `rules.deal_lies`, `solver.lie_suspects`, `par.case_par`, `Machine(lies=True)`.
+`solver/*_stats.txt`. In the game: `rules.deal_lies`, `solver.lie_suspects`, `par.case_par`, `Machine(variant='lies')` (`machine.VARIANTS`).
 `Shift+ON` was removed (earlier in the text it is mentioned as it was).
 Reason: a touch screen has no Shift (the Android apk was discussed; not started then).
 
