@@ -198,14 +198,17 @@ def frame_suspects(obs, worlds=None, pairs=None):
     return found
 
 
-def place_all(dom, cats, mates, places, three):
-    """Can everybody be placed? One of each category per place of four; companions together.
-    Returns one such placement (suspect -> place), or False."""
+def place_all(dom, cats, mates, places, three, apart=()):
+    """Can everybody be placed? One of each category per place of four; companions together; the pairs in apart
+    (a draft rule: false companions) at different places. Returns one such placement (suspect -> place), or False."""
     dom = {s: set(v) for s, v in dom.items()}
     cat_of = {s: c for c, members in enumerate(cats) for s in members}
     pairs = {}
     for a, b in mates:
         pairs.setdefault(a, []).append(b); pairs.setdefault(b, []).append(a)
+    away = {}
+    for a, b in apart:
+        away.setdefault(a, []).append(b); away.setdefault(b, []).append(a)
 
     def assign(s, l, trail):
         """Fix s at l and propagate; False on contradiction."""
@@ -214,6 +217,11 @@ def place_all(dom, cats, mates, places, three):
             s, l = stack.pop()
             if l not in dom[s]: return False
             if len(dom[s]) > 1: trail.append((s, dom[s])); dom[s] = {l}
+            for o in away.get(s, ()):                      # not together
+                if l in dom[o]:
+                    trail.append((o, dom[o])); dom[o] = dom[o] - {l}
+                    if not dom[o]: return False
+                    if len(dom[o]) == 1: stack.append((o, next(iter(dom[o]))))
             for o in cats[cat_of[s]]:                      # same category: different places
                 if o != s and l in dom[o]:
                     trail.append((o, dom[o])); dom[o] = dom[o] - {l}
@@ -225,7 +233,7 @@ def place_all(dom, cats, mates, places, three):
 
     def ok_final():
         loc = {s: next(iter(v)) for s, v in dom.items()}
-        if any(loc[a] != loc[b] for a, b in mates): return False
+        if any(loc[a] != loc[b] for a, b in mates) or any(loc[a] == loc[b] for a, b in apart): return False
         for members in cats:
             if len({loc[s] for s in members}) != len(members): return False
         count = {l: sum(1 for s in loc if loc[s] == l) for l in places}
