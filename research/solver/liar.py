@@ -12,6 +12,7 @@ where it is sure to tell something: the place of three has nobody of the victim'
 
     python liar.py full [n]           how many deals can be solved when everything is asked? (no check)
     python liar.py play [n] [level]   turns of the methodical detective on deals that can be solved
+    python liar.py cut [n]            par at levels 1-3 per case; what a cap on the level-2 par cuts and leaves
 """
 import os, sys
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', 'game'))
@@ -112,7 +113,8 @@ def run(job):
         assert murderer in cand, seed
         return len(cand)
     obs, murderer, skip = solvable_case(random.Random(seed))
-    return par.methodical(obs, level, lies=True, sus=liar_suspects), skip
+    if kind == 'cut': return [par.methodical(obs, lv, sus=liar_suspects, inverted=True) for lv in (1, 2, 3)]
+    return par.methodical(obs, level, sus=liar_suspects, inverted=True), skip
 
 
 if __name__ == '__main__':
@@ -122,7 +124,13 @@ if __name__ == '__main__':
     level = int(sys.argv[3]) if len(sys.argv) > 3 else 3
     with Pool(2) as p:                                   # half of the cores stay free
         res = p.map(run, [(kind, i, level) for i in range(n)], chunksize=2)
-    if kind == 'full':
+    if kind == 'cut':
+        stat = lambda v: 'median %2d  mean %4.1f  max %2d' % (v[len(v) // 2], sum(v) / len(v), v[-1]) if v else '-'
+        for cap in (None, 30, 25, 20, 16, 14, 12):
+            keep = [r for r in res if None not in r and (cap is None or r[1] <= cap)]
+            print('level-2 par <= %-4s keeps %3d%%   ' % (cap or 'any', 100 * len(keep) // n) + '   '.join(
+                'L%d: %s' % (lv, stat(sorted(r[lv - 1] for r in keep))) for lv in (1, 2, 3)))
+    elif kind == 'full':
         c = Counter(res)
         print('everything asked, %d deals: names left %s; solvable %d%%' % (
             n, ' '.join('%d:%d' % kv for kv in sorted(c.items())), 100 * c[1] // n))

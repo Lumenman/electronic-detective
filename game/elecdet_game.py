@@ -15,7 +15,7 @@ os.environ.setdefault('PYGAME_HIDE_SUPPORT_PROMPT', '1')   # no pygame banner in
 import pygame
 from board import ElecDet, IPS, SEG, load_romset
 import paper
-from machine import Machine, NUMBER, VARIANTS, deal_checked, number_rng
+from machine import LEVELS, Machine, NUMBER, VARIANTS, deal_checked, number_rng
 from rules import CARDS, from_ram, observe
 from help_text import HELP
 
@@ -91,6 +91,7 @@ class Decoder:
         self.players, self.level = 1, 0
         self.seq = 0             # ENTER counter: one answer per ENTER
         self.pair = False        # the accomplice game: I ACCUSE takes two numbers, murderer then accomplice
+        self.levels = '123'      # the levels the game allows (machine.LEVELS)
 
     def key(self, k):
         before = self.context[0] in ('number', 'setup')      # the machine shows ON and takes digits and ENTER only
@@ -107,7 +108,7 @@ class Decoder:
                 if n and n <= (self.context + (10 ** NUMBER,))[1]:      # ('number', most) after 8 + ON
                     self.context = ('off',)                  # remembered for the next game: the machine goes dark
             elif self.context[0] == 'setup':
-                if len(digits) == 2 and digits[0] in '123' and digits[1] in '1234':   # anything else: ON again
+                if len(digits) == 2 and digits[0] in self.levels and digits[1] in '1234':   # anything else: ON again
                     self.context = ('crime',)
                     self.level, self.players = int(digits[0]), int(digits[1])
             elif e[:1] == ['SUSPECT']:
@@ -630,7 +631,7 @@ class Game:
                     except SystemExit:           # no ROM chosen: stay off
                         return
                 self.decoder.key(key)
-                if key == 'ON': self.decoder.pair = variant == 'frame'
+                if key == 'ON': self.decoder.pair, self.decoder.levels = variant == 'frame', LEVELS.get(variant, '123')
                 self.score = self.note = self.final = None
                 self.stop_par()
                 if key == 'OFF': self.pending = self.count = None                 # OFF forgets the number that was set

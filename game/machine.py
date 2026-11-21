@@ -12,7 +12,7 @@ so the window can drive either. Time is counted in CPU cycles of the original (I
 """
 import os, random, sys
 from board import IPS, SEG
-from rules import deal, deal_frame, deal_lies, observe
+from rules import deal, deal_frame, deal_liar, deal_lies, observe
 from sounds import SOUNDS
 
 GLYPH = {'A': 'A', 'B': 'b', 'C': 'C', 'D': 'd', 'E': 'E', 'F': 'F'}
@@ -28,7 +28,9 @@ VARIANTS = {
     'fair': (0, None, deal, None, 'the usual game'),
     'lies': (1, '2', deal_lies, 'lie_suspects', 'two false alibis'),
     'frame': (2, '3', deal_frame, None, 'the accomplice'),            # always solvable: dealt unchecked
+    'liar': (3, '4', deal_liar, 'liar_checked', 'everybody lies'),     # DRAFT, branch everybody-lies: for a trial
 }
+LEVELS = {'liar': '23'}                            # the levels a game allows, if not all three
 
 
 def number_rng(number, variant):
@@ -154,7 +156,7 @@ class Machine:
             self.typed = (self.typed + k)[-2:]; self.echo()
         else:
             t, self.typed = self.typed, ''
-            if k == 'ENTER' and len(t) == 2 and t[0] in '123' and t[1] in '1234':
+            if k == 'ENTER' and len(t) == 2 and t[0] in LEVELS.get(self.variant, '123') and t[1] in '1234':
                 self.level, self.left = int(t[0]), int(t[1])       # questions per turn; players still in the game
                 self.start_case(t)
             else:

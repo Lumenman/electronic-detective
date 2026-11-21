@@ -28,11 +28,13 @@ def partial(obs, asked, visited):
             'ans': {k: obs['ans'][k] for k in asked}}
 
 
-def methodical(obs, level, cap=120, trace=None, once=False, lies=False, framed=(), sus=None):
+def methodical(obs, level, cap=120, trace=None, once=False, lies=False, framed=(), sus=None, inverted=False):
     """once: a draft rule - every suspect can be visited one time only.
     lies: the game of two false alibis - a question whose answer the alibi gave already tests that alibi.
     framed: the accomplice game (rules.FRAMED) - a fact of these questions counts as known once three agree on it.
-    sus: the solver to use instead (a draft rule)."""
+    sus: the solver to use instead (a draft rule).
+    inverted: everybody lies (liar.py) - every alibi field is false, so the side named tells the side, and asking
+    what the alibi named pays; weights tuned on 60 cases (VARIANTS_PLAN.md, step 3b)."""
     people = sorted(obs['alibi'])
     visited, asked = set(), set()
     cand, worlds = set(people), {}
@@ -69,7 +71,11 @@ def methodical(obs, level, cap=120, trace=None, once=False, lies=False, framed=(
             if q == 12:                                                # at a gun or not
                 if place and fact[5] and fact[6] or told(s, 13) or told(s, 14): return 0
                 return 4 if splits(s, 3) else 3 if s in cand else 1 if sex in (None, male(s)) else 0
-            if {9: 'side', 10: 'area', 11: 'place'}[q] in a: return 5 if lies else 0  # the alibi said it already
+            if inverted:
+                if q == 9 and 'side' in a: return 0                    # the other side: known
+                if {9: 'side', 10: 'area', 11: 'place'}[q] in a: return 8
+                if s in visited: return 4
+            elif {9: 'side', 10: 'area', 11: 'place'}[q] in a: return 5 if lies else 0  # the alibi said it already
             return 4 if splits(s, {9: 1, 10: 2, 11: 0}[q]) else 3 if s in cand else 0
 
         def questions(s, a):
@@ -79,7 +85,7 @@ def methodical(obs, level, cap=120, trace=None, once=False, lies=False, framed=(
         def value(s):
             a = obs['alibi'][s] if s in visited else {}
             v = sum(worth(s, q, a) for q in questions(s, a)[:level])
-            if s not in visited: v += (6 if s in cand else 2) + 3 * splits(s, 0, 1, 2)   # the alibi itself
+            if s not in visited: v += ((3 if inverted else 6) if s in cand else 2) + 3 * splits(s, 0, 1, 2)   # the alibi itself
             return v, -s
 
         open_ = [s for s in people if s not in visited or questions(s, {}) and not once]
@@ -100,6 +106,9 @@ def methodical(obs, level, cap=120, trace=None, once=False, lies=False, framed=(
 def case_par(case, level):
     """Par of a case as the game holds it (a dict, perhaps through JSON); None if the routine does not get there."""
     from rules import observe
+    if case.get('inverted'):
+        from liar import liar_suspects
+        return methodical(observe(case)[0], level, sus=liar_suspects, inverted=True)
     return methodical(observe(case)[0], level, lies=bool(case.get('lies')), framed=FRAMED if case.get('frame') else ())
 
 

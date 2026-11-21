@@ -88,6 +88,26 @@ def deal_frame(rng):
     return case
 
 
+def deal_liar(rng):
+    """DRAFT (research/solver/liar.py), everybody lies: every alibi is false in every field it shows - the other
+    side, another area, another place (never the body's), and for each true companion somebody of the same kind
+    from elsewhere. Answers stay true. The case gets 'inverted': [[suspect, false alibi], ...]."""
+    case = deal(rng)
+    obs = observe(case)[0]
+    people = sorted(obs['alibi'])
+    cats = [[s for s in people if col_of(s) == c] for c in range(4)]
+    false = []
+    for s in people:                     # the same draws as liar.liar_case: the numbers of the draft stay valid
+        a, b = obs['alibi'][s], {}
+        if 'side' in a: b['side'] = 3 - a['side']
+        if 'area' in a: b['area'] = rng.choice([x for x in (3, 4, 5) if x != a['area']])
+        if 'place' in a: b['place'] = rng.choice([l for l in 'ABCDEF' if l not in (a['place'], obs['scene'])])
+        if 'with' in a: b['with'] = sorted(rng.choice([o for o in cats[col_of(c)] if o != c]) for c in a['with'])
+        false.append([s, b])
+    case['inverted'] = false
+    return case
+
+
 def observe(case):
     rows, vcol, mcol, w38 = case['rows'], case['vcol'], case['mcol'], case['w38']
     victim, murderer = rows[4]['people'][vcol], rows[0]['people'][mcol]
@@ -118,6 +138,7 @@ def observe(case):
         for q in CARDS[s] + (13, 14): ans[(s, q)] = table[q]
         if s in OFF_CARD: hidden[(s, 12)] = table[12]
     for s, o in case.get('lies', ()): alibi[s] = dict(alibi[o])        # the liar tells the other one's alibi
+    for s, a in case.get('inverted', ()): alibi[s] = a                  # everybody lies (draft)
     if case.get('frame'):                                               # the pair tells the framed one's story
         m, c, x = case['frame']; false = story(rows, loc[x][0], x)
         for s in (m, c):

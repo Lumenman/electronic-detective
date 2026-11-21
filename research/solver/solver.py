@@ -198,6 +198,16 @@ def frame_suspects(obs, worlds=None, pairs=None):
     return found
 
 
+def liar_checked(obs, worlds=None, pause=None):
+    """Everybody lies (draft, liar.py): the murderer if the case can be solved and the methodical detective needs at
+    most 20 turns on level 2 (VARIANTS_PLAN.md, step 3b: keeps ~82%); else nothing, and the deal is skipped."""
+    import liar, par                     # here, not at the top: liar imports this module
+    found = liar.liar_suspects(obs, worlds, pause)
+    if len(found) != 1: return found
+    turns = par.methodical(obs, 2, sus=liar.liar_suspects, inverted=True)
+    return found if turns is not None and turns <= 20 else set()
+
+
 def place_all(dom, cats, mates, places, three, apart=()):
     """Can everybody be placed? One of each category per place of four; companions together; the pairs in apart
     (a draft rule: false companions) at different places. Returns one such placement (suspect -> place), or False."""
