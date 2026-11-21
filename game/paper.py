@@ -64,6 +64,7 @@ td.v { font-style: italic }
 .grid.small b { min-width: 9.5mm } .grid.small .s { width: 2.2mm; height: 4mm; margin-right: .6mm }
 table.pairs { font-size: 8.5pt } .pairs th, .pairs td { padding: .9mm .3mm }
 td.x { background: #ccc; -webkit-print-color-adjust: exact; print-color-adjust: exact }   /* printers drop backgrounds otherwise */
+col.q { width: 8.5mm } .notes col.c { width: 8.5mm }   /* columns of one kind, one width */
 table.notes { font-size: 11pt } .notes th, .notes td { padding: 1.5mm .5mm } table.notes th.n { font-size: 11pt }
 .pairs .corner { text-align: left; font-size: 8pt; font-weight: normal; white-space: nowrap } .pairs th.n { font-size: 8.5pt }
 .howto { font-size: 9.5pt; margin: 2mm 0 3mm }
@@ -76,7 +77,7 @@ table.notes { font-size: 11pt } .notes th, .notes td { padding: 1.5mm .5mm } tab
 TEXT = {'en': {
     'sub': 'Case Materials', 'case': 'CASE', 'index': 'Index', 'answers': 'Answers', 'victim_row': 'the victim',
     'game': ('THE USUAL GAME', 'TWO FALSE ALIBIS', 'THE ACCOMPLICE', 'EVERYBODY LIES'), 'accusation': 'Accusation',
-    'notes': 'Notes', 'par23': 'PAR &mdash; the turns a methodical detective needs: level 2 &mdash; %s, level 3 &mdash; %s.',
+    'notes': 'Notes', 'par23': 'PAR &mdash; the turns a methodical detective needs: levels 2 &mdash; %s, 3 &mdash; %s.',
     'notes_howto': 'Cross out what an alibi or an answer rules out. Above: where each suspect was not (place, side, '
                    'area); a true answer may also leave one cell. Companions named go to &ldquo;not with&rdquo;: they '
                    'were elsewhere. Below: the address of each place. The place of the body is shaded: nobody was there.',
@@ -85,7 +86,7 @@ TEXT = {'en': {
     'pairs_howto': 'Find the row of the one you accuse of the murder and the column of the accomplice: the number in '
                    'that cell is a paragraph of the answers. YES only if both are right; NO does not say which one is wrong.',
     'pairs_corner': '&darr; murderer &nbsp; accomplice &rarr;', 'victim': 'The victim is #%d %s. The body was found at the %s.',
-    'par': 'PAR &mdash; the turns a methodical detective needs: level 1 &mdash; %s, level 2 &mdash; %s, level 3 &mdash; %s.',
+    'par': 'PAR &mdash; the turns a methodical detective needs: levels 1 &mdash; %s, 2 &mdash; %s, 3 &mdash; %s.',
     'levels': {'fair': '''<p>Agree on the level &mdash; how many private questions a turn has: <b>1</b> Master Detective
 &mdash; one, <b>2</b> Sleuth &mdash; two, <b>3</b> Gumshoe &mdash; three.</p>''',
                'liar': '''<p>Agree on the level &mdash; how many private questions a turn has: <b>2</b> Sleuth &mdash; two,
@@ -131,7 +132,7 @@ and no other. An empty cell: the question is not on this suspect's card.</p>''',
 Put the victim's card away. At the place of the body there are neither suspects nor guns.</p></div>
 <div><h2>A turn: one suspect</h2>
 <p>%(suspect)s The alibi. Find its paragraph and read it aloud: everybody hears an alibi.</p>
-<p>%(pq)s As many as the level allows, and only those on this suspect's card (the filled cells of the row).
+<p>%(pq)s Up to as many as the level allows (fewer is fine), and only those on this suspect's card (the filled cells of the row).
 The answer is for your eyes only.</p>
 <p>%(end)s The turn passes to the left. The same suspect may be questioned again in a later turn.</p></div>
 <div><h2>%(accuse)s</h2>
@@ -188,7 +189,7 @@ an answer says YES. Grids for crossing out are on the last sheet of the case, <b
 </div>'''}, 'ru': {
     'sub': 'Материалы дела', 'case': 'ДЕЛО', 'index': 'Указатель', 'answers': 'Ответы', 'victim_row': 'жертва',
     'game': ('ОБЫЧНАЯ ИГРА', 'ДВА ЛОЖНЫХ АЛИБИ', 'СООБЩНИК', 'ВСЕ ВРУТ'), 'accusation': 'Обвинение',
-    'notes': 'Записи', 'par23': 'ПАР &mdash; столько ходов нужно методичному сыщику: уровень 2 &mdash; %s, уровень 3 &mdash; %s.',
+    'notes': 'Записи', 'par23': 'ПАР &mdash; столько ходов нужно методичному сыщику: уровни 2 &mdash; %s, 3 &mdash; %s.',
     'notes_howto': 'Зачёркивайте то, что исключает алиби или ответ. Вверху &mdash; где каждый подозреваемый не был '
                    '(место, сторона, район); правдивый ответ может оставить и одну клетку. Названных спутников пишите в '
                    '&laquo;не вместе с&raquo;: они были в другом месте. Внизу &mdash; адрес каждого места. Место тела '
@@ -198,7 +199,7 @@ an answer says YES. Grids for crossing out are on the last sheet of the case, <b
     'pairs_howto': 'Найдите строку того, кого обвиняете в убийстве, и столбец сообщника: число в клетке &mdash; номер '
                    'параграфа ответов. YES &mdash; только если верны оба; NO не говорит, кто из двоих назван неверно.',
     'pairs_corner': '&darr; убийца &nbsp; сообщник &rarr;', 'victim': 'Жертва &mdash; №&nbsp;%d %s. Тело найдено в %s.',
-    'par': 'ПАР &mdash; столько ходов нужно методичному сыщику: уровень 1 &mdash; %s, уровень 2 &mdash; %s, уровень 3 &mdash; %s.',
+    'par': 'ПАР &mdash; столько ходов нужно методичному сыщику: уровни 1 &mdash; %s, 2 &mdash; %s, 3 &mdash; %s.',
     'levels': {'fair': '''<p>Договоритесь об уровне &mdash; сколько частных вопросов в одном ходе: <b>1</b> Master
 Detective &mdash; один, <b>2</b> Sleuth &mdash; два, <b>3</b> Gumshoe &mdash; три.</p>''',
                'liar': '''<p>Договоритесь об уровне &mdash; сколько частных вопросов в одном ходе: <b>2</b> Sleuth &mdash; два,
@@ -244,7 +245,7 @@ Detective &mdash; один, <b>2</b> Sleuth &mdash; два, <b>3</b> Gumshoe &md
 На месте тела нет ни подозреваемых, ни оружия.</p></div>
 <div><h2>Ход: один подозреваемый</h2>
 <p>%(suspect)s Алиби. Найдите его параграф и прочтите вслух: алиби слышат все.</p>
-<p>%(pq)s Столько, сколько разрешает уровень, и только с карточки этого подозреваемого (заполненные клетки строки).
+<p>%(pq)s Не больше, чем разрешает уровень (можно меньше), и только с карточки этого подозреваемого (заполненные клетки строки).
 Ответ &mdash; только для ваших глаз.</p>
 <p>%(end)s Ход переходит к игроку слева. Того же подозреваемого можно допросить снова в другой ход.</p></div>
 <div><h2>%(accuse)s</h2>
@@ -349,10 +350,10 @@ def front(lang, variant='fair'):
     reading = t['key'] % dict(keys, example=seg('1 b1b  ', True, 'big'), positions=''.join('<span>%d</span>' % n for n in range(1, 8)),
                               six=seg('b'), yes=seg('  4E5  '), no=seg('     N0'), unknown=seg('0000000'),
                               **{'d%d' % n: seg(str(n)) for n in range(1, 6)})
-    return ('<section>%s%s</section>\n<section class="rules">%s%s</section>\n' % (
-        top(t['key_title'], t['sub']), reading + t.get('tips_' + variant, ''),
+    return ('<section class="rules">%s%s</section>\n<section>%s%s</section>\n' % (      # the rules first, then the display
         top(t['rules_title'], t['sub'], '<span class="game">%s</span>' % t['game'][VARIANTS[variant][0]]),
-        (t['rules'] + t.get('box_' + variant, '')) % dict(keys, **game, questions=questions)))
+        (t['rules'] + t.get('box_' + variant, '')) % dict(keys, **game, questions=questions),
+        top(t['key_title'], t['sub']), reading + t.get('tips_' + variant, '')))
 
 
 def codes(number, variant):
@@ -390,6 +391,7 @@ def pars(cases):
         return [[None] * 3 for _ in cases]
 
     def one(job):
+        if job[1] == 1 and job[0].get('inverted'): return None     # everybody lies has no level 1: not counted
         try:
             out = subprocess.run(SOLVE + ['case', json.dumps(job[0]), str(job[1])], capture_output=True,
                                  text=True, creationflags=getattr(subprocess, 'CREATE_NO_WINDOW', 0)).stdout.strip()
@@ -419,7 +421,8 @@ def book(number, variant, names, lang='en', par=None):
         '<section class="case">', top('%s %d' % (t['case'], number), t['index'], right),
         '<div class="status">%s<span>%s</span></div>\n' % (
             seg(digits(m.victim) + scene + '    ', True), t['victim'] % (m.victim, html.escape(names[m.victim - 1]), PLACES[scene])),
-        '<table><thead><tr><th></th><th>%s</th><th colspan="14">%s</th><th>%s</th></tr>\n' % (
+        '<table><colgroup><col><col>%s<col></colgroup>' % ('<col class="q">' * 14),
+        '<thead><tr><th></th><th>%s</th><th colspan="14">%s</th><th>%s</th></tr>\n' % (
             key('SUSPECT'), key('PRIVATE QUESTION'), key('I ACCUSE')),
         '<tr><th></th><th></th>%s<th></th></tr></thead>\n' % ''.join('<th>%s</th>' % key(q, 'd') for q in range(1, 15)),
         rows, '</table>\n<div class="answers">', top('%s %d' % (t['case'], number), t['answers'], right), '<div class="grid">\n',
@@ -444,9 +447,11 @@ def notes(t, number, m, right, names):
     return ''.join((
         '<div class="answers">', top('%s %d' % (t['case'], number), t['notes'], right),
         '<p class="howto">%s</p>' % t['notes_howto'],
-        (table % ('', t['notes_corner'], ''.join(map(head, cols)) + '<th></th>')).replace('<thead>', '<thead>' + groups),
+        (table % ('', t['notes_corner'], ''.join(map(head, cols)) + '<th></th>')).replace(
+            '<thead>', '<colgroup><col>%s<col></colgroup><thead>%s' % ('<col class="c">' * 11, groups)),
         who, '</table>\n',
-        table % (' style="width: 60%; margin-top: 5mm"', t['notes_addr'], ''.join(map(head, cols[6:]))), addr,
+        (table % (' style="width: 60%; margin-top: 5mm"', t['notes_addr'], ''.join(map(head, cols[6:])))).replace(
+            '<thead>', '<colgroup><col>%s</colgroup><thead>' % ('<col class="c">' * 5)), addr,
         '</table></div>'))
 
 
@@ -461,7 +466,8 @@ def accomplice_book(t, number, m, shown, para, rows, right, names, par):
         '<section class="case">', top('%s %d' % (t['case'], number), t['index'], right),
         '<div class="status">%s<span>%s</span></div>\n' % (
             seg(digits(m.victim) + scene + '    ', True), t['victim'] % (m.victim, html.escape(names[m.victim - 1]), PLACES[scene])),
-        '<table><thead><tr><th></th><th>%s</th><th colspan="14">%s</th></tr>\n' % (key('SUSPECT'), key('PRIVATE QUESTION')),
+        '<table><colgroup><col><col>%s</colgroup>' % ('<col class="q">' * 14),
+        '<thead><tr><th></th><th>%s</th><th colspan="14">%s</th></tr>\n' % (key('SUSPECT'), key('PRIVATE QUESTION')),
         '<tr><th></th><th></th>%s</tr></thead>\n' % ''.join('<th>%s</th>' % key(q, 'd') for q in range(1, 15)),
         rows, '</table>\n<p class="howto">%s</p>' % (t['to_accuse'] % t['accusation']),
         '<div class="answers">', top('%s %d' % (t['case'], number), t['answers'], right), '<div class="grid small">\n',
