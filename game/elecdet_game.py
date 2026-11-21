@@ -6,8 +6,8 @@ Keys: 0-9, S = Suspect, Q = Private Question, A = I Accuse, Enter, T = End Turn,
 M = sound off/on, Space = peek at a private answer, F1 = rules.
 ON starts our own machine (machine.py: same rules and behaviour, cases dealt at random, no ROM needed).
 ON pressed while 1 is held runs the original ROM in the emulator, with the regularities of its deals;
-2 + ON is the game of two false alibis. 9 + ON asks for the number of a case and switches off again: the next game
-(ON or 2 + ON) plays that case - the same number is the same case on any device.
+2, 3, 4 + ON are the other games (machine.VARIANTS). 9 + ON asks for the number of a case and switches off again: the
+next game plays that case - the same number is the same case on any device.
 Suspect cards are not shown: use the paper cards or the PDF.
 """
 import array, json, os, random, re, subprocess, sys, threading, time
@@ -67,10 +67,9 @@ TALL = {'ON': (0, 0, 1), 'OFF': (1, 0, 1), 'ACCUSE': (2, 0, 1),
         'ENTER': (0, 5, 2), 'ENDTURN': (2, 5, 1)}
 NUMPAD = {getattr(pygame, 'K_KP%d' % i): str(i) for i in range(10)}
 NUMPAD[pygame.K_KP_ENTER] = 'ENTER'
-OFF_HINT = ('ON: a new case. Hold a key, press ON: 1 the original, 2 two false alibis, '              # two lines:
-            '8 board game, 9 by number.')                                                       # longer is cut
-if 'ANDROID_ARGUMENT' in os.environ:      # no ROM on the phone
-    OFF_HINT = 'ON: a new case. Hold a key and press ON: 2 two false alibis, 9 a case by its number.'
+OFF_HINT = 'ON: a new case. Hold a key, press ON: %s.' % ', '.join(   # from VARIANTS: a new game is listed by itself
+    ['1 the original'] * (not ANDROID) + ['%s %s' % (row[1], row[4]) for row in VARIANTS.values() if row[1]]
+    + ['8 board game'] * (not ANDROID) + ['9 by number'])          # the phone has no ROM and no board game
 
 
 def num(s):
