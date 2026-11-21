@@ -16,7 +16,7 @@ from help_text import QUESTIONS_EN, QUESTIONS_RU
 from machine import GLYPH, MASK, NUMBER, VARIANTS, Machine, digits
 from rules import CARDS
 
-GAMES = ('fair', 'lies', 'frame')        # the games with a book
+GAMES = ('fair', 'lies', 'frame', 'liar')        # the games with a book
 MOST = 10                                # cases in one file: 22 sheets; the par takes seconds per case
 FROZEN = getattr(sys, 'frozen', False)       # built into one file by desktop/build.py
 BOOKS = os.path.dirname(sys.executable if FROZEN else os.path.abspath(__file__))   # beside the program: the place a player looks first
@@ -72,7 +72,11 @@ table.pairs { font-size: 8.5pt } .pairs th, .pairs td { padding: .9mm .3mm } .pa
 # the texts of the sheets; names of people, places and keys stay as the cards and the machine have them
 TEXT = {'en': {
     'sub': 'Case Materials', 'case': 'CASE', 'index': 'Index', 'answers': 'Answers', 'victim_row': 'the victim',
-    'game': ('THE USUAL GAME', 'TWO FALSE ALIBIS', 'THE ACCOMPLICE'), 'accusation': 'Accusation',
+    'game': ('THE USUAL GAME', 'TWO FALSE ALIBIS', 'THE ACCOMPLICE', 'EVERYBODY LIES'), 'accusation': 'Accusation',
+    'notes': 'Notes', 'par23': 'PAR &mdash; the turns a methodical detective needs: level 2 &mdash; %s, level 3 &mdash; %s.',
+    'notes_howto': 'Cross out what an alibi or an answer rules out. Above: where each suspect was not (place, side, '
+                   'area). Below: the address of each place. The place of the body is shaded: nobody was there.',
+    'notes_corner': 'suspect', 'notes_addr': 'place &darr; &nbsp; side, area &rarr;',
     'to_accuse': 'To accuse, use the last sheet of the case, %s.',
     'pairs_howto': 'Find the row of the one you accuse of the murder and the column of the accomplice: the number in '
                    'that cell is a paragraph of the answers. YES only if both are right; NO does not say which one is wrong.',
@@ -151,9 +155,22 @@ murderer) both answer as if another suspect, an innocent one, had done it.</li>
 <li>Their alibis are true, and so are their other answers. The other 17 tell the truth.</li>
 <li>Name both. The index has no %(accuse)s column: on the last sheet of the case, <b>Accusation</b>, find the row of
 the murderer and the column of the accomplice, and read that paragraph. YES only if both are right; NO does not say
-which one is wrong, and you are out.</li></ol></div>'''}, 'ru': {
+which one is wrong, and you are out.</li></ol></div>''',
+    'box_liar': '''
+<div class="box"><h2>Everybody Lies</h2>
+<p>For the cases marked <b>EVERYBODY LIES</b>. Everything is as above, except:</p>
+<ol><li>Every alibi is false &mdash; everybody's, the murderer's too &mdash; in every field it shows. The suspect was
+not on the side named, not in the area named, not at the place named (and the place named is never that of the body).
+Each companion named is a suspect of the same sex and parity as a true companion, who was somewhere else.</li>
+<li>Which fields an alibi shows is as in the usual game: only what they say is false.</li>
+<li>Private questions are answered truly by everybody; the rule about the prints works as usual.</li>
+<li>Levels 2 and 3 only. The last sheet of each case, <b>Notes</b>, has grids for crossing out.</li></ol></div>'''}, 'ru': {
     'sub': 'Материалы дела', 'case': 'ДЕЛО', 'index': 'Указатель', 'answers': 'Ответы', 'victim_row': 'жертва',
-    'game': ('ОБЫЧНАЯ ИГРА', 'ДВА ЛОЖНЫХ АЛИБИ', 'СООБЩНИК'), 'accusation': 'Обвинение',
+    'game': ('ОБЫЧНАЯ ИГРА', 'ДВА ЛОЖНЫХ АЛИБИ', 'СООБЩНИК', 'ВСЕ ВРУТ'), 'accusation': 'Обвинение',
+    'notes': 'Записи', 'par23': 'ПАР &mdash; столько ходов нужно методичному сыщику: уровень 2 &mdash; %s, уровень 3 &mdash; %s.',
+    'notes_howto': 'Зачёркивайте то, что исключает алиби или ответ. Вверху &mdash; где каждый подозреваемый не был '
+                   '(место, сторона, район). Внизу &mdash; адрес каждого места. Место тела затенено: там никого не было.',
+    'notes_corner': 'подозреваемый', 'notes_addr': 'место &darr; &nbsp; сторона, район &rarr;',
     'to_accuse': 'Чтобы обвинить, откройте последний лист дела, &laquo;%s&raquo;.',
     'pairs_howto': 'Найдите строку того, кого обвиняете в убийстве, и столбец сообщника: число в клетке &mdash; номер '
                    'параграфа ответов. YES &mdash; только если верны оба; NO не говорит, кто из двоих назван неверно.',
@@ -232,7 +249,16 @@ NO &mdash; вы выбыли. В одиночной игре неверное о
 <li>Их алиби правдивы, остальные их ответы тоже. Прочие 17 говорят правду.</li>
 <li>Назовите обоих. Колонки %(accuse)s в указателе нет: на последнем листе дела, &laquo;Обвинение&raquo;, найдите
 строку убийцы и столбец сообщника и прочтите этот параграф. YES &mdash; только если верны оба; NO не говорит, кто
-назван неверно, и вы выбываете.</li></ol></div>'''}}
+назван неверно, и вы выбываете.</li></ol></div>''',
+    'box_liar': '''
+<div class="box"><h2>Игра &laquo;Все врут&raquo;</h2>
+<p>Для дел с меткой <b>ВСЕ ВРУТ</b>. Всё как выше, кроме:</p>
+<ol><li>Все алиби ложны &mdash; у всех, и у убийцы тоже, &mdash; в каждом показанном поле. Подозреваемый был не на
+названной стороне, не в названном районе, не в названном месте (и названное место &mdash; никогда не место тела).
+Каждый названный спутник &mdash; подозреваемый того же пола и чётности, что настоящий спутник, бывший в другом месте.</li>
+<li>Какие поля есть в алиби &mdash; как в обычной игре: ложно только сказанное.</li>
+<li>На частные вопросы все отвечают правду; правило об отпечатках действует как обычно.</li>
+<li>Только уровни 2 и 3. На последнем листе каждого дела, &laquo;Записи&raquo;, &mdash; сетки для вычёркивания.</li></ol></div>'''}}
 
 # --- the display: seven segments a..g of a digit, as lines in a 10 x 18 box ---
 LINES = [(2, 1, 8, 1), (9, 2, 9, 8), (9, 10, 9, 16), (2, 17, 8, 17), (1, 10, 1, 16), (1, 2, 1, 8), (2, 9, 8, 9)]
@@ -283,7 +309,7 @@ def front(lang, variant='fair'):
                               **{'d%d' % n: seg(str(n)) for n in range(1, 6)})
     return ('<section>%s%s</section>\n<section class="rules">%s%s</section>\n' % (
         top(t['key_title'], t['sub']), reading, top(t['rules_title'], t['sub']),
-        (t['rules'] + t['box_frame' if variant == 'frame' else 'box_lies']) % dict(keys, questions=questions)))
+        (t['rules'] + t[{'frame': 'box_frame', 'liar': 'box_liar'}.get(variant, 'box_lies')]) % dict(keys, questions=questions)))
 
 
 def codes(number, variant):
@@ -355,8 +381,27 @@ def book(number, variant, names, lang='en', par=None):
         '<tr><th></th><th></th>%s<th></th></tr></thead>\n' % ''.join('<th>%s</th>' % key(q, 'd') for q in range(1, 15)),
         rows, '</table>\n<div class="answers">', top('%s %d' % (t['case'], number), t['answers'], right), '<div class="grid">\n',
         ''.join('<div><b>%d</b> %s</div>\n' % (n, seg(shown[k])) for k, n in sorted(para.items(), key=lambda kn: kn[1])),
-        '</div>', '<p class="par">%s</p>' % (t['par'] % tuple(p or '&ndash;' for p in par)) if par and any(par) else '',
-        '</div></section>\n'))
+        '</div>', '<p class="par">%s</p>' % (
+            t['par23'] % tuple(p or '&ndash;' for p in par[1:]) if m.variant == 'liar' else
+            t['par'] % tuple(p or '&ndash;' for p in par)) if par and any(par) else '',
+        '</div>', notes(t, number, m, right, names) if m.variant == 'liar' else '', '</section>\n'))
+
+
+def notes(t, number, m, right, names):
+    """Everybody lies: a last sheet to cross out on - suspect x (place, side, area), and place x (side, area)."""
+    cols = list('ABCDEF') + ['1', '2', '3', '4', '5']
+    head = lambda c: '<th>%s</th>' % seg(GLYPH.get(c, c))
+    cell = lambda c: '<td class="x"></td>' if c == m.obs['scene'] else '<td></td>'
+    who = ''.join('<tr><th class="n"><b>%d</b> %s</th>%s</tr>\n' % (s, html.escape(names[s - 1]), ''.join(map(cell, cols)))
+                  for s in range(1, 21) if s != m.victim)
+    addr = ''.join('<tr><th class="n">%s %s</th>%s</tr>\n' % (seg(GLYPH[l]), PLACES[GLYPH[l]], '<td></td>' * 5) for l in 'ABCDEF')
+    table = '<table class="pairs"%s><thead><tr><th class="corner">%s</th>%s</tr></thead>\n'
+    return ''.join((
+        '<div class="answers">', top('%s %d' % (t['case'], number), t['notes'], right),
+        '<p class="howto">%s</p>' % t['notes_howto'],
+        table % ('', t['notes_corner'], ''.join(map(head, cols))), who, '</table>\n',
+        table % (' style="width: 60%; margin-top: 5mm"', t['notes_addr'], ''.join(map(head, cols[6:]))), addr,
+        '</table></div>'))
 
 
 def accomplice_book(t, number, m, shown, para, rows, right, names, par):
