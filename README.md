@@ -28,6 +28,9 @@ original cards or your own copy of them (the help screen lists who answers which
   every case is checked by the solver to be solvable by reasoning.
 - **The Accomplice** (`3` + `ON`): the murderer and an accomplice tell one false story about the murderer; accuse
   both.
+- **Everybody Lies** (`4` + `ON`): every alibi is false in every field, private answers are true; a logic puzzle
+  for levels 2 and 3, every case checked to be solvable in at most 20 turns by a methodical detective.
+- **Board game** (`8` + `ON`, PC only): cases printed as a book of paragraphs, with the rules of that game.
 - The rules in several pages, in English and Russian (`?` or `F1`).
 - The original ROM on `1` + `ON`, with the display drawn by how long each segment was really lit.
 

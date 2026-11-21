@@ -14,7 +14,7 @@ data += ['--add-data', icon + os.pathsep + '.'] + (['--icon', icon] if os.name =
 PyInstaller.__main__.run([
     os.path.join(here, 'entry.py'), '--onefile', '--windowed', '--name', 'ElectronicDetective', '--noconfirm',
     '--paths', os.path.join(root, 'game'), '--paths', os.path.join(root, 'research', 'solver'),
-    '--hidden-import', 'par', '--hidden-import', 'solver',
+    '--hidden-import', 'par', '--hidden-import', 'solver', '--hidden-import', 'liar',
     '--distpath', os.path.join(here, 'dist'), '--workpath', os.path.join(here, 'work'), '--specpath', os.path.join(here, 'work'),
     *data])
 

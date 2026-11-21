@@ -177,6 +177,22 @@ Every case can be solved by reasoning, the pair included. This game has its own 
 In the board game (`8` + `ON`, then `3` + `ON`) the pair is accused on the last sheet of the case, a grid of murderer and
 accomplice.
 
+## Everybody Lies (`4` + `ON`)
+
+Hold `4` and press `ON`. Levels 2 and 3 only. Everything is as in the usual game, except:
+
+1. **Every alibi is false** — everybody's, the murderer's too — in every field it shows: the suspect was not on the
+   side named, not in the area named, not at the place named (and the place named is never that of the body).
+2. **Each companion named was somewhere else**; the true companion is another suspect of the same sex and parity.
+3. Which fields an alibi shows is as in the usual game.
+4. **Private questions are answered truly** by everybody; the rule about prints works as usual.
+
+An alibi says NOT, an answer says YES. Every case can be solved by reasoning; a methodical detective needs at most
+20 turns on level 2. Example: No. 4 says "side 1, the Card Party, with No. 15" — so 4 was on the East Side, not at
+the Card Party, and 15 was not where 4 was. Count the kinds: a place of four holds one suspect of each sex and
+parity, so the place of three has nobody of the victim's kind. This game has its own records and score against par.
+In the board game (`8` + `ON`, then `4` + `ON`) the last sheet of every case, Notes, has grids for crossing out.
+
 ## Messages and errors
 
 - `EE` — a wrong key sequence, a question not on the card, or an attempt to question another suspect without

@@ -13,7 +13,7 @@ pip -q install buildozer cython setuptools
 rm -f "$work"/app/*.py
 for f in main elecdet_game board tms0980 machine rules sounds help_text help_view paper; do cp "$here/../game/$f.py" "$work/app/"; done
 cp /usr/share/fonts/truetype/dejavu/DejaVuSans.ttf /usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf "$work/app/"   # the phone has no Arial
-cp "$here/../research/solver/par.py" "$here/../research/solver/solver.py" "$work/app/"      # par is counted on the phone too
+cp "$here/../research/solver/par.py" "$here/../research/solver/solver.py" "$here/../research/solver/liar.py" "$work/app/"   # par is counted on the phone too; liar: everybody lies
 cp "$here/buildozer.spec" "$work/"
 cp "$here/../game/icon.png" "$work/icon.png"
 cp "$here/presplash.png" "$work/presplash.png"
