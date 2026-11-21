@@ -75,8 +75,9 @@ TEXT = {'en': {
     'game': ('THE USUAL GAME', 'TWO FALSE ALIBIS', 'THE ACCOMPLICE', 'EVERYBODY LIES'), 'accusation': 'Accusation',
     'notes': 'Notes', 'par23': 'PAR &mdash; the turns a methodical detective needs: level 2 &mdash; %s, level 3 &mdash; %s.',
     'notes_howto': 'Cross out what an alibi or an answer rules out. Above: where each suspect was not (place, side, '
-                   'area). Below: the address of each place. The place of the body is shaded: nobody was there.',
-    'notes_corner': 'suspect', 'notes_addr': 'place &darr; &nbsp; side, area &rarr;',
+                   'area); a true answer may also leave one cell. Companions named go to &ldquo;not with&rdquo;: they '
+                   'were elsewhere. Below: the address of each place. The place of the body is shaded: nobody was there.',
+    'notes_groups': ('place', 'side', 'area', 'not with'), 'notes_corner': 'suspect', 'notes_addr': 'place &darr; &nbsp; side, area &rarr;',
     'to_accuse': 'To accuse, use the last sheet of the case, %s.',
     'pairs_howto': 'Find the row of the one you accuse of the murder and the column of the accomplice: the number in '
                    'that cell is a paragraph of the answers. YES only if both are right; NO does not say which one is wrong.',
@@ -169,8 +170,10 @@ Each companion named is a suspect of the same sex and parity as a true companion
     'game': ('ОБЫЧНАЯ ИГРА', 'ДВА ЛОЖНЫХ АЛИБИ', 'СООБЩНИК', 'ВСЕ ВРУТ'), 'accusation': 'Обвинение',
     'notes': 'Записи', 'par23': 'ПАР &mdash; столько ходов нужно методичному сыщику: уровень 2 &mdash; %s, уровень 3 &mdash; %s.',
     'notes_howto': 'Зачёркивайте то, что исключает алиби или ответ. Вверху &mdash; где каждый подозреваемый не был '
-                   '(место, сторона, район). Внизу &mdash; адрес каждого места. Место тела затенено: там никого не было.',
-    'notes_corner': 'подозреваемый', 'notes_addr': 'место &darr; &nbsp; сторона, район &rarr;',
+                   '(место, сторона, район); правдивый ответ может оставить и одну клетку. Названных спутников пишите в '
+                   '&laquo;не вместе с&raquo;: они были в другом месте. Внизу &mdash; адрес каждого места. Место тела '
+                   'затенено: там никого не было.',
+    'notes_groups': ('место', 'сторона', 'район', 'не вместе с'), 'notes_corner': 'подозреваемый', 'notes_addr': 'место &darr; &nbsp; сторона, район &rarr;',
     'to_accuse': 'Чтобы обвинить, откройте последний лист дела, &laquo;%s&raquo;.',
     'pairs_howto': 'Найдите строку того, кого обвиняете в убийстве, и столбец сообщника: число в клетке &mdash; номер '
                    'параграфа ответов. YES &mdash; только если верны оба; NO не говорит, кто из двоих назван неверно.',
@@ -392,14 +395,17 @@ def notes(t, number, m, right, names):
     cols = list('ABCDEF') + ['1', '2', '3', '4', '5']
     head = lambda c: '<th>%s</th>' % seg(GLYPH.get(c, c))
     cell = lambda c: '<td class="x"></td>' if c == m.obs['scene'] else '<td></td>'
-    who = ''.join('<tr><th class="n"><b>%d</b> %s</th>%s</tr>\n' % (s, html.escape(names[s - 1]), ''.join(map(cell, cols)))
-                  for s in range(1, 21) if s != m.victim)
+    who = ''.join('<tr><th class="n"><b>%d</b> %s</th>%s<td style="width: 22%%"></td></tr>\n' % (
+        s, html.escape(names[s - 1]), ''.join(map(cell, cols))) for s in range(1, 21) if s != m.victim)
+    groups = '<tr><th></th>%s</tr>' % ''.join(      # named groups: a companion's number is not a side or an area
+        '<th colspan="%d">%s</th>' % (n, g) for n, g in zip((6, 2, 3, 1), t['notes_groups']))
     addr = ''.join('<tr><th class="n">%s %s</th>%s</tr>\n' % (seg(GLYPH[l]), PLACES[GLYPH[l]], '<td></td>' * 5) for l in 'ABCDEF')
     table = '<table class="pairs"%s><thead><tr><th class="corner">%s</th>%s</tr></thead>\n'
     return ''.join((
         '<div class="answers">', top('%s %d' % (t['case'], number), t['notes'], right),
         '<p class="howto">%s</p>' % t['notes_howto'],
-        table % ('', t['notes_corner'], ''.join(map(head, cols))), who, '</table>\n',
+        (table % ('', t['notes_corner'], ''.join(map(head, cols)) + '<th></th>')).replace('<thead>', '<thead>' + groups),
+        who, '</table>\n',
         table % (' style="width: 60%; margin-top: 5mm"', t['notes_addr'], ''.join(map(head, cols[6:]))), addr,
         '</table></div>'))
 
