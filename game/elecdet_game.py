@@ -17,7 +17,7 @@ from board import ElecDet, IPS, SEG, load_romset
 import paper
 from machine import LEVELS, Machine, NUMBER, VARIANTS, deal_checked, number_rng
 from rules import CARDS, from_ram, observe
-from help_text import HELP
+from help_text import CONTENTS, HELP
 
 VERSION = '1.1'                          # of the builds (buildozer.spec reads it from here)
 STOCK = 3                                # cases of the game of two false alibis kept dealt ahead
@@ -905,9 +905,9 @@ class Game:
                 pygame.draw.arc(sc, col, a, -0.8, 0.8, w)
 
     def help_bar(self):
-        """The keys under a page: back, smaller and larger text, the other language, forward, close."""
-        h, w = self.KEY_H * 3 // 4, (self.CW - 5 * self.GAP) // 6
-        names = ('<', 'A-', 'A+', 'RU' if self.lang == 'en' else 'EN', '>', 'X')
+        """The keys under a page: back, smaller and larger text, the other language, the contents, forward, close."""
+        h, w = self.KEY_H * 3 // 4, (self.CW - 6 * self.GAP) // 7
+        names = ('<', 'A-', 'A+', 'RU' if self.lang == 'en' else 'EN', '\u2261', '>', 'X')
         return [(pygame.Rect(self.M + i * (w + self.GAP), self.H - self.M - h, w, h), n) for i, n in enumerate(names)]
 
     def help_fonts(self):
@@ -919,24 +919,25 @@ class Game:
         return self._fonts
 
     def help_pages(self):
-        """The text of the current language as pages of (font, line): wrapped to the width, cut to the height."""
+        """The text of the current language as pages of (font, line): wrapped to the width, cut to the height. Page 0
+        is the contents (drawn by draw_toc); self._toc lists (chapter, its page, quick reference or not)."""
         if getattr(self, '_help_src', None) != (self.lang, self.size):
             body, head = self.help_fonts()
             step, room = body.get_linesize(), self.help_bar()[0][0].top - self.M - 2 * body.get_linesize()
-            pages, page, y = [], [], 0
+            pages, page, y, toc = [], [], 0, []
             texts = [t for text in HELP[self.lang] for t in                         # '@cards': who can be asked what
                      (['%d %s:  %s' % (s, NAMES[s - 1], ', '.join(map(str, CARDS[s]))) for s in sorted(CARDS)]
                       if text == '@cards' else [text])] + ['', 'Electronic Detective ' + VERSION]
 
             def cut(text):
-                if text.startswith('# '): return [(head, t) for t in self.wrap(text[2:], self.CW, head)]
+                if text.startswith('#'): return [(head, t) for t in self.wrap(text.lstrip('#').strip(), self.CW, head)]
                 return [(body, t) for t in self.wrap(text, self.CW, body)] if text else [(None, '')]
-            for k, text in enumerate(texts):
+            for text in texts:
                 lines = cut(text)
-                if text.startswith('# '):                                           # a heading keeps two lines of text
-                    after = [ln for t in texts[k + 1:k + 3] for ln in cut(t) if ln[1]]
-                    if y + step * (len(lines) + min(2, len(after))) > room and page:
+                if text.startswith('#'):                                            # a chapter opens a page: the
+                    if page:                                                        # contents leads to its top
                         pages.append(page); page, y = [], 0
+                    toc.append((text.lstrip('#').strip(), len(pages) + 1, text.startswith('##')))
                     page += lines; y += step * len(lines)
                     continue
                 for ln in lines:                                                    # a paragraph goes on line by line
@@ -944,11 +945,12 @@ class Game:
                         pages.append(page); page, y = [], 0
                     if page or ln[1]:                                               # no gap at the top of a page
                         page.append(ln); y += step
-            self._help_src, self._help_pages = (self.lang, self.size), pages + [page]
+            self._help_src, self._help_pages, self._toc = (self.lang, self.size), [[(None, '')]] + pages + [page], toc
         return self._help_pages
 
     def help_do(self, name):
         if name == 'X': self.help = None
+        elif name == '\u2261': self.help = 0
         elif name in ('A-', 'A+'):
             first = self.help_pages()[self.help][0][1]              # stay at the text that was being read
             self.size = max(-2, min(5, self.size + (1 if name == 'A+' else -1))); save_settings(help_size=self.size)
@@ -971,12 +973,39 @@ class Game:
             return False
         for r, name in self.help_bar():
             if r.collidepoint(pos): self.help_do(name)
+        if self.help == 0:
+            for r, _, page in self.toc_rows():
+                if r.collidepoint(pos): self.help = page
         return True
+
+    def toc_rows(self):
+        """The contents: (rect, chapter, page) - the rules first, then the quick reference apart, under its own title."""
+        self.help_pages()
+        room = self.help_bar()[0][0].top - self.M                          # large text: the rows close up to fit
+        step = min(self.help_fonts()[0].get_linesize() * 3 // 2, room // (len(self._toc) + 5))
+        y, rows = self.M + 2 * step, []
+        for quick in (False, True):
+            y += 2 * step * quick                                     # a blank line, then its title
+            for title, page, q in self._toc:
+                if q == quick:
+                    rows.append((pygame.Rect(self.M, y, self.CW, step), title, page)); y += step
+        return rows
+
+    def draw_toc(self, sc):
+        body, head = self.help_fonts()
+        rows = self.toc_rows()
+        title, quick = CONTENTS[self.lang]
+        sc.blit(head.render(title, True, (20, 20, 20)), (self.M, self.M))
+        quick_y = next(r.y for r, t, p in rows if (t, p, True) in self._toc)
+        sc.blit(head.render(quick, True, (20, 20, 20)), (self.M, quick_y - rows[0][0].h))
+        for r, t, _ in rows:
+            sc.blit(head.render(t, True, (40, 105, 175)), (r.x + self.px(12), r.y + (r.h - head.get_linesize()) // 2))
 
     def draw_help(self):
         sc, pages = self.screen, self.help_pages()
         sc.fill((250, 248, 240))
         body = self.help_fonts()[0]
+        if self.help == 0: self.draw_toc(sc)
         for k, (f, t) in enumerate(pages[self.help]):
             if t: sc.blit(f.render(t, True, (20, 20, 20) if f is body else (40, 105, 175)), (self.M, self.M + k * body.get_linesize()))
         note = '%d / %d' % (self.help + 1, len(pages)) + ''.join(
@@ -1046,7 +1075,7 @@ class Game:
                     if self.help is None: self.help = 0
                     else: self.help_do({pygame.K_LEFT: '<', pygame.K_RIGHT: '>', pygame.K_SPACE: '>',
                                         pygame.K_l: self.help_bar()[3][1], pygame.K_MINUS: 'A-', pygame.K_KP_MINUS: 'A-',
-                                        pygame.K_EQUALS: 'A+', pygame.K_KP_PLUS: 'A+'}.get(e.key, 'X'))
+                                        pygame.K_EQUALS: 'A+', pygame.K_KP_PLUS: 'A+', pygame.K_HOME: '\u2261'}.get(e.key, 'X'))
                     continue
                 if e.type == pygame.KEYDOWN and e.key == pygame.K_m:
                     self.toggle_sound()

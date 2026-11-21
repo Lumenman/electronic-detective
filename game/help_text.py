@@ -1,5 +1,8 @@
 """The rules as the '?' screen shows them, in English and Russian (the rules only: nothing on how to solve a case).
-A line starting with '# ' is a heading; an empty string is a gap. The window wraps the lines and cuts them into pages."""
+A line starting with '# ' is a heading - a chapter of the contents; '## ' is a chapter of the quick reference, listed
+apart. An empty string is a gap. The window wraps the lines and cuts them into pages."""
+
+CONTENTS = {'en': ('Contents', 'Quick reference'), 'ru': ('Оглавление', 'Справочник')}
 
 QUESTIONS_EN = [
     '1  Did the murderer go to the East Side?',
@@ -41,10 +44,10 @@ HELP = {
         'Hold 1 and press ON - the original (needs its ROM; not on the phone). In the original the case depends on '
         'the moment you press ENTER at the start and on how long you hold it: up to about 0.8 s, after that the '
         'machine goes on by itself.',
-        'Hold 2 and press ON - the game of Two False Alibis; hold 3 and press ON - the Accomplice (see the last '
-        'sections).',
+        'Hold 2 and press ON - the game of Two False Alibis; hold 3 - the Accomplice; hold 4 - Everybody Lies (see '
+        'the last sections).',
         'Hold 9 and press ON - choose a case by its number: type a number from 1 to 9999999 and press ENTER. The '
-        'machine remembers it and goes dark; the next game you start (ON, 2 + ON or 3 + ON) plays that case '
+        'machine remembers it and goes dark; the next game you start (ON or a digit + ON) plays that case '
         '(OFF before that forgets the number). '
         'The same number is the same case on any device: give it to a friend, or agree to play the date as the case '
         'of the day. Every case shows its number at the start and in the final summary. A case chosen by its number '
@@ -53,7 +56,8 @@ HELP = {
         'Hold 0 and press ON - clear the records and the running score: ENTER confirms, any other key keeps them.',
         'The speaker at the top right of the message field turns the sound off and on (on a PC also the M key).',
         '',
-        'Then enter the level (1 Master Detective, 2 Sleuth, 3 Gumshoe: that many private questions per turn), '
+        'Then enter the level (1 Master Detective, 2 Sleuth, 3 Gumshoe: up to that many private questions per turn; '
+        'Everybody Lies has levels 2 and 3 only), '
         'the number of players (1-4) and ENTER. The display shows the number of the victim and the place of the body.',
         '',
         '# A turn',
@@ -76,11 +80,11 @@ HELP = {
         'There are two guns, a .38 and a .45; one of them is the murder weapon.',
         'Suspects 1-10 are men, 11-20 are women.',
         '',
-        '# Private questions',
+        '## Private questions',
         *QUESTIONS_EN,
         'Questions 13 and 14 can be put to everybody; the others are on the cards.',
         '',
-        '# The cards: who can be asked what',
+        '## The cards: who can be asked what',
         'After an alibi the message field lists the questions of that suspect.',
         '@cards',
         '',
@@ -110,7 +114,7 @@ HELP = {
         '',
         '# Board game (8 + ON, PC only)',
         'To play without the machine. Hold 8 and press ON, type how many cases to write (1-10) and press ENTER: the '
-        'machine goes dark. Then ON writes that many random cases of the usual game, 2 + ON of Two False Alibis, 3 + ON of the Accomplice; '
+        'machine goes dark. Then ON writes that many random cases of the usual game, 2 + ON of Two False Alibis, 3 + ON of the Accomplice, 4 + ON of Everybody Lies; '
         'OFF cancels. Nothing of the cases is shown on the screen.',
         'The file cases_<date>_<time>.html appears beside the program (if its folder is read-only: in the folder ElectronicDetective of your AppData or ~/.config). Open it in a browser and print it on A4, without headers and '
         'footers. First come two sheets for all cases: how to read the display, and the rules in brief. Then two '
@@ -141,6 +145,25 @@ HELP = {
         'and the player is out.',
         'Every case can be solved by reasoning, the pair included. In the board game the pair is accused on the last '
         'sheet of the case: a grid of murderer and accomplice.',
+        '',
+        '# Everybody Lies (4 + ON)',
+        'Everything as in the usual game, except:',
+        "1. Every alibi is false - everybody's, the murderer's too - in every field it shows. The suspect was not on "
+        'the side named, not in the area named, not at the place named (and the place named is never that of the body). '
+        'Each companion named is a suspect of the same sex and parity as a true companion, who was somewhere else.',
+        '2. Which fields an alibi shows is as in the usual game.',
+        '3. Private questions are answered truly by everybody; the rule about the prints works as usual. An alibi says '
+        'NOT, an answer says YES.',
+        '4. Levels 2 and 3 only.',
+        'Every case can be solved by reasoning; a methodical detective needs at most 20 turns on level 2.',
+        '',
+        'Example. No. 4 says: side 1, the Card Party, with No. 15. Read it: 4 was on the East Side, not at the Card '
+        'Party; 15 was not where 4 was (the true companion of 4 is another odd woman).',
+        'Count the kinds. A place of four holds one suspect of each kind (sex and parity), so the place of three has '
+        "nobody of the victim's kind. When a suspect has one place left, it is closed to the others of their kind.",
+        'Suppose and check. Say No. 10 can only be at A or F, and of the odd men only No. 5 can still be at F. 10 named '
+        '5 as a companion, so they were apart: were 10 at F, F would have no odd man. So 10 was at A.',
+        'In the board game the last sheet of every case, Notes, has grids for crossing out.',
     ],
     'ru': [
         '# Начало игры',
@@ -148,9 +171,10 @@ HELP = {
         'Удерживая 1, нажмите ON - оригинал (нужен его ROM; на телефоне нет). В оригинале дело зависит от того, '
         'в какой момент вы нажмёте ENTER в начале игры и сколько его продержите: до 0,8 с, дальше машина '
         'продолжает сама.',
-        'Удерживая 2, нажмите ON - игра «Два ложных алиби»; удерживая 3 - «Сообщник» (см. последние разделы).',
+        'Удерживая 2, нажмите ON - игра «Два ложных алиби»; удерживая 3 - «Сообщник»; удерживая 4 - «Все врут» '
+        '(см. последние разделы).',
         'Удерживая 9, нажмите ON - выбор дела по номеру: введите номер от 1 до 9999999 и нажмите ENTER. Машина '
-        'запомнит его и погаснет; следующая игра, которую вы начнёте (ON, 2 + ON или 3 + ON), будет этим делом '
+        'запомнит его и погаснет; следующая игра, которую вы начнёте (ON или цифра + ON), будет этим делом '
         '(OFF до этого - забыть номер). Один номер - '
         'одно и то же дело на любом устройстве: продиктуйте его другу или договоритесь играть дату как дело дня. '
         'Номер каждого дела показан в начале и в итоге. Дело, выбранное по номеру, в рекорды и накопленный счёт '
@@ -160,7 +184,8 @@ HELP = {
         'оставляет их.',
         'Динамик в правом верхнем углу поля сообщений выключает и включает звук (на ПК ещё клавиша M).',
         '',
-        'Затем введите уровень (1 Master Detective, 2 Sleuth, 3 Gumshoe: столько частных вопросов за ход), '
+        'Затем введите уровень (1 Master Detective, 2 Sleuth, 3 Gumshoe: не больше стольких частных вопросов за ход; '
+        'в «Все врут» - только 2 и 3), '
         'число игроков (1-4) и ENTER. На табло - номер жертвы и место тела.',
         '',
         '# Ход',
@@ -183,11 +208,11 @@ HELP = {
         'В городе два пистолета, .38 и .45; один из них - орудие убийства.',
         'Подозреваемые 1-10 - мужчины, 11-20 - женщины.',
         '',
-        '# Частные вопросы',
+        '## Частные вопросы',
         *QUESTIONS_RU,
         'Вопросы 13 и 14 можно задать всем; остальные - по карточкам.',
         '',
-        '# Карточки: кому какие вопросы',
+        '## Карточки: кому какие вопросы',
         'После алиби в поле сообщений перечислены вопросы этого подозреваемого.',
         '@cards',
         '',
@@ -217,7 +242,7 @@ HELP = {
         '',
         '# Настольная игра (8 + ON, только ПК)',
         'Чтобы играть без машины. Удерживая 8, нажмите ON, введите, сколько дел записать (1-10), и нажмите ENTER: '
-        'машина погаснет. Затем ON запишет столько случайных дел обычной игры, 2 + ON - игры «Два ложных алиби», 3 + ON - «Сообщника»; '
+        'машина погаснет. Затем ON запишет столько случайных дел обычной игры, 2 + ON - игры «Два ложных алиби», 3 + ON - «Сообщника», 4 + ON - «Все врут»; '
         'OFF отменяет. На экран о делах ничего не выводится.',
         'Файл cases_<дата>_<время>.html появится рядом с программой (если в её папку нельзя писать - в папке ElectronicDetective в AppData или ~/.config). Откройте его в браузере и напечатайте на A4, без колонтитулов. Сначала '
         'идут два листа на все дела: как читать табло и краткие правила. Затем по два листа на дело: указатель '
@@ -246,5 +271,25 @@ HELP = {
         'YES - только если верны оба и в этом порядке. NO не говорит, кто назван неверно, и игрок выбывает.',
         'Каждое дело можно раскрыть рассуждением, вместе с парой. В настольной игре пару обвиняют на последнем листе '
         'дела: в сетке «убийца × сообщник».',
+        '',
+        '# Все врут (4 + ON)',
+        'Всё как в обычной игре, кроме следующего:',
+        '1. Все алиби ложны - у всех, и у убийцы тоже, - в каждом показанном поле. Подозреваемый был не на названной '
+        'стороне, не в названном районе, не в названном месте (и названное место - никогда не место тела). Каждый '
+        'названный спутник - подозреваемый того же пола и чётности, что настоящий спутник, бывший в другом месте.',
+        '2. Какие поля есть в алиби - как в обычной игре.',
+        '3. На частные вопросы все отвечают правду; правило об отпечатках действует как обычно. Алиби говорит НЕ, '
+        'ответ говорит ДА.',
+        '4. Только уровни 2 и 3.',
+        'Каждое дело можно раскрыть рассуждением; методичному сыщику на уровне 2 хватает 20 ходов.',
+        '',
+        'Пример. № 4 говорит: сторона 1, Card Party, с № 15. Читаем: 4 был на East Side, не в Card Party; 15 был не '
+        'там, где 4 (настоящий спутник 4 - другая нечётная женщина).',
+        'Считайте роды. В месте на четверых - по одному каждого рода (пол и чётность), поэтому в месте на троих нет '
+        'рода жертвы. Если у подозреваемого осталось одно место, оно закрыто для остальных его рода.',
+        'Предположите и проверьте. Пусть № 10 может быть только в A или F, а из нечётных мужчин в F может быть только '
+        '№ 5. 10 назвал 5 спутником, значит, они были порознь: будь 10 в F, в F не нашлось бы нечётного мужчины. '
+        'Значит, 10 был в A.',
+        'В настольной игре на последнем листе каждого дела, «Записи», - сетки для вычёркивания.',
     ],
 }
