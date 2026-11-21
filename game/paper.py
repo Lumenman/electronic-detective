@@ -60,11 +60,14 @@ td.v { font-style: italic }
 .rules ol { margin: 0; padding-left: 5mm } .rules li { margin: 0 0 1mm } .rules table { font-size: 9pt }
 .rules td, .rules th { padding: .7mm 1.2mm; text-align: left } .rules td.a { white-space: nowrap; text-align: center; width: 1% }
 .par { margin: 4mm 0 0; font-weight: bold }
-.grid.small { columns: 6; column-gap: 4mm; font-size: 9pt } .grid.small div { padding: .25mm 0 }
-.grid.small b { min-width: 8mm } .grid.small .s { width: 1.8mm; height: 3.2mm; margin-right: .5mm }
-table.pairs { font-size: 8.5pt } .pairs th, .pairs td { padding: .9mm .3mm } .pairs td.x { background: #ddd }
+.grid.small { columns: 5; column-gap: 5mm; font-size: 10pt } .grid.small div { padding: .3mm 0 }
+.grid.small b { min-width: 9.5mm } .grid.small .s { width: 2.2mm; height: 4mm; margin-right: .6mm }
+table.pairs { font-size: 8.5pt } .pairs th, .pairs td { padding: .9mm .3mm }
+td.x { background: #ccc; -webkit-print-color-adjust: exact; print-color-adjust: exact }   /* printers drop backgrounds otherwise */
+table.notes { font-size: 11pt } .notes th, .notes td { padding: 1.5mm .5mm } table.notes th.n { font-size: 11pt }
 .pairs .corner { text-align: left; font-size: 8pt; font-weight: normal; white-space: nowrap } .pairs th.n { font-size: 8.5pt }
 .howto { font-size: 9.5pt; margin: 2mm 0 3mm }
+.tips { margin-top: 3mm; font-size: 9.5pt; border: 1.5pt solid #000; border-radius: 2mm; padding: 3mm } .tips h2 { margin: 0 0 1.5mm; font-size: 11.5pt } .tips p { margin: 0 0 1.5mm }
 .rules .s { width: 1.9mm; height: 3.4mm; margin-right: .5mm } .rules .box { border: 1.5pt solid #000; border-radius: 2mm; padding: 3mm }
 </style>
 '''
@@ -83,6 +86,14 @@ TEXT = {'en': {
                    'that cell is a paragraph of the answers. YES only if both are right; NO does not say which one is wrong.',
     'pairs_corner': '&darr; murderer &nbsp; accomplice &rarr;', 'victim': 'The victim is #%d %s. The body was found at the %s.',
     'par': 'PAR &mdash; the turns a methodical detective needs: level 1 &mdash; %s, level 2 &mdash; %s, level 3 &mdash; %s.',
+    'levels': {'fair': '''<p>Agree on the level &mdash; how many private questions a turn has: <b>1</b> Master Detective
+&mdash; one, <b>2</b> Sleuth &mdash; two, <b>3</b> Gumshoe &mdash; three.</p>''',
+               'liar': '''<p>Agree on the level &mdash; how many private questions a turn has: <b>2</b> Sleuth &mdash; two,
+<b>3</b> Gumshoe &mdash; three. (Level 1 is too long for this game.)</p>'''},
+    'truth': {'fair': 'The suspects tell the truth, with one exception (item 4).',
+              'lies': 'The suspects tell the truth, except item 4 and two false alibis (below).',
+              'frame': 'The suspects tell the truth, except item 4 and one false story (below).',
+              'liar': 'Every alibi is false (below); answers are true, except item 4.'},
     'questions': QUESTIONS_EN, 'yes_no': 'YES / NO', 'key_title': 'READING THE DISPLAY', 'rules_title': 'RULES IN BRIEF',
     'key': '''<p>Every paragraph of the book is the seven digits of the machine's display. A dot is a dark digit: nothing is shown there.</p>
 <h2>%(suspect)s &nbsp;An alibi</h2>
@@ -115,8 +126,7 @@ and no other. An empty cell: the question is not on this suspect's card.</p>''',
 <p>Six places: %(places)s. Each place is on a side (1 West Side, 2 East Side) and in an area (3 Uptown, 4 Midtown,
 5 Downtown). Two guns are hidden in the city, a .38 and a .45, at two different places. One of them is the murder weapon.</p></div>
 <div><h2>Before you start</h2>
-<p>Agree on the level &mdash; how many private questions a turn has: <b>1</b> Master Detective &mdash; one,
-<b>2</b> Sleuth &mdash; two, <b>3</b> Gumshoe &mdash; three.</p>
+%(levels)s
 <p>Take the index sheet of a case. The display at its top shows the number of the victim and the place of the body.
 Put the victim's card away. At the place of the body there are neither suspects nor guns.</p></div>
 <div><h2>A turn: one suspect</h2>
@@ -130,7 +140,7 @@ YES &mdash; you have solved the case; NO &mdash; you are out. Playing alone, a w
 <p>Count your turns: the par of every level is at the bottom of the answers sheet.</p></div>
 </div><div>
 <div><h2>What is always true</h2>
-<ol><li>The suspects tell the truth, with one exception (item 4).</li>
+<ol><li>%(truth)s</li>
 <li>Four places hold four suspects each: an even and an odd man, an even and an odd woman.</li>
 <li>The fifth place holds three: two men and a woman, or two women and a man. The sixth, the place of the body, is empty.</li>
 <li>The prints on the murder weapon: whether they are an odd-numbered suspect's is told reliably only by a suspect
@@ -142,7 +152,7 @@ Where there is no gun, questions 13 and 14 are answered &ldquo;I don't know&rdqu
 <p style="margin-top: 1.5mm">Everybody has questions 13 and 14; they may also be answered &ldquo;I don't know&rdquo;.</p></div>
 </div></div>''', 'box_lies': '''
 <div class="box"><h2>The game of Two False Alibis</h2>
-<p>For the cases marked <b>TWO FALSE ALIBIS</b>. Everything is as above, except:</p>
+<p>Everything is as above, except:</p>
 <ol><li>Two suspects lie in their alibis: the murderer and one more. Each repeats the alibi of another suspect of the
 same sex and the same parity who was at another place.</li>
 <li>Private questions are answered truly by everybody, these two as well.</li>
@@ -150,22 +160,32 @@ same sex and the same parity who was at another place.</li>
 <li>The other 17 tell the truth; the rule about the prints works as usual.</li></ol></div>''',
     'box_frame': '''
 <div class="box"><h2>The Accomplice</h2>
-<p>For the cases marked <b>THE ACCOMPLICE</b>. Everything is as above, except:</p>
+<p>Everything is as above, except:</p>
 <ol><li>The murderer has an accomplice, and the two keep to one false story: to questions 1, 2, 3 and 8 (about the
 murderer) both answer as if another suspect, an innocent one, had done it.</li>
 <li>Their alibis are true, and so are their other answers. The other 17 tell the truth.</li>
 <li>Name both. The index has no %(accuse)s column: on the last sheet of the case, <b>Accusation</b>, find the row of
 the murderer and the column of the accomplice, and read that paragraph. YES only if both are right; NO does not say
 which one is wrong, and you are out.</li></ol></div>''',
+    'tips_liar': '''
+<div class="box tips"><h2>Reading an alibi in this game</h2>
+<p><b>Example.</b> No. 4 says: side 1, the Card Party, with No. 15. Read it: 4 was on the East
+Side, not at the Card Party; 15 was not where 4 was (4's true companion is another odd woman). Cross out side 1 and the
+Card Party for 4; write 15 under &ldquo;not with&rdquo; for 4, and 4 for 15.</p>
+<p><b>Count the kinds.</b> A place of four holds one suspect of each kind (sex and parity), so the place of three has
+nobody of the victim's kind. When a suspect has one place left, it is closed to the others of their kind.</p>
+<p><b>Suppose and check.</b> Say No. 10 can only be at A or F, and of the odd men only No. 5 can still be at F. 10 named 5
+as a companion, so they were apart: were 10 at F, F would have no odd man. So 10 was at A.</p></div>''',
     'box_liar': '''
 <div class="box"><h2>Everybody Lies</h2>
-<p>For the cases marked <b>EVERYBODY LIES</b>. Everything is as above, except:</p>
+<p>Everything is as above, except:</p>
 <ol><li>Every alibi is false &mdash; everybody's, the murderer's too &mdash; in every field it shows. The suspect was
 not on the side named, not in the area named, not at the place named (and the place named is never that of the body).
-Each companion named is a suspect of the same sex and parity as a true companion, who was somewhere else.</li>
-<li>Which fields an alibi shows is as in the usual game: only what they say is false.</li>
-<li>Private questions are answered truly by everybody; the rule about the prints works as usual.</li>
-<li>Levels 2 and 3 only. The last sheet of each case, <b>Notes</b>, has grids for crossing out.</li></ol></div>'''}, 'ru': {
+Each companion named is a suspect of the same sex and parity as a true companion, who was somewhere else. Which
+fields an alibi shows is as in the usual game.</li>
+<li>Private questions are answered truly by everybody; the rule about the prints works as usual. An alibi says NOT,
+an answer says YES. Grids for crossing out are on the last sheet of the case, <b>Notes</b>.</li></ol>
+</div>'''}, 'ru': {
     'sub': 'Материалы дела', 'case': 'ДЕЛО', 'index': 'Указатель', 'answers': 'Ответы', 'victim_row': 'жертва',
     'game': ('ОБЫЧНАЯ ИГРА', 'ДВА ЛОЖНЫХ АЛИБИ', 'СООБЩНИК', 'ВСЕ ВРУТ'), 'accusation': 'Обвинение',
     'notes': 'Записи', 'par23': 'ПАР &mdash; столько ходов нужно методичному сыщику: уровень 2 &mdash; %s, уровень 3 &mdash; %s.',
@@ -179,6 +199,14 @@ Each companion named is a suspect of the same sex and parity as a true companion
                    'параграфа ответов. YES &mdash; только если верны оба; NO не говорит, кто из двоих назван неверно.',
     'pairs_corner': '&darr; убийца &nbsp; сообщник &rarr;', 'victim': 'Жертва &mdash; №&nbsp;%d %s. Тело найдено в %s.',
     'par': 'ПАР &mdash; столько ходов нужно методичному сыщику: уровень 1 &mdash; %s, уровень 2 &mdash; %s, уровень 3 &mdash; %s.',
+    'levels': {'fair': '''<p>Договоритесь об уровне &mdash; сколько частных вопросов в одном ходе: <b>1</b> Master
+Detective &mdash; один, <b>2</b> Sleuth &mdash; два, <b>3</b> Gumshoe &mdash; три.</p>''',
+               'liar': '''<p>Договоритесь об уровне &mdash; сколько частных вопросов в одном ходе: <b>2</b> Sleuth &mdash; два,
+<b>3</b> Gumshoe &mdash; три. (Уровень 1 для этой игры слишком долгий.)</p>'''},
+    'truth': {'fair': 'Подозреваемые говорят правду &mdash; с одним исключением (п.&nbsp;4).',
+              'lies': 'Подозреваемые говорят правду, кроме п.&nbsp;4 и двух ложных алиби (ниже).',
+              'frame': 'Подозреваемые говорят правду, кроме п.&nbsp;4 и одной ложной версии (ниже).',
+              'liar': 'Все алиби ложны (ниже); ответы правдивы, кроме п.&nbsp;4.'},
     'questions': QUESTIONS_RU, 'yes_no': 'YES / NO', 'key_title': 'КАК ЧИТАТЬ ТАБЛО', 'rules_title': 'КРАТКИЕ ПРАВИЛА',
     'key': '''<p>Каждый параграф книги &mdash; семь разрядов табло машины. Точка &mdash; погасший разряд: там ничего не показано.</p>
 <h2>%(suspect)s &nbsp;Алиби</h2>
@@ -211,8 +239,7 @@ Each companion named is a suspect of the same sex and parity as a true companion
 <p>Шесть мест: %(places)s. Каждое место &mdash; на стороне (1 West Side, 2 East Side) и в районе (3 Uptown, 4 Midtown,
 5 Downtown). В городе спрятаны два пистолета, .38 и .45, в двух разных местах. Один из них &mdash; орудие убийства.</p></div>
 <div><h2>Перед игрой</h2>
-<p>Договоритесь об уровне &mdash; сколько частных вопросов в одном ходе: <b>1</b> Master Detective &mdash; один,
-<b>2</b> Sleuth &mdash; два, <b>3</b> Gumshoe &mdash; три.</p>
+%(levels)s
 <p>Возьмите лист-указатель дела. Табло вверху показывает номер жертвы и место тела. Карточку жертвы уберите.
 На месте тела нет ни подозреваемых, ни оружия.</p></div>
 <div><h2>Ход: один подозреваемый</h2>
@@ -226,7 +253,7 @@ NO &mdash; вы выбыли. В одиночной игре неверное о
 <p>Считайте свои ходы: пар для каждого уровня &mdash; внизу листа ответов.</p></div>
 </div><div>
 <div><h2>Что верно всегда</h2>
-<ol><li>Подозреваемые говорят правду &mdash; с одним исключением (п.&nbsp;4).</li>
+<ol><li>%(truth)s</li>
 <li>В четырёх местах &mdash; по четыре подозреваемых: чётный и нечётный мужчина, чётная и нечётная женщина.</li>
 <li>В пятом месте &mdash; трое: двое мужчин и женщина или две женщины и мужчина. Шестое, место тела, пустое.</li>
 <li>Отпечатки на орудии убийства: нечётного ли они подозреваемого, надёжно скажет только подозреваемый того же пола,
@@ -238,7 +265,7 @@ NO &mdash; вы выбыли. В одиночной игре неверное о
 <p style="margin-top: 1.5mm">Вопросы 13 и 14 есть у всех; на них могут ответить и &laquo;не знаю&raquo;.</p></div>
 </div></div>''', 'box_lies': '''
 <div class="box"><h2>Игра &laquo;Два ложных алиби&raquo;</h2>
-<p>Для дел с меткой <b>ДВА ЛОЖНЫХ АЛИБИ</b>. Всё как выше, кроме:</p>
+<p>Всё как выше, кроме:</p>
 <ol><li>Двое лгут в алиби: убийца и ещё один подозреваемый. Каждый повторяет алиби другого подозреваемого того же пола
 и той же чётности, который был в другом месте.</li>
 <li>На частные вопросы все отвечают правду &mdash; и эти двое тоже.</li>
@@ -246,22 +273,33 @@ NO &mdash; вы выбыли. В одиночной игре неверное о
 <li>Остальные 17 говорят правду; правило об отпечатках действует как обычно.</li></ol></div>''',
     'box_frame': '''
 <div class="box"><h2>Игра &laquo;Сообщник&raquo;</h2>
-<p>Для дел с меткой <b>СООБЩНИК</b>. Всё как выше, кроме:</p>
+<p>Всё как выше, кроме:</p>
 <ol><li>У убийцы есть сообщник, и они держатся одной ложной версии: на вопросы 1, 2, 3 и 8 (об убийце) оба отвечают
 так, будто это сделал другой подозреваемый, невиновный.</li>
 <li>Их алиби правдивы, остальные их ответы тоже. Прочие 17 говорят правду.</li>
 <li>Назовите обоих. Колонки %(accuse)s в указателе нет: на последнем листе дела, &laquo;Обвинение&raquo;, найдите
 строку убийцы и столбец сообщника и прочтите этот параграф. YES &mdash; только если верны оба; NO не говорит, кто
 назван неверно, и вы выбываете.</li></ol></div>''',
+    'tips_liar': '''
+<div class="box tips"><h2>Как читать алиби в этой игре</h2>
+<p><b>Пример.</b> №&nbsp;4 говорит: сторона 1, Card Party, с №&nbsp;15. Читаем: 4 был на East
+Side, не в Card Party; 15 был не там, где 4 (настоящий спутник 4 &mdash; другая нечётная женщина). Зачеркните у 4
+сторону 1 и Card Party; в &laquo;не вместе с&raquo; запишите 15 у 4 и 4 у 15.</p>
+<p><b>Считайте роды.</b> В месте на четверых &mdash; по одному каждого рода (пол и чётность), поэтому в месте на
+троих нет рода жертвы. Если у подозреваемого осталось одно место, оно закрыто для остальных его рода.</p>
+<p><b>Предположите и проверьте.</b> Пусть №&nbsp;10 может быть только в A или F, а из нечётных мужчин в F может быть
+только №&nbsp;5. 10 назвал 5 спутником, значит, они были порознь: будь 10 в F, в F не нашлось бы нечётного мужчины.
+Значит, 10 был в A.</p></div>''',
     'box_liar': '''
 <div class="box"><h2>Игра &laquo;Все врут&raquo;</h2>
-<p>Для дел с меткой <b>ВСЕ ВРУТ</b>. Всё как выше, кроме:</p>
+<p>Всё как выше, кроме:</p>
 <ol><li>Все алиби ложны &mdash; у всех, и у убийцы тоже, &mdash; в каждом показанном поле. Подозреваемый был не на
 названной стороне, не в названном районе, не в названном месте (и названное место &mdash; никогда не место тела).
-Каждый названный спутник &mdash; подозреваемый того же пола и чётности, что настоящий спутник, бывший в другом месте.</li>
-<li>Какие поля есть в алиби &mdash; как в обычной игре: ложно только сказанное.</li>
-<li>На частные вопросы все отвечают правду; правило об отпечатках действует как обычно.</li>
-<li>Только уровни 2 и 3. На последнем листе каждого дела, &laquo;Записи&raquo;, &mdash; сетки для вычёркивания.</li></ol></div>'''}}
+Каждый названный спутник &mdash; подозреваемый того же пола и чётности, что настоящий спутник, бывший в другом месте.
+Какие поля есть в алиби &mdash; как в обычной игре.</li>
+<li>На частные вопросы все отвечают правду; правило об отпечатках действует как обычно. Алиби говорит НЕ, ответ
+говорит ДА. Сетки для вычёркивания &mdash; на последнем листе дела, &laquo;Записи&raquo;.</li></ol>
+</div>'''}}
 
 # --- the display: seven segments a..g of a digit, as lines in a 10 x 18 box ---
 LINES = [(2, 1, 8, 1), (9, 2, 9, 8), (9, 10, 9, 16), (2, 17, 8, 17), (1, 10, 1, 16), (1, 2, 1, 8), (2, 9, 8, 9)]
@@ -298,8 +336,8 @@ def top(title, note, right=''):
 
 # --- the sheets ---
 def front(lang, variant='fair'):
-    """The two sheets that go with any number of cases: how to read the display, and the rules in brief (with the box
-    of the accomplice for its cases, else that of two false alibis)."""
+    """The two sheets that go with any number of cases: how to read the display, and the rules of this game in brief
+    (a book holds one game: its levels and truth line, and its own box; the usual game has none)."""
     t = TEXT[lang]
     keys = {'suspect': key('SUSPECT'), 'pq': key('PRIVATE QUESTION'), 'accuse': key('I ACCUSE'), 'end': key('END TURN'),
             'places': ', '.join('%s&nbsp;%s' % (seg(g), name) for g, name in PLACES.items())}
@@ -307,12 +345,14 @@ def front(lang, variant='fair'):
     for q in t['questions']:             # '3  What area did the murderer go to?  3 / 4 / 5'
         n, text, answer = (q.split('  ') + [t['yes_no']])[:3]
         questions += '<tr><th>%s</th><td>%s</td><td class="a">%s</td></tr>' % (n, html.escape(text), answer.replace('-', '&ndash;'))
+    game = {'levels': t['levels'].get(variant, t['levels']['fair']), 'truth': t['truth'][variant]}
     reading = t['key'] % dict(keys, example=seg('1 b1b  ', True, 'big'), positions=''.join('<span>%d</span>' % n for n in range(1, 8)),
                               six=seg('b'), yes=seg('  4E5  '), no=seg('     N0'), unknown=seg('0000000'),
                               **{'d%d' % n: seg(str(n)) for n in range(1, 6)})
     return ('<section>%s%s</section>\n<section class="rules">%s%s</section>\n' % (
-        top(t['key_title'], t['sub']), reading, top(t['rules_title'], t['sub']),
-        (t['rules'] + t[{'frame': 'box_frame', 'liar': 'box_liar'}.get(variant, 'box_lies')]) % dict(keys, questions=questions)))
+        top(t['key_title'], t['sub']), reading + t.get('tips_' + variant, ''),
+        top(t['rules_title'], t['sub'], '<span class="game">%s</span>' % t['game'][VARIANTS[variant][0]]),
+        (t['rules'] + t.get('box_' + variant, '')) % dict(keys, **game, questions=questions)))
 
 
 def codes(number, variant):
@@ -400,7 +440,7 @@ def notes(t, number, m, right, names):
     groups = '<tr><th></th>%s</tr>' % ''.join(      # named groups: a companion's number is not a side or an area
         '<th colspan="%d">%s</th>' % (n, g) for n, g in zip((6, 2, 3, 1), t['notes_groups']))
     addr = ''.join('<tr><th class="n">%s %s</th>%s</tr>\n' % (seg(GLYPH[l]), PLACES[GLYPH[l]], '<td></td>' * 5) for l in 'ABCDEF')
-    table = '<table class="pairs"%s><thead><tr><th class="corner">%s</th>%s</tr></thead>\n'
+    table = '<table class="pairs notes"%s><thead><tr><th class="corner">%s</th>%s</tr></thead>\n'
     return ''.join((
         '<div class="answers">', top('%s %d' % (t['case'], number), t['notes'], right),
         '<p class="howto">%s</p>' % t['notes_howto'],
