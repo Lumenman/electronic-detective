@@ -1,10 +1,10 @@
 """The rules as the '?' screen shows them, in English and Russian (the rules only: nothing on how to solve a case,
-beyond the hints of the original's own rules). The markup is read by help_view.py (see there): chapters '# ',
+beyond the hints of the original's own rules). The markup is read by help_view.py (see there): chapters '#! ' (about), '# ',
 '#+ ' (a game) and '## ' (the quick reference), '### ' subheadings, '- ' and '1. ' items, '> ' notes, **bold**,
 [KEY]; '@questions' and '@cards' are the tables."""
 
-# the help's own title, and the groups of its contents: the rules, the games, the quick reference
-CONTENTS = {'en': ('Help', 'Rules', 'Games', 'Quick reference'), 'ru': ('Справка', 'Правила', 'Режимы игры', 'Справочник')}
+# the help's own title, and the groups of its contents: about the game (no title), the rules, the games, the quick reference
+CONTENTS = {'en': ('Help', '', 'Rules', 'Games', 'Quick reference'), 'ru': ('Справка', '', 'Правила', 'Режимы игры', 'Справочник')}
 
 QUESTIONS_EN = [
     '1  Did the murderer go to the East Side?',
@@ -41,6 +41,21 @@ QUESTIONS_RU = [
 
 HELP = {
     'en': [
+        '#! About the game',
+        '**Electronic Detective** is a deduction game by Ideal (1979): an electronic machine with a keypad and a '
+        'seven-digit display, twenty suspect cards and Case Fact Sheets. A murder has been committed; the other 19 '
+        'people have scattered to six places around town. The players question them in turns, collect alibis and '
+        'private answers, and name the murderer.',
+        '### This version',
+        'A fan project: the game on a PC or a phone.',
+        '- **Our machine** (the default) - the behaviour of the device: the same keys, display, sounds, questions and '
+        'answers, compared key by key with the original program; but the cases are dealt fairly at random, and every '
+        'case has a number.',
+        '- **The original** - the real program (ROM) run by an emulator of its TMS0980 chip. The ROM is not included.',
+        '- New games, the par (the turns a methodical detective needs), records, and a board game to print.',
+        '> Not affiliated with or endorsed by Ideal or the present owners of the game. The suspect cards are not '
+        'included: use the original ones or your own copy (who answers what is in the quick reference).',
+
         '# Starting a game',
         'Switch on with [ON]. Hold a digit while pressing [ON] to choose the game or a service:',
         '- [ON] - the usual game, dealt fairly (without the patterns of the original).',
@@ -62,9 +77,6 @@ HELP = {
         'The same number is the same case on any device: give it to a friend, or play the date as the case of the '
         'day. Every case shows its number at the start and in the summary. A case chosen by number does not go to '
         'the records.',
-        '### The original',
-        'In the original the case depends on when you press [ENTER] at the start and how long you hold it: up to '
-        'about 0.8 s, then the machine goes on by itself.',
         '### Other',
         '[0] + [ON] asks first: [ENTER] clears the records, any other key keeps them.',
         'The speaker at the top right of the message field turns the sound off and on (on a PC also the M key).',
@@ -135,6 +147,16 @@ HELP = {
         'Read only the paragraph you asked for. The sheets are in the language of this help. The number of the case '
         'is on its sheets: it can be played on the machine too ([9] + [ON]).',
 
+        '#+ The original (1 + ON)',
+        'The real program of the 1979 device, run instruction by instruction by an emulator of its TMS0980 chip.',
+        '- It needs the ROM of the original: on the first [1] + [ON] the program asks where it is. Not on the phone.',
+        '- The case depends on when you press [ENTER] at the start and how long you hold it: up to about 0.8 s, then '
+        'the machine goes on by itself.',
+        '- Its cases have no numbers: a case by number ([9] + [ON]) and the board game are for our machine only.',
+        '- The display is drawn by how long each segment was really lit, as on the device.',
+        '> The rules are those of the usual game. But the deals of the original are not quite random - they have '
+        'patterns; our machine deals fairly.',
+
         '#+ Two False Alibis (2 + ON)',
         'Everything as in the usual game, except:',
         '1. Two suspects lie in their alibi: the murderer, and one more with something else to hide. Each repeats the '
@@ -184,6 +206,21 @@ HELP = {
         '@cards',
     ],
     'ru': [
+        '#! Об игре',
+        '**Electronic Detective** - детективная игра фирмы Ideal (1979): электронная машина с клавиатурой и '
+        'семиразрядным табло, двадцать карточек подозреваемых и листы записей. Совершено убийство; остальные 19 '
+        'человек разъехались по шести местам города. Игроки по очереди допрашивают их, собирают алиби и частные '
+        'ответы и называют убийцу.',
+        '### Эта версия',
+        'Любительский проект: игра на ПК и телефоне.',
+        '- **Наша машина** (по умолчанию) - повторяет поведение устройства: те же клавиши, табло, звуки, вопросы и '
+        'ответы, сверенные с программой оригинала клавиша за клавишей; но дела раздаются честно и случайно, и у '
+        'каждого дела есть номер.',
+        '- **Оригинал** - настоящая программа (ROM) на эмуляторе её микросхемы TMS0980. ROM не входит в комплект.',
+        '- Новые режимы, пар (сколько ходов нужно методичному сыщику), рекорды и настольная игра для печати.',
+        '> Проект не связан с Ideal и нынешними владельцами игры и не одобрен ими. Карточки подозреваемых не входят '
+        'в комплект: нужны оригинальные или своя копия (кто на какие вопросы отвечает - в «Справочнике»).',
+
         '# Начало игры',
         'Включение - [ON]. Удерживайте цифру, нажимая [ON], чтобы выбрать игру или действие:',
         '- [ON] - обычная игра с честной раздачей (без закономерностей оригинала).',
@@ -203,9 +240,6 @@ HELP = {
         'начнёте, будет этим делом ([OFF] до этого - забыть номер).',
         'Один номер - одно и то же дело на любом устройстве: продиктуйте его другу или играйте дату как дело дня. '
         'Номер показан в начале и в итоге. Дело по номеру в рекорды не идёт.',
-        '### Оригинал',
-        'В оригинале дело зависит от того, когда вы нажмёте [ENTER] в начале игры и сколько продержите: до 0,8 с, '
-        'дальше машина продолжает сама.',
         '### Прочее',
         '[0] + [ON] сначала спрашивает: [ENTER] стирает рекорды, любая другая клавиша оставляет.',
         'Динамик в правом верхнем углу поля сообщений выключает и включает звук (на ПК ещё клавиша M).',
@@ -274,6 +308,16 @@ HELP = {
         'для каждого уровня); в некоторых играх ещё лист - обвинение пары или записи.',
         'Читайте только тот параграф, о котором спросили. Листы пишутся на языке этой справки. Номер дела стоит на '
         'его листах: то же дело можно сыграть на машине ([9] + [ON]).',
+
+        '#+ Оригинал (1 + ON)',
+        'Настоящая программа устройства 1979 года, выполняемая команда за командой эмулятором микросхемы TMS0980.',
+        '- Нужен ROM оригинала: при первом [1] + [ON] программа спросит, где он. На телефоне этого режима нет.',
+        '- Дело зависит от того, когда вы нажмёте [ENTER] в начале игры и сколько продержите: до 0,8 с, дальше '
+        'машина продолжает сама.',
+        '- У дел нет номеров: дело по номеру ([9] + [ON]) и настольная игра - только для нашей машины.',
+        '- Табло рисуется по тому, сколько на самом деле горел каждый сегмент, - как на устройстве.',
+        '> Правила - как в обычной игре. Но раздача оригинала не вполне случайна, в ней есть закономерности; наша '
+        'машина раздаёт дела честно.',
 
         '#+ Два ложных алиби (2 + ON)',
         'Всё как в обычной игре, кроме следующего:',

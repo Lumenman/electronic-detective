@@ -1,7 +1,7 @@
 """The '?' screen: the text of help_text.py laid out in pages and drawn; a mixin of the Game window.
 
 Markup of a line of help_text.HELP (one line = one paragraph):
-  '# t'  a chapter of the rules     '#+ t'  a chapter of a game     '## t'  a chapter of the quick reference
+  '#! t' about the game   '# t' a chapter of the rules   '#+ t' of a game   '## t' of the quick reference
   '### t' a subheading   '- t' an item   '1. t' a numbered item   '> t' a note in a tinted box   '' a little gap
   '@questions', '@cards': the tables.  In any text: **bold**, and [KEY] - a key of the machine, drawn as one.
 A chapter opens a page, so the contents (page 0) leads to its top.
@@ -13,7 +13,7 @@ from rules import CARDS
 INK, BLUE, GREY, PAPER = (30, 30, 30), (40, 105, 175), (125, 120, 110), (250, 248, 240)
 TINT, STRIPE, TILE, RULE = (226, 236, 248), (242, 238, 228), (236, 232, 222), (205, 200, 188)
 TOKEN = re.compile(r'(\*\*.+?\*\*|\[[^\]]+\])')
-GROUPS = {'#': 0, '#+': 1, '##': 2}                  # the marks of the chapters -> groups of the contents
+GROUPS = {'#!': 0, '#': 1, '#+': 2, '##': 3}         # the marks of the chapters -> groups of the contents
 
 
 DASHES = [(re.compile(r' - '), ' \u2013 '), (re.compile(r'\b([0-9]+|[A-F])-([0-9]+|[A-F])\b'), '\\1\u2013\\2')]
@@ -270,7 +270,7 @@ class HelpScreen:
         for title, page, g in toc:
             first = g != group
             if first:
-                y += step // 2 * (group is not None) + step
+                y += step // 2 * (group is not None) + step * bool(titles[g])    # a group without a title: no room
                 group = g
             rows.append((pygame.Rect(body.x, y, body.w, step - max(2, step // 7)), title, page, titles[g] if first else None))
             y += step
