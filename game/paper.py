@@ -10,7 +10,7 @@ The look follows the program's window in black and white: the display in a frame
     python paper.py 3 [lies] [en|ru]     three random cases -> cases_....html beside this file
                                          (lies or another name in machine.VARIANTS: two false alibis; the language: by default that of the help)
 """
-import html, json, os, random, subprocess, sys, time
+import functools, html, json, os, random, subprocess, sys, time
 from concurrent.futures import ThreadPoolExecutor
 from help_text import QUESTIONS_EN, QUESTIONS_RU
 from machine import GLYPH, MASK, NUMBER, VARIANTS, Machine, digits
@@ -29,7 +29,7 @@ STYLE = '''<!doctype html><meta charset="utf-8"><title>Electronic Detective: cas
 <style>
 @page { size: A4 portrait; margin: 12mm }
 body { font: 10.5pt/1.3 Arial, Helvetica, sans-serif; margin: 12mm; color: #000; background: #fff }
-@media print { body { margin: 0 } }
+@media print { body { margin: 0; padding: 0 1.5pt } }   /* a border at the edge sticks out by half: Chrome cuts it */
 section + section, .answers { page-break-before: always }
 .top { display: flex; align-items: center; justify-content: space-between; border-bottom: 1.5pt solid #000;
        padding: 0 0 3mm; margin: 0 0 4mm }
@@ -356,8 +356,10 @@ def front(lang, variant='fair'):
         top(t['key_title'], t['sub']), reading + t.get('tips_' + variant, '')))
 
 
+@functools.lru_cache(maxsize=MOST)       # write() needs each case twice (par, sheets); a checked deal takes seconds
 def codes(number, variant):
-    """{(suspect, column): the display} for every alibi, card question and accusation of a case; and its machine."""
+    """{(suspect, column): the display} for every alibi, card question and accusation of a case; and its machine.
+    Cached: the callers only read what it returns."""
     m = Machine(variant=variant, number=number)
     m.power_on(); m.level, m.left = 3, 1; m.start_case('31')
     m.over = True                        # a closed case answers without the limit of questions

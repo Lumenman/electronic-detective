@@ -28,7 +28,7 @@ VARIANTS = {
     'fair': (0, None, deal, None, 'the usual game'),
     'lies': (1, '2', deal_lies, 'lie_suspects', 'two false alibis'),
     'frame': (2, '3', deal_frame, None, 'the accomplice'),            # always solvable: dealt unchecked
-    'liar': (3, '4', deal_liar, 'liar_checked', 'everybody lies'),     # DRAFT, branch everybody-lies: for a trial
+    'liar': (3, '4', deal_liar, 'liar_checked', 'everybody lies'),     # levels 2-3 only (LEVELS)
 }
 LEVELS = {'liar': '23'}                            # the levels a game allows, if not all three
 

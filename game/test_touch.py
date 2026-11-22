@@ -34,7 +34,7 @@ steps = [lambda: (finger(pygame.FINGERDOWN, 1, '1'), finger(pygame.FINGERDOWN, 2
                        (game.help_do('RU'), len(game.help_pages()) > 1, game.help_do('EN'))[1]),
          lambda: check('larger text makes more pages', (n := len(game.help_pages())) and
                        (game.help_do('A+'), game.help_do('A+'), len(game.help_pages()) > n, game.help_do('A-'), game.help_do('A-'))[2]),
-         lambda: check('X closes them', game.tap(game.help_bar()[-1][0].center) and game.help is None),
+         lambda: check('X closes them', game.tap(next(r for r, n in game.help_bar() if n == 'X').center) and game.help is None),
          lambda: pygame.event.post(pygame.event.Event(pygame.QUIT))]
 results, frame, orig_draw = [], [0], game.draw
 

@@ -137,9 +137,9 @@ where the murderer cannot be, the one left is the murderer.
 
 Every case has a number: it is shown in the message field at the start of the game and in the summary. To play a
 particular case, press `ON` while holding `9`, type the number (1 to 9999999) and press `ENTER`. The machine
-remembers the number and goes dark. Now start a game as usual (`ON` or `2` + `ON`) — it will be the chosen case;
+remembers the number and goes dark. Now start a game as usual (`ON`, or `2`, `3`, `4` + `ON`) — it will be the chosen case;
 the game after it is random again. Changed your mind — press `OFF` before the game starts: the number is forgotten.
-In the two games the same number is a different case. One number is the same case on any device, so results can be
+In different games the same number is a different case. One number is the same case on any device, so results can be
 compared: tell the number to a friend, or agree to play today's date.
 A case played by its number does not go to the records or the running score.
 

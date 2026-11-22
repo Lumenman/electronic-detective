@@ -67,9 +67,9 @@ TALL = {'ON': (0, 0, 1), 'OFF': (1, 0, 1), 'ACCUSE': (2, 0, 1),
         'ENTER': (0, 5, 2), 'ENDTURN': (2, 5, 1)}
 NUMPAD = {getattr(pygame, 'K_KP%d' % i): str(i) for i in range(10)}
 NUMPAD[pygame.K_KP_ENTER] = 'ENTER'
-OFF_HINT = 'ON: a new case. Hold a key, press ON: %s.' % ', '.join(   # from VARIANTS: a new game is listed by itself
-    ['1 the original'] * (not ANDROID) + ['%s %s' % (row[1], row[4]) for row in VARIANTS.values() if row[1]]
-    + ['8 board game'] * (not ANDROID) + ['9 by number'])          # the phone has no ROM and no board game
+OTHERS = ', '.join('%s %s' % (row[1], row[4]) for row in VARIANTS.values() if row[1])   # from VARIANTS: a new game is listed by itself
+OFF_HINT = 'ON: a new case. Hold a key, press ON: %s.' % ', '.join(
+    ['1 the original'] * (not ANDROID) + [OTHERS] + ['8 board game'] * (not ANDROID) + ['9 by number'])  # the phone has no ROM and no board game
 
 
 def num(s):
@@ -311,14 +311,16 @@ def ask_rom(error=None):
     return p or None
 
 
-def load_settings():
-    try:
-        return json.load(open(SETTINGS))
-    except (OSError, ValueError):
-        return {}
-
-
 LOCK = threading.RLock()                 # the settings are written by the window and by the thread that deals ahead
+
+
+def load_settings():
+    with LOCK:                           # Windows cannot replace a file while it is being read (save_settings)
+        try:
+            with open(SETTINGS) as f:
+                return json.load(f)
+        except (OSError, ValueError):
+            return {}
 
 
 SAVE_ERROR = ''                          # set when neither place can be written: shown while off
@@ -338,7 +340,7 @@ def save_settings(**changes):
     global SAVE_ERROR, SETTINGS
     with LOCK:
         data = load_settings(); data.update(changes)
-        for _ in range(2):
+        for _ in range(5):
             try:
                 os.makedirs(os.path.dirname(SETTINGS), exist_ok=True)
                 with open(SETTINGS + '.tmp', 'w') as f:
@@ -347,10 +349,14 @@ def save_settings(**changes):
                 SAVE_ERROR = ''
                 return
             except OSError as e:
-                if ANDROID or SETTINGS == FALLBACK:
-                    SAVE_ERROR = 'Records and settings are not saved (%s).' % (e.strerror or e)
-                    return
-                SETTINGS = FALLBACK                      # the folder of the program is read-only: the user's folder
+                error = e
+                if writable(os.path.dirname(SETTINGS)):
+                    time.sleep(0.1)                      # the folder takes files: the file is busy a moment (an antivirus)
+                elif ANDROID or SETTINGS == FALLBACK:
+                    break
+                else:
+                    SETTINGS = FALLBACK                  # the folder of the program is read-only: the user's folder
+        SAVE_ERROR = 'Records and settings are not saved (%s).' % (error.strerror or error)
 
 
 def find_rom(arg):
@@ -791,14 +797,13 @@ class Game(HelpScreen):
         if isinstance(b, Machine) and b.ask and not b.powered and b.number:
             self.pending, self.count, b.number = (None, b.number, None) if self.booking else (b.number, None, None)
         if self.count and not (b and b.powered):
-            self.status = ('%d case%s to write for the board game. Press ON for the usual game, hold 2 and press ON for two '
-                           'false alibis, or 3 for the accomplice. OFF cancels.' % (self.count, 's' * (self.count > 1)))
+            self.status = ('%d case%s to write for the board game. Press ON for the usual game, or hold a key and press ON: '
+                           '%s. OFF cancels.' % (self.count, 's' * (self.count > 1), OTHERS))
         if self.printed and not (b and b.powered):
             self.status = self.printed + ('' if self.printed.endswith('...') else 'ON: a new case.')
         if self.pending and not (b and b.powered):
-            self.status = ('Case %d is set. Press ON to play it, or hold 2 and press ON to play it as two false alibis. '
-                           'OFF forgets it.'
-                           % self.pending)
+            self.status = ('Case %d is set. Press ON to play it, or hold a key and press ON to play it in another game: '
+                           '%s. OFF forgets it.' % (self.pending, OTHERS))
         if self.wiped and not (self.board and self.board.powered):
             self.status = 'Records and the running score are cleared. ' + OFF_HINT
         if self.wipe_ask:

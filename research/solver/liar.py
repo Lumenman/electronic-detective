@@ -1,4 +1,5 @@
-"""DRAFT, not part of the game: the rule 'everybody lies' (alibi = not here). (SPOILERS: playing logic.)
+"""The rule 'everybody lies' (alibi = not here), the game on 4 + ON. (SPOILERS: playing logic.)
+The game uses liar_suspects (through solver.liar_checked and par.py); the commands below are research.
 
 The rule tried here: every alibi is false in every field it shows, and everybody's, the murderer's too. The side
 named is the other side (so the side is known all the same); the area is one of the two others; the place is another

@@ -118,6 +118,12 @@ eg.save_settings(x=2)
 assert eg.SAVE_ERROR.startswith('Records and settings are not saved'), eg.SAVE_ERROR
 assert not eg.writable(blocked) and eg.writable(os.path.join(tmpdir, 'new_folder'))
 eg.SETTINGS, eg.FALLBACK = saved; eg.SAVE_ERROR = ''
+import threading                                         # a file busy a moment (Windows: an antivirus or a thread reads it)
+busy, eg.FALLBACK = open(eg.SETTINGS), os.path.join(tmpdir, 'user2', 'settings.json')   # is written again, in its place
+threading.Timer(0.15, busy.close).start()
+eg.save_settings(y=1)
+assert eg.SETTINGS == saved[0] and eg.load_settings()['y'] == 1 and eg.SAVE_ERROR == '', (eg.SETTINGS, eg.SAVE_ERROR)
+eg.FALLBACK = saved[1]
 print('read-only folder OK')
 
 # --- key queue: instant clicks and overlapping keys must still reach the ROM ---
@@ -215,6 +221,14 @@ assert g.board.display() == _digits(m_) + ' --  ' and 'Now the accomplice' in g.
 [click(k) for k in str(c_)]; click('ENTER'); wait(6); g.update_status()
 assert g.score.winner == 0 and 'The accomplice: #%d' % c_ in g.status, g.status
 assert eg.load_settings()['records_frame'], 'a solo win is a record of its own game'
+g.press('OFF', True); g.press('4', True); g.press('ON', True); g.press('4', False)    # 4 + ON: everybody lies
+assert g.board.variant == 'liar' and g.kind() == '_liar' and g.decoder.levels == '23'
+wait(3.5); click('1'); click('1'); click('ENTER'); wait(1)                             # no level 1 in this game: still ON
+assert g.decoder.context == ('setup',) and g.score is None and g.board.display() == '     0N', g.board.display()
+click('2'); click('1'); click('ENTER'); wait(6)
+assert g.decoder.context == ('crime',) and g.score.level == 2 and g.board.case['inverted']
+click('ACCUSE'); [click(k) for k in str(g.board.murderer)]; click('ENTER'); wait(6); g.update_status()
+assert g.score.winner == 0 and eg.load_settings()['records_liar'], g.status
 g.press('OFF', True)
 g.press('ON', True); assert g.board.powered and not g.original                         # ON alone: our machine
 eg.save_settings(records_fair={'3': [4, 9]}, par_fair={'3': [1]})
@@ -224,7 +238,7 @@ click('ENDTURN'); assert not g.wipe_ask and eg.load_settings()['records_fair'] =
 g.press('0', True); g.press('ON', True); g.press('0', False); click('ENTER')            # ENTER: a clean sheet, still off
 st = eg.load_settings()
 assert not g.board.powered and g.wiped and st['records_fair'] == st['par_fair'] == st['records'] == {} and 'rom' in st
-assert st['records_lies'] == st['par_lies'] == st['records_frame'] == {}
+assert st['records_lies'] == st['par_lies'] == st['records_frame'] == st['records_liar'] == st['par_liar'] == {}
 g.press('ON', True); assert g.board.powered and not g.wiped
 wait(3.5); click('3'); click('1'); click('ENTER'); wait(6)
 s3 = 1 if g.decoder.victim != 1 else 2
@@ -322,6 +336,8 @@ assert len(set(cells)) == len(cells) == 19 * 18                     # every pair
 assert [k for k in para3 if para3[k] in cells and shown3[k] == '  4E5  '] == [(m3.murderer, ('pair', m3.pair))]
 assert not any(c == 'accuse' for s, c in shown3) and page3.index('>Answers<') < page3.index('>Accusation<')
 assert 'The Accomplice' in paper.front('en', 'frame') and 'Two False Alibis' in paper.front('en', 'lies')
+page4 = paper.book(1, 'liar', eg.NAMES, 'en', [None, 12, 9])               # everybody lies: a Notes sheet, no level-1 par
+assert '>Notes<' in page4 and 'levels 2 &mdash; 12, 3 &mdash; 9.' in page4 and 'EVERYBODY LIES' in page4
 paper.BOOKS = os.path.join(tmpdir, 'books')
 eg.save_settings(help_lang='ru')                                    # the book speaks the language of the help
 g.press('OFF', True)
@@ -339,7 +355,7 @@ g.update_status(); print(g.status)
 book, = glob.glob(os.path.join(tmpdir, 'books', 'cases_*_lies_ru.html'))
 text = open(book, encoding='utf-8').read()
 assert text.count('<section class="case">') == 2 and 'КРАТКИЕ ПРАВИЛА' in text and 'ДВА ЛОЖНЫХ АЛИБИ</span>' in text
-assert len(re.findall(r'<p class="par">ПАР .*?уровень 1 &mdash; \d+, уровень 2 &mdash; \d+, уровень 3 &mdash; \d+', text)) == 2
+assert len(re.findall(r'<p class="par">ПАР .*?уровни 1 &mdash; \d+, 2 &mdash; \d+, 3 &mdash; \d+', text)) == 2
 assert not g.board.powered and g.count is None and g.status.startswith('2 cases of two false alibis written to cases_'), g.status
 assert g.status.endswith('in Russian. ON: a new case.'), g.status
 eg.save_settings(help_lang='en')

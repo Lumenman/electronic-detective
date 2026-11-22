@@ -117,14 +117,14 @@ reachable. Held for longer than about 0.8 s, the machine goes on by itself, as t
   to skip; `2` + `ON` starts a game without waiting.
 - **Case number**: every case of our machine has a number (1-9999999), shown at the start (`Case 1234567. The victim
   is…`) and in the summary. Hold `9`, press `ON`, type the number, `ENTER`: the machine remembers it and goes dark, and
-  the next game (`ON` or `2` + `ON`) plays that case; after that cases are random again. The number is kept while the
-  program is open; `OFF` before the game forgets it. The number seeds the deal (`machine.number_rng`; the two games
-  deal differently), so it is the same case on a PC and a phone; in Two False Alibis the first solvable deal of that
+  the next game (`ON`, or `2`, `3`, `4` + `ON`) plays that case; after that cases are random again. The number is kept while the
+  program is open; `OFF` before the game forgets it. The number seeds the deal (`machine.number_rng`; each game
+  deals differently), so it is the same case on a PC and a phone; in Two False Alibis the first solvable deal of that
   seed is taken (for a typed number it is checked on the spot — the machine waits). A case chosen by its number does
   not go to the records or the running score; par is shown. For a "case of the day", agree to type the date.
   `selftest.py` keeps samples: number 1 must give the same case under any Python version.
 - **Board game** (PC only): hold `8`, press `ON`, type how many cases to write (1-10), `ENTER`: the machine goes
-  dark; then `ON` (the usual game), `2` + `ON` (Two False Alibis) or `3` + `ON` (the Accomplice) writes that many random cases to
+  dark; then `ON` (the usual game), `2` + `ON` (Two False Alibis), `3` + `ON` (the Accomplice) or `4` + `ON` (Everybody Lies) writes that many random cases to
   `cases_<date>_<time>.html` beside the program and stays off; `OFF` cancels. Nothing of the cases is shown on the screen.
   Open the file in a browser and print it on portrait A4 (untick "Headers and footers"); it is black and white, in
   the look of the window: the display in a frame, the keys as boxes. First come two sheets for any number of cases —
