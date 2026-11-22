@@ -107,7 +107,7 @@ reachable. Held for longer than about 0.8 s, the machine goes on by itself, as t
   (a few seconds), in both modes. On the phone it takes longer: the par line joins the summary a bit later.
 - **Score against par**: the difference "your turns − par" of every solo win is kept (the last 10 per level, per mode;
   `par_fair` and `par` in `settings.json`); from the second case on, the summary shows the total:
-  `Your last 3 solved cases on level 3: 1 under par in total.` Lost cases are not in the total.
+  `Last 3 cases on level 3: 1 under par.` Lost cases are not in the total.
 - **Records** (solo games, per level): fewer turns, then fewer questions; kept in `settings.json`.
 - **Final summary**: hidden while you type and back after `END TURN`; it goes away with `ON` or `OFF`.
 - **Help**: the `?` icon at the bottom right of the message field (also `F1` on a PC) — the rules in several pages,

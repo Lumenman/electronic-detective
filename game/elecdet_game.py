@@ -257,7 +257,7 @@ class Score:
     def summary(self):
         if self.n == 1:
             return ('Solved after %s.' if self.winner == 0 else 'Out after %s.') % self.stats(0)
-        parts = [('Case solved by %s: %s.' % (self.name(self.winner), self.stats(self.winner)))
+        parts = [('Solved by %s: %s.' % (self.name(self.winner), self.stats(self.winner)))
                  if self.winner is not None else 'All detectives are out.']
         parts += ['%s: %s.' % (self.name(p), 'out' if self.out[p] else self.stats(p))
                   for p in range(self.n) if p != self.winner]
@@ -273,7 +273,7 @@ class Score:
         if not best:
             return 'First record for level %d.' % self.level
         if mine < best:
-            return 'New record for level %d! (was %d turns, %d questions)' % (self.level, *best)
+            return 'New record! (was %d turns, %d questions)' % tuple(best)
         return 'Best on level %d: %d turns, %d questions.' % (self.level, *best)
 
 
@@ -453,13 +453,13 @@ class Game(HelpScreen):
         """The phone: the whole upright screen, drawn at its own resolution (sharp text) - larger text, 3 x 6 keys."""
         # shortcut: upright screens only (the apk is locked to portrait); a wide one needs side margins
         self.K, self.Z, self.LINES, self.DIGIT = ww / self.W, 1.8, 4, (48, 82)
-        self.ROWS = self.LINES
+        self.ROWS = self.LINES + 1       # the final summary of a game with par and a record (DejaVu is wide)
         self.LABEL, self.CMD = 15, (40, 105, 175)                               # the commands stand out from the digits
         self.M, self.GAP, self.W, self.H = self.px(24), self.px(12), ww, wh
         self.CW = ww - 2 * self.M
         self.U = (self.CW - 2 * self.GAP) // 3
         self.DISP = pygame.Rect(self.M, self.M, self.CW, 2 * self.px(7) + self.LINES * self.px(19 * self.Z))
-        self.STATUS = self.DISP.move(0, self.DISP.h + self.px(14))             # the same size as the display
+        self.STATUS = pygame.Rect(self.M, self.DISP.bottom + self.px(14), self.CW, 2 * self.px(7) + self.ROWS * self.px(19 * self.Z))
         self.PAD_TOP = self.STATUS.bottom + self.px(16)
         self.KEY_H = (wh - self.PAD_TOP - self.M - 5 * self.GAP) // 6
 
@@ -676,7 +676,8 @@ class Game(HelpScreen):
                 if writable(paper.BOOKS):
                     where = os.path.basename(paper.write(n, variant, NAMES, lang)) + ' beside the program'
                 else:                                                # read-only folder: the user's folder
-                    where = paper.write(n, variant, NAMES, lang, folder=os.path.dirname(FALLBACK))
+                    path = paper.write(n, variant, NAMES, lang, folder=os.path.dirname(FALLBACK))
+                    where = '%s (folder %s)' % os.path.split(path)[::-1]   # spaced: a whole path is one word, past the edge
                 self.printed = '%d case%s of %s written to %s, in %s. ' % (
                     n, 's' * (n > 1), VARIANTS[variant][4], where,
                     {'ru': 'Russian'}.get(lang, 'English'))
@@ -740,7 +741,7 @@ class Game(HelpScreen):
             out = self.par.stdout.read().strip()
             self.timing['par'] = getattr(self.par, 'seconds', None)
             par, sc, self.par_msg = int(out) if out.isdigit() else 0, self.score, ''
-            rel = lambda d: 'on par' if d == 0 else '%d %s par' % (abs(d), 'over' if d > 0 else 'under')
+            rel = lambda d, par=' par': 'on par' if d == 0 else '%d %s%s' % (abs(d), 'over' if d > 0 else 'under', par)
             if par:
                 self.par_msg = ' Par for this case: %d turns.' % par
             if par and sc and sc.n == 1 and sc.winner == 0 and not self.numbered:   # a known case could be replayed
@@ -748,9 +749,9 @@ class Game(HelpScreen):
                 tally = load_settings().get(name, {})
                 last = tally[str(sc.level)] = (tally.get(str(sc.level), []) + [sc.turns[0] - par])[-TALLY:]
                 save_settings(**{name: tally})
-                self.par_msg = ' Par for this case: %d turns - you are %s.' % (par, rel(last[-1]))
+                self.par_msg = ' Par for this case: %d turns, you are %s.' % (par, rel(last[-1], ''))   # short: the phone
                 if len(last) > 1:
-                    self.par_msg += ' Your last %d solved cases on level %d: %s in total.' % (len(last), sc.level, rel(sum(last)))
+                    self.par_msg += ' Last %d cases on level %d: %s.' % (len(last), sc.level, rel(sum(last)))
         return self.par_msg
 
     # --- drawing ---
@@ -954,7 +955,7 @@ class Game(HelpScreen):
             self._pin = self.font.render(pin, True, (120, 120, 110))
         lines = self._status_lines
         if pin:
-            sc.blit(self._pin, (self.STATUS.x + self.px(12), self.STATUS.y + self.px(7) + (self.LINES - 1) * self.px(19 * self.Z)))
+            sc.blit(self._pin, (self.STATUS.x + self.px(12), self.STATUS.y + self.px(7) + (self.ROWS - 1) * self.px(19 * self.Z)))
         if self.decoder.is_private(self.d) and not (self.peek_key or self.peek_mouse or None in self.fingers.values()):
             self.draw_cover(sc)
             c = self.decoder.context

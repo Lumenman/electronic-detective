@@ -80,7 +80,7 @@ s3.accused(False)                                    # player 2 accuses wrongly 
 assert s3.cur == 2 and s3.out == [False, True, False]
 s3.suspect(); s3.end_turn(); assert s3.cur == 0       # player 3 done, player 2 skipped
 s3.accused(True)
-assert s3.summary() == 'Case solved by Player 1: 1 turn, 1 question. Player 2: out. Player 3: 1 turn, 0 questions.'
+assert s3.summary() == 'Solved by Player 1: 1 turn, 1 question. Player 2: out. Player 3: 1 turn, 0 questions.'
 assert s3.record({}) == ''                           # records are solo only
 print('score OK')
 
@@ -269,8 +269,8 @@ eg.save_settings(par_fair={'3': [1, -3]})
 g = eg.Game.__new__(eg.Game); g.original = False
 g.score = Score(3, 1); g.score.turns[0] = 8; g.score.winner = 0
 g.par = types.SimpleNamespace(poll=lambda: 0, stdout=types.SimpleNamespace(read=lambda: '7'))
-assert g.par_text() == g.par_text() == (' Par for this case: 7 turns - you are 1 over par.'
-                                        ' Your last 3 solved cases on level 3: 1 under par in total.')
+assert g.par_text() == g.par_text() == (' Par for this case: 7 turns, you are 1 over.'
+                                        ' Last 3 cases on level 3: 1 under par.')
 assert eg.load_settings()['par_fair'] == {'3': [1, -3, 1]}
 print('par tally OK')
 

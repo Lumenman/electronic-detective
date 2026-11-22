@@ -61,7 +61,7 @@ def turn_plan():
     check(t + 10.0, 'final summary in the status line',
           lambda: 'Solved after 2 turns, 3 questions.' in game.status and 'First record for level 3.' in game.status)
     check(t + 10.05, 'par shown with the summary',
-          lambda: re.search('Par for this case: [0-9]+ turns - you are [0-9]+ under par[.]', game.status))
+          lambda: re.search('Par for this case: [0-9]+ turns, you are [0-9]+ under[.]', game.status))
     check(t + 10.07, 'difference from par kept for the running score',
           lambda: [type(x) for x in g.load_settings().get('par_fair', {}).get('3', [])] == [int])
     check(t + 10.1, 'record saved', lambda: g.load_settings().get('records_fair') == {'3': [2, 3]})   # default mode: no patterns
