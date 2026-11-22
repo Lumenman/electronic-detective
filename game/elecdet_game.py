@@ -20,7 +20,7 @@ from rules import CARDS, from_ram, observe
 from help_text import CONTENTS, HELP, QUESTIONS_EN, QUESTIONS_RU
 from help_view import HelpScreen
 
-VERSION = '1.2'                          # of the builds (buildozer.spec reads it from here)
+VERSION = '1.2.1'                         # of the builds (buildozer.spec reads it from here)
 STOCK = 3                                # cases of the game of two false alibis kept dealt ahead
 TALLY = 10                               # solved cases kept for the running score against par
 PAR = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'research', 'solver', 'par.py')
