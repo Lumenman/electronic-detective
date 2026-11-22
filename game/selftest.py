@@ -138,6 +138,10 @@ def wait(s):
     for _ in range(int(s * 60)): g.emulate(1 / 60)
 
 
+def watch(s):                                          # as the window does: the status line follows every frame
+    for _ in range(int(s * 60)): g.emulate(1 / 60); g.update_status()   # (a blinking answer is dark at times)
+
+
 def click(k): g.press(k, True); g.press(k, False)     # down and up in the same frame
 
 
@@ -218,7 +222,7 @@ assert [m_, c_] == g.board.case['frame'][:2] and m_ != c_
 click('ACCUSE'); [click(k) for k in str(m_)]; click('ENTER'); wait(1); g.update_status()
 from machine import digits as _digits
 assert g.board.display() == _digits(m_) + ' --  ' and 'Now the accomplice' in g.status and not g.score.over, g.status
-[click(k) for k in str(c_)]; click('ENTER'); wait(6); g.update_status()
+[click(k) for k in str(c_)]; click('ENTER'); watch(6)
 assert g.score.winner == 0 and 'The accomplice: #%d' % c_ in g.status, g.status
 assert eg.load_settings()['records_frame'], 'a solo win is a record of its own game'
 g.press('OFF', True); g.press('4', True); g.press('ON', True); g.press('4', False)    # 4 + ON: everybody lies
@@ -227,7 +231,7 @@ wait(3.5); click('1'); click('1'); click('ENTER'); wait(1)                      
 assert g.decoder.context == ('setup',) and g.score is None and g.board.display() == '     0N', g.board.display()
 click('2'); click('1'); click('ENTER'); wait(6)
 assert g.decoder.context == ('crime',) and g.score.level == 2 and g.board.case['inverted']
-click('ACCUSE'); [click(k) for k in str(g.board.murderer)]; click('ENTER'); wait(6); g.update_status()
+click('ACCUSE'); [click(k) for k in str(g.board.murderer)]; click('ENTER'); watch(6)
 assert g.score.winner == 0 and eg.load_settings()['records_liar'], g.status
 g.press('OFF', True)
 g.press('ON', True); assert g.board.powered and not g.original                         # ON alone: our machine

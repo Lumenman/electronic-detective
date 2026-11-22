@@ -52,7 +52,8 @@ td.v { font-style: italic }
 .grid { columns: 4; column-gap: 6mm; font-size: 12.5pt }
 .grid div { break-inside: avoid; border-bottom: 1px solid #aaa; padding: .55mm 0; white-space: nowrap }
 .grid b { display: inline-block; min-width: 11mm }
-.k th { white-space: nowrap; width: 1%; text-align: left } .k td { text-align: left } .k .s { width: 3.2mm; height: 5.8mm; margin-right: 1mm }
+.k th { white-space: nowrap; width: 29.5mm; text-align: left } .k td { text-align: left } .k .s { width: 3.2mm; height: 5.8mm; margin-right: 1mm }
+/* .k th: both tables of the display sheet one width, that of a display in the table of answers */
 .big.panel { padding: 3mm 3mm 3mm 5mm } .big .s { width: 7mm; height: 12.6mm; margin-right: 2mm }
 .pos { margin: 1mm 0 3mm 5mm } .pos span { display: inline-block; width: 7mm; margin-right: 2mm; text-align: center; font-size: 9pt }
 .rules .cols, .rules .box { font-size: 9.5pt } .rules .cols { display: flex; gap: 8mm } .rules .cols > div { flex: 1 }
@@ -64,7 +65,8 @@ td.v { font-style: italic }
 .grid.small b { min-width: 9.5mm } .grid.small .s { width: 2.2mm; height: 4mm; margin-right: .6mm }
 table.pairs { font-size: 8.5pt } .pairs th, .pairs td { padding: .9mm .3mm }
 td.x { background: #ccc; -webkit-print-color-adjust: exact; print-color-adjust: exact }   /* printers drop backgrounds otherwise */
-col.q { width: 8.5mm } .notes col.c { width: 8.5mm }   /* columns of one kind, one width */
+col.q { width: 7.5mm } .notes col.c { width: 8.5mm } .notes col.who { width: 45mm }   /* columns of one kind, one width */
+table.index td { padding: 1.75mm .3mm } table.index thead .key { font-size: 8.5pt; padding: .4mm 1mm }   /* 168 mm wide: a left margin up to 30 mm */
 table.notes { font-size: 11pt } .notes th, .notes td { padding: 1.5mm .5mm } table.notes th.n { font-size: 11pt }
 .pairs .corner { text-align: left; font-size: 8pt; font-weight: normal; white-space: nowrap } .pairs th.n { font-size: 8.5pt }
 .howto { font-size: 9.5pt; margin: 2mm 0 3mm }
@@ -78,9 +80,9 @@ TEXT = {'en': {
     'sub': 'Case Materials', 'case': 'CASE', 'index': 'Index', 'answers': 'Answers', 'victim_row': 'the victim',
     'game': ('THE USUAL GAME', 'TWO FALSE ALIBIS', 'THE ACCOMPLICE', 'EVERYBODY LIES'), 'accusation': 'Accusation',
     'notes': 'Notes', 'par23': 'PAR &mdash; the turns a methodical detective needs: levels 2 &mdash; %s, 3 &mdash; %s.',
-    'notes_howto': 'Cross out what an alibi or an answer rules out. Above: where each suspect was not (place, side, '
-                   'area); a true answer may also leave one cell. Companions named go to &ldquo;not with&rdquo;: they '
-                   'were elsewhere. Below: the address of each place. The place of the body is shaded: nobody was there.',
+    'notes_howto': 'Cross out what alibis and answers rule out (an answer may leave one cell). Above: where each suspect was not; '
+                   'companions named go to &ldquo;not with&rdquo;. Below: the address of each place. The place of the '
+                   'body is shaded.',
     'notes_groups': ('place', 'side', 'area', 'not with'), 'notes_corner': 'suspect', 'notes_addr': 'place &darr; &nbsp; side, area &rarr;',
     'to_accuse': 'To accuse, use the last sheet of the case, %s.',
     'pairs_howto': 'Find the row of the one you accuse of the murder and the column of the accomplice: the number in '
@@ -105,8 +107,7 @@ TEXT = {'en': {
 <tr><th>1st digit</th><td><b>Side</b> &mdash; %(d1)s &ldquo;I was on the West Side&rdquo;, %(d2)s &ldquo;I was on the East Side&rdquo;</td></tr>
 <tr><th>2nd digit</th><td><b>Area</b> &mdash; %(d3)s &ldquo;I was Uptown&rdquo;, %(d4)s &ldquo;I was Midtown&rdquo;, %(d5)s &ldquo;I was Downtown&rdquo;</td></tr>
 <tr><th>3rd digit</th><td><b>Place</b>, &ldquo;I was at the &hellip;&rdquo; &mdash; %(places)s</td></tr>
-<tr><th>4th&ndash;7th digits</th><td><b>Companions</b>, &ldquo;I was with these suspects&rdquo; &mdash; one or two numbers of suspects.
-A six is shown as %(six)s, the same sign as the Theatre.</td></tr>
+<tr><th>4th&ndash;7th digits</th><td><b>Companions</b> &mdash; one or two numbers. A six is shown as %(six)s, the same sign as the Theatre.</td></tr>
 </table>
 <h2>%(pq)s %(accuse)s &nbsp;An answer</h2>
 <table class="k">
@@ -116,9 +117,9 @@ A six is shown as %(six)s, the same sign as the Theatre.</td></tr>
 </table>
 <p style="margin-top: 3mm">An area or a place is shown in the same digit as in an alibi: an area in the 2nd, a place in the 3rd.</p>
 <h2>Playing from the book</h2>
-<p>On the index sheet of the case find the row of the suspect and the column: %(suspect)s for the alibi, the number of a
-%(pq)s, or %(accuse)s. The cell gives the number of a paragraph. Read that paragraph on the answers sheet &mdash;
-and no other. An empty cell: the question is not on this suspect's card.</p>''',
+<p>On the index sheet find the row of the suspect and the column: %(suspect)s for the alibi, the number of a
+%(pq)s, or %(accuse)s. The cell gives a paragraph: read it on the answers sheet, and no other. An empty cell: the
+question is not on the card.</p>''',
     'rules': '''<div class="cols"><div>
 <div><h2>The case</h2>
 <p>A murder has been committed in a big city. The victim and the place where the body was found are known. The other
@@ -145,7 +146,7 @@ YES &mdash; you have solved the case; NO &mdash; you are out. Playing alone, a w
 <li>Four places hold four suspects each: an even and an odd man, an even and an odd woman.</li>
 <li>The fifth place holds three: two men and a woman, or two women and a man. The sixth, the place of the body, is empty.</li>
 <li>The prints on the murder weapon: whether they are an odd-numbered suspect's is told reliably only by a suspect
-of the murderer's sex who went where that weapon is. The others at a gun may lie about the prints, or may not.
+of the murderer's sex who went where that weapon is. The others at a gun may lie about them.
 Where there is no gun, questions 13 and 14 are answered &ldquo;I don't know&rdquo;.</li>
 <li>The murderer is never at the place of the body, nor at a place where a gun is.</li></ol></div>
 <div><h2>The private questions</h2>
@@ -165,13 +166,12 @@ same sex and the same parity who was at another place.</li>
 <ol><li>The murderer has an accomplice, and the two keep to one false story: to questions 1, 2, 3 and 8 (about the
 murderer) both answer as if another suspect, an innocent one, had done it.</li>
 <li>Their alibis are true, and so are their other answers. The other 17 tell the truth.</li>
-<li>Name both. The index has no %(accuse)s column: on the last sheet of the case, <b>Accusation</b>, find the row of
-the murderer and the column of the accomplice, and read that paragraph. YES only if both are right; NO does not say
-which one is wrong, and you are out.</li></ol></div>''',
+<li>Name both: on the last sheet of the case, <b>Accusation</b>, find the row of the murderer and the column of the
+accomplice. YES: both are right; NO: you are out, and which one was wrong is not said.</li></ol></div>''',
     'tips_liar': '''
 <div class="box tips"><h2>Reading an alibi in this game</h2>
-<p><b>Example.</b> No. 4 says: side 1, the Card Party, with No. 15. Read it: 4 was on the East
-Side, not at the Card Party; 15 was not where 4 was (4's true companion is another odd woman). Cross out side 1 and the
+<p><b>Example.</b> No. 4 says: side 1, the Card Party, with No. 15. So 4 was on the East
+Side and not at the Card Party, and 15 was not where 4 was. Cross out side 1 and the
 Card Party for 4; write 15 under &ldquo;not with&rdquo; for 4, and 4 for 15.</p>
 <p><b>Count the kinds.</b> A place of four holds one suspect of each kind (sex and parity), so the place of three has
 nobody of the victim's kind. When a suspect has one place left, it is closed to the others of their kind.</p>
@@ -190,10 +190,9 @@ an answer says YES. Grids for crossing out are on the last sheet of the case, <b
     'sub': 'Материалы дела', 'case': 'ДЕЛО', 'index': 'Указатель', 'answers': 'Ответы', 'victim_row': 'жертва',
     'game': ('ОБЫЧНАЯ ИГРА', 'ДВА ЛОЖНЫХ АЛИБИ', 'СООБЩНИК', 'ВСЕ ВРУТ'), 'accusation': 'Обвинение',
     'notes': 'Записи', 'par23': 'ПАР &mdash; столько ходов нужно методичному сыщику: уровни 2 &mdash; %s, 3 &mdash; %s.',
-    'notes_howto': 'Зачёркивайте то, что исключает алиби или ответ. Вверху &mdash; где каждый подозреваемый не был '
-                   '(место, сторона, район); правдивый ответ может оставить и одну клетку. Названных спутников пишите в '
-                   '&laquo;не вместе с&raquo;: они были в другом месте. Внизу &mdash; адрес каждого места. Место тела '
-                   'затенено: там никого не было.',
+    'notes_howto': 'Зачёркивайте то, что исключают алиби и ответы (ответ может оставить одну клетку). Вверху &mdash; где '
+                   'каждый не был; спутников пишите в &laquo;не вместе с&raquo;. Внизу &mdash; адрес каждого '
+                   'места. Место тела затенено.',
     'notes_groups': ('место', 'сторона', 'район', 'не вместе с'), 'notes_corner': 'подозреваемый', 'notes_addr': 'место &darr; &nbsp; сторона, район &rarr;',
     'to_accuse': 'Чтобы обвинить, откройте последний лист дела, &laquo;%s&raquo;.',
     'pairs_howto': 'Найдите строку того, кого обвиняете в убийстве, и столбец сообщника: число в клетке &mdash; номер '
@@ -218,8 +217,7 @@ Detective &mdash; один, <b>2</b> Sleuth &mdash; два, <b>3</b> Gumshoe &md
 <tr><th>1-й разряд</th><td><b>Сторона</b> &mdash; %(d1)s &laquo;Я был на West Side&raquo;, %(d2)s &laquo;Я был на East Side&raquo;</td></tr>
 <tr><th>2-й разряд</th><td><b>Район</b> &mdash; %(d3)s &laquo;Я был в Uptown&raquo;, %(d4)s &laquo;Я был в Midtown&raquo;, %(d5)s &laquo;Я был в Downtown&raquo;</td></tr>
 <tr><th>3-й разряд</th><td><b>Место</b>, &laquo;Я был в &hellip;&raquo; &mdash; %(places)s</td></tr>
-<tr><th>4&ndash;7-й разряды</th><td><b>Спутники</b>, &laquo;Я был с этими подозреваемыми&raquo; &mdash; один или два номера.
-Шестёрка показывается как %(six)s &mdash; тем же знаком, что Theatre.</td></tr>
+<tr><th>4&ndash;7-й разряды</th><td><b>Спутники</b> &mdash; один или два номера. Шестёрка показана как %(six)s, тем же знаком, что Theatre.</td></tr>
 </table>
 <h2>%(pq)s %(accuse)s &nbsp;Ответ</h2>
 <table class="k">
@@ -229,9 +227,9 @@ Detective &mdash; один, <b>2</b> Sleuth &mdash; два, <b>3</b> Gumshoe &md
 </table>
 <p style="margin-top: 3mm">Район или место показаны в том же разряде, что и в алиби: район во 2-м, место в 3-м.</p>
 <h2>Как играть по книге</h2>
-<p>На листе-указателе дела найдите строку подозреваемого и столбец: %(suspect)s &mdash; алиби, номер под
-%(pq)s &mdash; вопрос, или %(accuse)s &mdash; обвинение. В клетке номер параграфа. Прочтите этот параграф на листе
-ответов &mdash; и только его. Пустая клетка: такого вопроса нет на карточке подозреваемого.</p>''',
+<p>На листе-указателе найдите строку подозреваемого и столбец: %(suspect)s &mdash; алиби, номер под
+%(pq)s &mdash; вопрос, %(accuse)s &mdash; обвинение. В клетке &mdash; номер параграфа: прочтите на листе ответов
+только его. Пустая клетка &mdash; такого вопроса нет на карточке.</p>''',
     'rules': '''<div class="cols"><div>
 <div><h2>Дело</h2>
 <p>В большом городе совершено убийство. Жертва и место, где найдено тело, известны. Остальные 19 человек разъехались
@@ -258,7 +256,7 @@ NO &mdash; вы выбыли. В одиночной игре неверное о
 <li>В четырёх местах &mdash; по четыре подозреваемых: чётный и нечётный мужчина, чётная и нечётная женщина.</li>
 <li>В пятом месте &mdash; трое: двое мужчин и женщина или две женщины и мужчина. Шестое, место тела, пустое.</li>
 <li>Отпечатки на орудии убийства: нечётного ли они подозреваемого, надёжно скажет только подозреваемый того же пола,
-что убийца, скрывшийся туда, где лежит это оружие. Остальные у оружия могут солгать про отпечатки, а могут и нет.
+что убийца, скрывшийся туда, где лежит это оружие. Остальные у оружия могут и солгать.
 Там, где оружия нет, на вопросы 13 и 14 отвечают &laquo;не знаю&raquo;.</li>
 <li>Убийцы никогда нет на месте тела и там, где лежит любой из пистолетов.</li></ol></div>
 <div><h2>Частные вопросы</h2>
@@ -278,13 +276,12 @@ NO &mdash; вы выбыли. В одиночной игре неверное о
 <ol><li>У убийцы есть сообщник, и они держатся одной ложной версии: на вопросы 1, 2, 3 и 8 (об убийце) оба отвечают
 так, будто это сделал другой подозреваемый, невиновный.</li>
 <li>Их алиби правдивы, остальные их ответы тоже. Прочие 17 говорят правду.</li>
-<li>Назовите обоих. Колонки %(accuse)s в указателе нет: на последнем листе дела, &laquo;Обвинение&raquo;, найдите
-строку убийцы и столбец сообщника и прочтите этот параграф. YES &mdash; только если верны оба; NO не говорит, кто
-назван неверно, и вы выбываете.</li></ol></div>''',
+<li>Назовите обоих: на последнем листе дела, &laquo;Обвинение&raquo;, найдите строку убийцы и столбец сообщника.
+YES &mdash; верны оба; NO &mdash; вы выбыли, а кто назван неверно, не сказано.</li></ol></div>''',
     'tips_liar': '''
 <div class="box tips"><h2>Как читать алиби в этой игре</h2>
-<p><b>Пример.</b> №&nbsp;4 говорит: сторона 1, Card Party, с №&nbsp;15. Читаем: 4 был на East
-Side, не в Card Party; 15 был не там, где 4 (настоящий спутник 4 &mdash; другая нечётная женщина). Зачеркните у 4
+<p><b>Пример.</b> №&nbsp;4 говорит: сторона 1, Card Party, с №&nbsp;15. Значит, 4 был на East
+Side и не в Card Party, а 15 &mdash; не там, где 4. Зачеркните у 4
 сторону 1 и Card Party; в &laquo;не вместе с&raquo; запишите 15 у 4 и 4 у 15.</p>
 <p><b>Считайте роды.</b> В месте на четверых &mdash; по одному каждого рода (пол и чётность), поэтому в месте на
 троих нет рода жертвы. Если у подозреваемого осталось одно место, оно закрыто для остальных его рода.</p>
@@ -423,7 +420,7 @@ def book(number, variant, names, lang='en', par=None):
         '<section class="case">', top('%s %d' % (t['case'], number), t['index'], right),
         '<div class="status">%s<span>%s</span></div>\n' % (
             seg(digits(m.victim) + scene + '    ', True), t['victim'] % (m.victim, html.escape(names[m.victim - 1]), PLACES[scene])),
-        '<table><colgroup><col><col>%s<col></colgroup>' % ('<col class="q">' * 14),
+        '<table class="index"><colgroup><col><col>%s<col></colgroup>' % ('<col class="q">' * 14),
         '<thead><tr><th></th><th>%s</th><th colspan="14">%s</th><th>%s</th></tr>\n' % (
             key('SUSPECT'), key('PRIVATE QUESTION'), key('I ACCUSE')),
         '<tr><th></th><th></th>%s<th></th></tr></thead>\n' % ''.join('<th>%s</th>' % key(q, 'd') for q in range(1, 15)),
@@ -440,7 +437,7 @@ def notes(t, number, m, right, names):
     cols = list('ABCDEF') + ['1', '2', '3', '4', '5']
     head = lambda c: '<th>%s</th>' % seg(GLYPH.get(c, c))
     cell = lambda c: '<td class="x"></td>' if c == m.obs['scene'] else '<td></td>'
-    who = ''.join('<tr><th class="n"><b>%d</b> %s</th>%s<td style="width: 22%%"></td></tr>\n' % (
+    who = ''.join('<tr><th class="n"><b>%d</b> %s</th>%s<td></td></tr>\n' % (
         s, html.escape(names[s - 1]), ''.join(map(cell, cols))) for s in range(1, 21) if s != m.victim)
     groups = '<tr><th></th>%s</tr>' % ''.join(      # named groups: a companion's number is not a side or an area
         '<th colspan="%d">%s</th>' % (n, g) for n, g in zip((6, 2, 3, 1), t['notes_groups']))
@@ -450,10 +447,10 @@ def notes(t, number, m, right, names):
         '<div class="answers">', top('%s %d' % (t['case'], number), t['notes'], right),
         '<p class="howto">%s</p>' % t['notes_howto'],
         (table % ('', t['notes_corner'], ''.join(map(head, cols)) + '<th></th>')).replace(
-            '<thead>', '<colgroup><col>%s<col></colgroup><thead>%s' % ('<col class="c">' * 11, groups)),
+            '<thead>', '<colgroup><col class="who">%s<col></colgroup><thead>%s' % ('<col class="c">' * 11, groups)),
         who, '</table>\n',
-        (table % (' style="width: 60%; margin-top: 5mm"', t['notes_addr'], ''.join(map(head, cols[6:])))).replace(
-            '<thead>', '<colgroup><col>%s</colgroup><thead>' % ('<col class="c">' * 5)), addr,
+        (table % (' style="width: auto; margin-top: 5mm"', t['notes_addr'], ''.join(map(head, cols[6:])))).replace(
+            '<thead>', '<colgroup><col class="who">%s</colgroup><thead>' % ('<col class="c">' * 5)), addr,
         '</table></div>'))
 
 
@@ -468,7 +465,7 @@ def accomplice_book(t, number, m, shown, para, rows, right, names, par):
         '<section class="case">', top('%s %d' % (t['case'], number), t['index'], right),
         '<div class="status">%s<span>%s</span></div>\n' % (
             seg(digits(m.victim) + scene + '    ', True), t['victim'] % (m.victim, html.escape(names[m.victim - 1]), PLACES[scene])),
-        '<table><colgroup><col><col>%s</colgroup>' % ('<col class="q">' * 14),
+        '<table class="index"><colgroup><col><col>%s</colgroup>' % ('<col class="q">' * 14),
         '<thead><tr><th></th><th>%s</th><th colspan="14">%s</th></tr>\n' % (key('SUSPECT'), key('PRIVATE QUESTION')),
         '<tr><th></th><th></th>%s</tr></thead>\n' % ''.join('<th>%s</th>' % key(q, 'd') for q in range(1, 15)),
         rows, '</table>\n<p class="howto">%s</p>' % (t['to_accuse'] % t['accusation']),
